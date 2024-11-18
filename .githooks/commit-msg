@@ -1,0 +1,28 @@
+#!/bin/bash
+
+### ---------------------------------------------------------------
+# simple commit message hook to verify the commit message **starts** in correct format
+### ---------------------------------------------------------------
+# Use .githooks folder instead of .git/hooks to use the hooks in this Project
+#
+#    git config core.hooksPath ./.githooks
+#
+# Make sure the file is executable
+#
+#    chmod 744 ./.githooks/commit-msg
+#
+### ---------------------------------------------------------------
+
+allowed_types="build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|wip"
+
+commit_msg_file=$1
+commit_msg=$(head -n 1 "$commit_msg_file")
+
+if ! [[ $commit_msg =~ ^($allowed_types): ]]; then
+  echo "Error: Commit message must start with <type>: where <type> is one of:"
+  echo "  build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test, wip"
+  echo "Example: feat: add new login feature"
+  exit 1
+fi
+
+exit 0
