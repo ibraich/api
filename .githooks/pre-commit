@@ -43,13 +43,15 @@ if ! docker ps --format '{{.Names}}' | grep -q 'python-black-container'; then
 fi
 
 # Run Black in the Docker container
-docker compose -f ./.githooks/docker/pre-commit/docker-compose.yml exec -T python-black-container black --check "$CHANGED_FILES"
+# shellcheck disable=SC2086
+docker compose -f ./.githooks/docker/pre-commit/docker-compose.yml exec -T python-black-container black --check $CHANGED_FILES
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
   echo "Commit failed: Black formatting check did not pass."
   # Show detailed output by running Black again
-  docker compose -f ./.githooks/docker/pre-commit/docker-compose.yml exec -T python-black-container black "$CHANGED_FILES" --diff
+  # shellcheck disable=SC2086
+  docker compose -f ./.githooks/docker/pre-commit/docker-compose.yml exec -T python-black-container black $CHANGED_FILES --diff
   exit 1
 else
   echo "Black formatting check passed. Proceeding with commit."
