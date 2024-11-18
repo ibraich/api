@@ -1,5 +1,6 @@
 FROM python:3.12-alpine
 
+RUN apk add git
 WORKDIR /app
 
 RUN pip install --upgrade pip

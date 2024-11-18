@@ -1,7 +1,7 @@
 # Annotation project api
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ## Development setup
-You can choose between [Pycharm](https://www.jetbrains.com/de-de/pycharm/) and [VsCode](https://code.visualstudio.com/) as a development environment. 
+You can choose between [Pycharm](https://www.jetbrains.com/de-de/pycharm/) (Professional Edition) and [VsCode](https://code.visualstudio.com/) as a development environment. 
 
 In the following steps, only the variant in the selected development environment needs to be executed.
 ### Run Project
