@@ -1,0 +1,7 @@
+services:
+  python-black-container:
+    build:
+      context: .
+    volumes:
+      - ../../..:/app # use /api as base dir
+    working_dir: /app

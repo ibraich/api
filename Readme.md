@@ -8,6 +8,20 @@ In the following steps, only the variant in the selected development environment
 
 Clone the [setup](https://github.com/Databases-and-Informationsystems/setup) project and follow the instructions
 
+### Git hooks
+#### Update git hooks settings
+```bash
+git config core.hooksPath ./.githooks
+```
+```bash
+chmod 744 ./.githooks/pre-commit
+chmod 744 ./.githooks/commit-msg
+```
+#### Run pre-commit docker-compose
+```bash
+docker compose -f ./.githooks/docker/pre-commit/docker-compose.yml up -d
+```
+
 ### Select Interpreter
 #### in PyCharm ...
 - `Settings -> "Seach" Python interpreter -> add interpreter (Button on the right of current interpreter) -> On Docker...`

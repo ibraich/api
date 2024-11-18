@@ -4,3 +4,5 @@ __pycache__/
 
 # Ignore macOS metadata files
 .DS_Store
+
+.idea
