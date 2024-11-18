@@ -1,9 +1,12 @@
 # Annotation project api
-
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ## Development setup
+You can choose between [Pycharm](https://www.jetbrains.com/de-de/pycharm/) and [VsCode](https://code.visualstudio.com/) as a development environment. 
+
+In the following steps, only the variant in the selected development environment needs to be executed.
 ### Run Project
 
-Clone the `setup` project and follow the instructions
+Clone the [setup](https://github.com/Databases-and-Informationsystems/setup) project and follow the instructions
 
 ### Select Interpreter
 #### in PyCharm ...
@@ -15,7 +18,7 @@ Clone the `setup` project and follow the instructions
 Source: [dev.to](https://dev.to/alvarocavalcanti/setting-up-a-python-remote-interpreter-using-docker-1i24)
 - Install the Python extension
 - Install the Dev - Containers extension
-- Open the Command Pallette and type `Dev-Containers`, then select the `Attach to Running Container...` and select the running docker container (flask)
+- Open the Command Palette and type `Dev-Containers`, then select the `Attach to Running Container...` and select the running docker container (flask)
 - VS Code will restart and reload
 - On the Explorer sidebar, click the open a folder button and then enter `/app` (this will be loaded from the remote container)
 - On the Extensions sidebar, select the Python extension and install it on the container
@@ -31,8 +34,18 @@ Source: [dev.to](https://dev.to/alvarocavalcanti/setting-up-a-python-remote-inte
 - run black on save
    - `Settings -> Tools -> Actions on save --> "check" run black`
 #### Set up in VS Code
-- Install [Black Formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter)
+- Install [Black Formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter) (inside the dev-container environment)
 - `Settings -> Seach "Default Formatter"`
 - `Settings -> Text Editor -> Format on Save`
 
-
+### Connect to Database
+#### in PyCharm ...
+- Click Database Icon (top right)
+- `+ -> Data Source -> PostgreSQL`
+   - Host: `localhost`
+   - Port: `5432`
+   - User: `user`
+   - Password: `s3cr3t`
+- `OK`
+#### in VS Code...
+TODO
