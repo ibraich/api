@@ -56,10 +56,21 @@ Source: [dev.to](https://dev.to/alvarocavalcanti/setting-up-a-python-remote-inte
 #### in PyCharm ...
 - Click Database Icon (top right)
 - `+ -> Data Source -> PostgreSQL`
-   - Host: `localhost`
+   - Host: `0.0.0.0`
    - Port: `5432`
    - User: `user`
    - Password: `s3cr3t`
+   - Database: `annotation_db`
 - `OK`
 #### in VS Code...
 TODO
+
+### Updating Data Model
+- Inside docker-image ``annotation_backend``, open terminal
+- run ``flask db init`` (must only run once)
+- After every change in data model:
+- run ``flask db migrate``
+- run ``flask db upgrade``
+- If an error occurs during these steps, try: 
+  - run ``flask db stamp head`` 
+  - run migrate + upgrade again
