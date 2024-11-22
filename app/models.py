@@ -1,11 +1,11 @@
 from app.db import db
-from sqlalchemy import exc
 
 
 class User(db.Model):
     __tablename__ = "User"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(), unique=True, nullable=False)
+    email = db.Column(db.String(), unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
 
 
@@ -68,6 +68,7 @@ class Project(db.Model):
 class Document(db.Model):
     __tablename__ = "Document"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(), unique=False, nullable=False)
     content = db.Column(db.String(), nullable=False)
     creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
     state_id = db.Column(db.Integer, db.ForeignKey("DocumentState.id"), nullable=False)
