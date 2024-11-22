@@ -13,6 +13,7 @@ class Team(db.Model):
     __tablename__ = "Team"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(), unique=True, nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey("User.id"))
 
 
 class UserTeam(db.Model):
