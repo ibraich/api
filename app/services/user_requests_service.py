@@ -7,7 +7,7 @@ class UserRequestsService:
 
     @staticmethod
     def check_authentication(user_id):
-        if "user_ud" not in session or user_id != session["user_id"]:
+        if "user_id" not in session or user_id != session["user_id"]:
             response = {"message": "Unauthorized"}
             return response, 403
         return "", 200
