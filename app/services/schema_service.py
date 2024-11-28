@@ -1,15 +1,14 @@
-from app.db import db
-from app.models import Schema
+from app.repositories.schema_repository import SchemaRepository
 
 
 class SchemaService:
+    __schema_repository: SchemaRepository
 
-    @staticmethod
-    def check_schema_exists(schema_id):
-        if db.session.query(Schema).filter(Schema.id == schema_id).first is None:
-            response = {"message": "Schema does not exist"}
-            return response, 400
-        return "", 200
+    def __init__(self, schema_repository: SchemaRepository):
+        self.__schema_repository = schema_repository
+
+    def check_schema_exists(self, schema_id):
+        return self.__schema_repository.check_schema_exists(schema_id)
 
 
-schema_service = SchemaService()
+schema_service = SchemaService(SchemaRepository())

@@ -1,7 +1,7 @@
 from app.db import db
 
 
-class BaseRepoisotry:
+class BaseRepository:
     @staticmethod
     def store_object(db_object):
         db.session.add(db_object)

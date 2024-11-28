@@ -1,17 +1,9 @@
-from flask import session
-from app.db import db
 from app.models import UserTeam
+from app.repositories.base_repository import BaseRepository
+from app.db import db
 
 
-class UserRequestsService:
-
-    @staticmethod
-    def check_authentication(user_id):
-        if "user_id" not in session or user_id != session["user_id"]:
-            response = {"message": "Unauthorized"}
-            return response, 403
-        return "", 200
-
+class UserRepository(BaseRepository):
     @staticmethod
     def check_user_in_team(user_id, team_id):
         if (
@@ -23,6 +15,3 @@ class UserRequestsService:
             response = {"message": "User not in team"}
             return response, 400
         return "", 200
-
-
-user_requests_service = UserRequestsService()

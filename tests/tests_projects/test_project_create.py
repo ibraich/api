@@ -2,7 +2,7 @@ from tests.test_routes import BaseTestCase
 from unittest.mock import patch
 import json
 from app.services.project_service import ProjectService, project_service
-from app.services.user_requests_service import UserRequestsService
+from app.services.user_service import UserService
 from app.services.schema_service import SchemaService
 from app.db import db
 
@@ -33,7 +33,7 @@ class ProjectCreateTestCases(BaseTestCase):
         response = self.service.create_project(payload)
         self.assertEqual(400, response[1])
 
-    @patch.object(UserRequestsService, "check_authentication")
+    @patch.object(UserService, "check_authentication")
     def test_create_project_service_invalid_user_auth(self, check_auth_mock):
         payload = {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
 
@@ -42,8 +42,8 @@ class ProjectCreateTestCases(BaseTestCase):
 
         self.assertEqual(403, response[1])
 
-    @patch.object(UserRequestsService, "check_authentication")
-    @patch.object(UserRequestsService, "check_user_in_team")
+    @patch.object(UserService, "check_authentication")
+    @patch.object(UserService, "check_user_in_team")
     def test_create_project_service_no_team(self, check_team_mock, check_auth_mock):
         payload = {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
 
@@ -53,8 +53,8 @@ class ProjectCreateTestCases(BaseTestCase):
 
         self.assertEqual(400, response[1])
 
-    @patch.object(UserRequestsService, "check_authentication")
-    @patch.object(UserRequestsService, "check_user_in_team")
+    @patch.object(UserService, "check_authentication")
+    @patch.object(UserService, "check_user_in_team")
     @patch.object(SchemaService, "check_schema_exists")
     @patch.object(db.session, "add")
     def test_create_project_service_no_schema(
@@ -69,8 +69,8 @@ class ProjectCreateTestCases(BaseTestCase):
         db_mock.assert_not_called()
         self.assertEqual(400, response[1])
 
-    @patch.object(UserRequestsService, "check_authentication")
-    @patch.object(UserRequestsService, "check_user_in_team")
+    @patch.object(UserService, "check_authentication")
+    @patch.object(UserService, "check_user_in_team")
     @patch.object(SchemaService, "check_schema_exists")
     @patch.object(db.session, "add")
     @patch.object(db.session, "commit")

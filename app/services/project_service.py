@@ -1,19 +1,19 @@
 from app.services.schema_service import SchemaService, schema_service
-from app.services.user_requests_service import (
-    UserRequestsService,
-    user_requests_service,
+from app.services.user_service import (
+    UserService,
+    user_service,
 )
-from app.repositories.project_repository import ProjectRepository, project_repository
+from app.repositories.project_repository import ProjectRepository
 
 
 class ProjectService:
-    user_requests_service: UserRequestsService
+    user_service: UserService
     schema_service: SchemaService
-    project_repository: ProjectRepository
+    __project_repository: ProjectRepository
 
-    def __init__(self, project_repository, user_requests_service, schema_service):
-        self.project_repository = project_repository
-        self.user_requests_service = user_requests_service
+    def __init__(self, project_repository, user_service, schema_service):
+        self.__project_repository = project_repository
+        self.user_service = user_service
         self.schema_service = schema_service
 
     def create_project(self, request_data):
@@ -25,12 +25,10 @@ class ProjectService:
         ):
             response = {"message": "Parameters missing"}
             return response, 400
-        check_auth = self.user_requests_service.check_authentication(
-            request_data["user_id"]
-        )
+        check_auth = self.user_service.check_authentication(request_data["user_id"])
         if check_auth[1] == 403:
             return check_auth
-        check_team = self.user_requests_service.check_user_in_team(
+        check_team = self.user_service.check_user_in_team(
             request_data["user_id"], request_data["team_id"]
         )
         if check_team[1] == 400:
@@ -40,7 +38,7 @@ class ProjectService:
         )
         if check_schema[1] == 400:
             return check_schema
-        return project_repository.create_project(
+        return self.__project_repository.create_project(
             request_data["name"],
             request_data["user_id"],
             request_data["team_id"],
@@ -48,6 +46,4 @@ class ProjectService:
         )
 
 
-project_service = ProjectService(
-    project_repository, user_requests_service, schema_service
-)
+project_service = ProjectService(ProjectRepository(), user_service, schema_service)
