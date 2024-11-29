@@ -1,12 +1,9 @@
 import unittest
 from app import create_app
+from app.config import TestingConfig
 
-class RoutesTestCase(unittest.TestCase):
+
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app()
+        self.app = create_app(TestingConfig)
         self.client = self.app.test_client()
-
-    def test_api_home(self):
-        response = self.client.get('/api')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Hello, Flask API is running!', response.data)

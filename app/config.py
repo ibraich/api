@@ -14,3 +14,9 @@ class Config:
         f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    TESTING = False
+
+
+class TestingConfig:
+    DEBUG = os.getenv("DEBUG", True)
+    TESTING = True
