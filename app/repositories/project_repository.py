@@ -1,6 +1,7 @@
 from app.models import Project
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import exc
+from app.db import db
 
 
 class ProjectRepository(BaseRepository):
@@ -23,3 +24,6 @@ class ProjectRepository(BaseRepository):
         except exc.SQLAlchemyError:
             response = {"message": "Creating project not possible"}
             return response, 400
+
+    def get_projects_by_team(self, team_id):
+        return db.session.query(Project).filter(Project.team_id == team_id).all()
