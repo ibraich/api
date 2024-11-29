@@ -4,8 +4,7 @@ from app.db import db
 
 
 class UserRepository(BaseRepository):
-    @staticmethod
-    def check_user_in_team(user_id, team_id):
+    def check_user_in_team(self, user_id, team_id):
         if (
             db.session.query(UserTeam)
             .filter(UserTeam.user_id == user_id, UserTeam.team_id == team_id)

@@ -2,11 +2,9 @@ from app.db import db
 
 
 class BaseRepository:
-    @staticmethod
-    def store_object(db_object):
+    def store_object(self, db_object):
         db.session.add(db_object)
         db.session.commit()
 
-    @staticmethod
-    def get_object_by_id(classname, object_id):
+    def get_object_by_id(self, classname, object_id):
         return db.session.query(classname).filter_by(id=object_id).first()
