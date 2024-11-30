@@ -20,10 +20,9 @@ class DocumentRepository(BaseRepository):
             .filter(Document.project_id == project_id)
         ).all()
 
-    def get_document_edit_by_user_and_document(self, document_id, user_id):
+    def get_document_edit_by_user_and_document(self, user_id, document_id):
         return (
             db.session.query(
-                DocumentEdit.document_id,
                 DocumentEditState.type.label("document_edit_type"),
                 DocumentEdit.id.label("document_edit_id"),
             )

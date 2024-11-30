@@ -39,7 +39,9 @@ class DocumentService:
                 user_id, document["id"]
             )
             if edit is None:
-                documents_with_edit.append(document | {"document_edit_id": None})
+                documents_with_edit.append(
+                    document | {"document_edit_id": None, "document_edit_type": None}
+                )
             else:
                 documents_with_edit.append(document | dict(edit._mapping))
 
