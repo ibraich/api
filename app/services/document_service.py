@@ -1,3 +1,5 @@
+from werkzeug.exceptions import NotFound
+
 from app.repositories.document_repository import DocumentRepository
 from app.services.user_service import UserService, user_service
 from app.services.team_service import TeamService, team_service
@@ -22,9 +24,7 @@ class DocumentService:
         return self.__document_repository.get_documents_by_project(project_id)
 
     def get_documents_by_user(self, user_id):
-        check_auth = self.user_service.check_authentication(user_id)
-        if check_auth[1] == 403:
-            return check_auth
+        self.user_service.check_authentication(user_id)
         projects = self.project_service.get_projects_by_user(user_id)
         documents = self.__get_documents_by_project_list(projects)
         documents_with_edit = []
@@ -46,7 +46,8 @@ class DocumentService:
                         "document_edit_type": edit.type,
                     }
                 )
-
+        if not documents_with_edit:
+            raise NotFound("No documents available.")
         return documents_with_edit, 200
 
     def get_documents_by_team(self, team_id):
