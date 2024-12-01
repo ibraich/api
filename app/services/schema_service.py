@@ -1,3 +1,5 @@
+from werkzeug.exceptions import NotFound
+
 from app.repositories.schema_repository import SchemaRepository
 
 
@@ -8,7 +10,8 @@ class SchemaService:
         self.__schema_repository = schema_repository
 
     def check_schema_exists(self, schema_id):
-        return self.__schema_repository.check_schema_exists(schema_id)
+        if self.__schema_repository.get_schema_by_id(schema_id) is None:
+            return NotFound("Schema not found")
 
 
 schema_service = SchemaService(SchemaRepository())
