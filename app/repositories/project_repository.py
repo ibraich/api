@@ -1,6 +1,7 @@
 from app.models import Project
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import exc
+from app.db import db
 
 
 class ProjectRepository(BaseRepository):
@@ -11,15 +12,5 @@ class ProjectRepository(BaseRepository):
             team_id=team_id,
             schema_id=schema_id,
         )
-        try:
-            super().store_object(project)
-            return {"message": "Success", "project": project}, 200
-        except exc.IntegrityError:
-            response = {
-                "message": "Projectname already exists",
-                "project_name": project.name,
-            }
-            return response, 400
-        except exc.SQLAlchemyError:
-            response = {"message": "Creating project not possible"}
-            return response, 400
+        super().store_object(project)
+        return project

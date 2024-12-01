@@ -1,3 +1,5 @@
+from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound
+
 from tests.test_routes import BaseTestCase
 from unittest.mock import patch
 import json
@@ -28,30 +30,55 @@ class ProjectCreateTestCases(BaseTestCase):
         )
         self.assertEqual(200, response.status_code)
 
-    def test_create_project_service_wrong_param(self):
-        payload = json.dumps({"user_id": 1, "team_id": 2, "schema_id": 7})
-        response = self.service.create_project(payload)
-        self.assertEqual(400, response[1])
+    @patch.object(ProjectService, "create_project")
+    def test_create_project_service_wrong_param(self, create_project_mock):
+        payload = json.dumps({"user_id": 1, "name": "Project-Name", "schema_id": 7})
+
+        create_project_mock.return_value = "", 200
+        response = self.client.post(
+            "/api/projects/",
+            headers={"Content-Type": "application/json"},
+            data=payload,
+        )
+        self.assertEqual(400, response.status_code)
 
     @patch.object(UserService, "check_authentication")
     def test_create_project_service_invalid_user_auth(self, check_auth_mock):
-        payload = {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
+        payload = json.dumps(
+            {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
+        )
 
-        check_auth_mock.return_value = "", 403
-        response = project_service.create_project(payload)
+        check_auth_mock.side_effect = Forbidden("You need to be logged in")
 
-        self.assertEqual(403, response[1])
+        response = self.client.post(
+            "/api/projects/",
+            headers={"Content-Type": "application/json"},
+            data=payload,
+        )
+        self.assertEqual(403, response.status_code)
+        self.assertEqual(
+            response.json.get("message"), "403 Forbidden: You need to be logged in"
+        )
 
     @patch.object(UserService, "check_authentication")
     @patch.object(UserService, "check_user_in_team")
     def test_create_project_service_no_team(self, check_team_mock, check_auth_mock):
-        payload = {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
+        payload = json.dumps(
+            {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
+        )
 
         check_auth_mock.return_value = "", 200
-        check_team_mock.return_value = "", 400
-        response = project_service.create_project(payload)
+        check_team_mock.side_effect = BadRequest("You have to be in a team")
 
-        self.assertEqual(400, response[1])
+        response = self.client.post(
+            "/api/projects/",
+            headers={"Content-Type": "application/json"},
+            data=payload,
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(
+            response.json.get("message"), "400 Bad Request: You have to be in a team"
+        )
 
     @patch.object(UserService, "check_authentication")
     @patch.object(UserService, "check_user_in_team")
@@ -60,14 +87,23 @@ class ProjectCreateTestCases(BaseTestCase):
     def test_create_project_service_no_schema(
         self, db_mock, check_schema_mock, check_team_mock, check_auth_mock
     ):
-        payload = {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
+        payload = json.dumps(
+            {"user_id": 1, "name": "Project-Name", "team_id": 2, "schema_id": 7}
+        )
 
         check_auth_mock.return_value = "", 200
         check_team_mock.return_value = "", 200
-        check_schema_mock.return_value = "", 400
-        response = project_service.create_project(payload)
+        check_schema_mock.side_effect = NotFound("Schema not found")
+        response = self.client.post(
+            "/api/projects/",
+            headers={"Content-Type": "application/json"},
+            data=payload,
+        )
+        self.assertEqual(404, response.status_code)
+        self.assertEqual(
+            response.json.get("message"), "404 Not Found: Schema not found"
+        )
         db_mock.assert_not_called()
-        self.assertEqual(400, response[1])
 
     @patch.object(UserService, "check_authentication")
     @patch.object(UserService, "check_user_in_team")
@@ -99,5 +135,4 @@ class ProjectCreateTestCases(BaseTestCase):
         db_mock_add.assert_called_once()
         db_mock_commit.assert_called_once()
         self.assertEqual(200, response.status_code)
-        response_project = response.json.get("project")
-        self.assertEqual(response_project.get("name"), "Project-Name")
+        self.assertEqual(response.json.get("project_name"), "Project-Name")

@@ -1,5 +1,4 @@
 from app.db import db
-from dataclasses import dataclass
 
 
 class User(db.Model):
@@ -58,14 +57,13 @@ class SchemaConstraint(db.Model):
     isDirected = db.Column(db.Boolean, nullable=False, default=True)
 
 
-@dataclass
 class Project(db.Model):
     __tablename__ = "Project"
-    id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name: str = db.Column(db.String(), unique=True, nullable=False)
-    creator_id: int = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
-    team_id: int = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
-    schema_id: int = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(), unique=True, nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
+    schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
 
 
 class Document(db.Model):
