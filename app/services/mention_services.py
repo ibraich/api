@@ -7,14 +7,16 @@ class MentionService:
     def __init__(self, mention_repository):
         self.__mention_repository = mention_repository
 
-    def get_mentions_by_document(self, document_id):
-        if not isinstance(document_id, int) or document_id <= 0:
-            raise BadRequest("Invalid document ID. It must be a positive integer.")
+    def get_mentions_by_document_edit(self, document_edit_id):
+        if not isinstance(document_edit_id, int) or document_edit_id <= 0:
+            raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        mentions = self.__mention_repository.get_mentions_by_document(document_id)
+        mentions = self.__mention_repository.get_mentions_by_document_edit(
+            document_edit_id
+        )
 
         if not mentions:
-            raise NotFound("No mentions found for the given document.")
+            raise NotFound("No mentions found for the given document edit.")
 
         # Serialize mentions to JSON-compatible format
         mentions_list = [
@@ -30,5 +32,6 @@ class MentionService:
         ]
 
         return {"mentions": mentions_list}, 200
+
 
 mention_service = MentionService(MentionRepository())

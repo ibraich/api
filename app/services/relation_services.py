@@ -7,14 +7,16 @@ class RelationService:
     def __init__(self, relation_repository):
         self.__relation_repository = relation_repository
 
-    def get_relations_by_document(self, document_id):
-        if not isinstance(document_id, int) or document_id <= 0:
-            raise BadRequest("Invalid document ID. It must be a positive integer.")
+    def get_relations_by_document_edit(self, document_edit_id):
+        if not isinstance(document_edit_id, int) or document_edit_id <= 0:
+            raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        relations = self.__relation_repository.get_relations_by_document(document_id)
+        relations = self.__relation_repository.get_relations_by_document_edit(
+            document_edit_id
+        )
 
         if not relations:
-            raise NotFound("No relations found for the given document.")
+            raise NotFound("No relations found for the given document edit.")
 
         # Serialize mentions to JSON-compatible format
         relation_list = [
@@ -22,7 +24,7 @@ class RelationService:
                 "id": relation.id,
                 "tag": relation.tag,
                 "isShownRecommendation": relation.isShownRecommendation,
-                "isDirected":relation.isDirected,
+                "isDirected": relation.isDirected,
                 "mention_head_id": relation.mention_head_id,
                 "mention_tail_id": relation.mention_tail_id,
             }
@@ -30,4 +32,6 @@ class RelationService:
         ]
 
         return {"relations": relation_list}, 200
+
+
 relation_service = RelationService(RelationRepository)
