@@ -23,8 +23,8 @@ class DocumentRepository(BaseRepository):
     def get_document_edit_by_user_and_document(self, user_id, document_id):
         return (
             db.session.query(
-                DocumentEditState.type.label("document_edit_type"),
-                DocumentEdit.id.label("document_edit_id"),
+                DocumentEditState.type,
+                DocumentEdit.id,
             )
             .filter(
                 DocumentEdit.document_id == document_id, DocumentEdit.user_id == user_id

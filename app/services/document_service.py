@@ -21,14 +21,10 @@ class DocumentService:
     def get_documents_by_project(self, project_id):
         return self.__document_repository.get_documents_by_project(project_id)
 
-    def get_documents_by_user(self, request_data):
-        if "user_id" not in request_data:
-            response = {"message": "Parameters missing"}
-            return response, 400
-        user_id = request_data["user_id"]
-        # check_auth = self.user_service.check_authentication(user_id)
-        # if check_auth[1] == 403:
-        #    return check_auth
+    def get_documents_by_user(self, user_id):
+        check_auth = self.user_service.check_authentication(user_id)
+        if check_auth[1] == 403:
+            return check_auth
         projects = self.project_service.get_projects_by_user(user_id)
         documents = self.__get_documents_by_project_list(projects)
         documents_with_edit = []
@@ -43,7 +39,13 @@ class DocumentService:
                     document | {"document_edit_id": None, "document_edit_type": None}
                 )
             else:
-                documents_with_edit.append(document | dict(edit._mapping))
+                documents_with_edit.append(
+                    document
+                    | {
+                        "document_edit_id": edit.id,
+                        "document_edit_type": edit.type,
+                    }
+                )
 
         return documents_with_edit, 200
 
@@ -60,7 +62,16 @@ class DocumentService:
             if docs is None:
                 continue
             for doc in docs:
-                documents_of_projects.append(dict(doc._mapping))
+                documents_of_projects.append(
+                    {
+                        "content": doc.content,
+                        "id": doc.id,
+                        "name": doc.name,
+                        "project_id": doc.project_id,
+                        "project_name": doc.project_name,
+                        "type": doc.type,
+                    }
+                )
         return documents_of_projects
 
 
