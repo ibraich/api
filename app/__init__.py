@@ -14,6 +14,10 @@ def create_app(config_class):
 
     app.register_blueprint(main)
 
+    from .extension import api
+
+    api.init_app(app)
+
     if not config_class.TESTING:
         from app.db import db
 
