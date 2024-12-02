@@ -96,6 +96,7 @@ class DocumentEdit(db.Model):
         db.Integer, db.ForeignKey("DocumentEditState.id"), nullable=False
     )
     document_id = db.Column(db.Integer, db.ForeignKey("Document.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
 
 
 class Token(db.Model):
@@ -134,6 +135,12 @@ class Entity(db.Model):
     __tablename__ = "Entity"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     isShownRecommendation = db.Column(db.Boolean, nullable=False, default=False)
+    document_edit_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentEdit.id"), nullable=True
+    )
+    document_recommendation_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentRecommendation.id"), nullable=True
+    )
 
 
 class Relation(db.Model):
@@ -144,6 +151,12 @@ class Relation(db.Model):
     isDirected = db.Column(db.Boolean, nullable=False, default=True)
     mention_head_id = db.Column(db.Integer, db.ForeignKey("Mention.id"), nullable=False)
     mention_tail_id = db.Column(db.Integer, db.ForeignKey("Mention.id"), nullable=False)
+    document_edit_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentEdit.id"), nullable=True
+    )
+    document_recommendation_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentRecommendation.id"), nullable=True
+    )
 
 
 class ModellingLanguage(db.Model):
