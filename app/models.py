@@ -98,7 +98,6 @@ class DocumentEdit(db.Model):
         db.Integer, db.ForeignKey("DocumentEditState.id"), nullable=False
     )
     document_id = db.Column(db.Integer, db.ForeignKey("Document.id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
 
 
 class Token(db.Model):
