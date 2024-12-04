@@ -1,5 +1,4 @@
 from app.db import db
-from dataclasses import dataclass
 
 
 class User(db.Model):
@@ -58,14 +57,13 @@ class SchemaConstraint(db.Model):
     isDirected = db.Column(db.Boolean, nullable=False, default=True)
 
 
-@dataclass
 class Project(db.Model):
     __tablename__ = "Project"
-    id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name: str = db.Column(db.String(), unique=True, nullable=False)
-    creator_id: int = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
-    team_id: int = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
-    schema_id: int = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(), unique=True, nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
+    schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
 
 
 class Document(db.Model):
@@ -98,6 +96,7 @@ class DocumentEdit(db.Model):
         db.Integer, db.ForeignKey("DocumentEditState.id"), nullable=False
     )
     document_id = db.Column(db.Integer, db.ForeignKey("Document.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
 
 
 class Token(db.Model):
@@ -136,6 +135,12 @@ class Entity(db.Model):
     __tablename__ = "Entity"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     isShownRecommendation = db.Column(db.Boolean, nullable=False, default=False)
+    document_edit_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentEdit.id"), nullable=True
+    )
+    document_recommendation_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentRecommendation.id"), nullable=True
+    )
 
 
 class Relation(db.Model):
@@ -146,6 +151,12 @@ class Relation(db.Model):
     isDirected = db.Column(db.Boolean, nullable=False, default=True)
     mention_head_id = db.Column(db.Integer, db.ForeignKey("Mention.id"), nullable=False)
     mention_tail_id = db.Column(db.Integer, db.ForeignKey("Mention.id"), nullable=False)
+    document_edit_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentEdit.id"), nullable=True
+    )
+    document_recommendation_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentRecommendation.id"), nullable=True
+    )
 
 
 class ModellingLanguage(db.Model):

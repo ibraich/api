@@ -10,7 +10,7 @@ def create_app(config_class):
     app.config.from_object(config_class)
 
     # Register blueprints
-    from .routes import main, project
+    from .routes import main, project, mentions, relations
 
     app.register_blueprint(main)
 
