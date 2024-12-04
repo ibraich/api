@@ -1,11 +1,13 @@
 from flask import request, jsonify
-from . import mentions
 from app.services.mention_services import MentionService
 from app.repositories.mention_repository import MentionRepository
 from werkzeug.exceptions import HTTPException, BadRequest
+from flask_restx import Namespace
+
+api = Namespace("mentions", description="Project related operations")
 
 
-@mentions.route("/<document_edit_id>", methods=["GET"])
+@api.route("/<document_edit_id>", methods=["GET"])
 def get_mentions_by_document_edit(document_edit_id):
     mention_service = MentionService(MentionRepository())
 

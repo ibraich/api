@@ -1,11 +1,13 @@
 from flask import request, jsonify
-from . import relations
 from app.services.relation_services import RelationService
 from app.repositories.relation_repository import RelationRepository
 from werkzeug.exceptions import HTTPException, BadRequest
+from flask_restx import Namespace
+
+api = Namespace("relations", description="Project related operations")
 
 
-@relations.route("/<document_edit_id>", methods=["GET"])
+@api.route("/<document_edit_id>", methods=["GET"])
 def get_relations_by_document(document_edit_id):
     relation_service = RelationService(RelationRepository())
     try:

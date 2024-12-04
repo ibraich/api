@@ -10,13 +10,11 @@ def create_app(config_class):
     app.config.from_object(config_class)
 
     # Register blueprints
-    from .routes import main, project, mentions, relations
+    from .routes import main
 
+    # app.register_blueprint(api)
+    # api.init_app(app)
     app.register_blueprint(main)
-
-    from .extension import api
-
-    api.init_app(app)
 
     if not config_class.TESTING:
         from app.db import db
