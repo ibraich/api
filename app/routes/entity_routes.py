@@ -7,7 +7,7 @@ from werkzeug.exceptions import HTTPException, BadRequest
 
 @entities.route("/<document_edit_id>", methods=["GET"])
 def get_entities_by_document_edit(document_edit_id):
-    entity_service = EntityService(EntityRepository)
+    entity_service = EntityService(EntityRepository())
 
     try:
         if not document_edit_id:

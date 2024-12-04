@@ -9,6 +9,12 @@ class EntityRepository:
     def get_entities_by_document_edit(self, document_edit_id):
         return (
             self.db_session.query(Entity)
-            .filter_by(document_edit_id=document_edit_id)
+            .filter(
+                (Entity.document_edit_id == document_edit_id) &
+                (
+                        Entity.document_recommendation_id.is_(None) |
+                        Entity.isShownRecommendation.is_(True)
+                )
+            )
             .all()
         )
