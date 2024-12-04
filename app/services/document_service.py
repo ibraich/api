@@ -29,7 +29,7 @@ class DocumentService:
         documents = self.__get_documents_by_project_list(projects)
         documents_with_edit = []
         if documents is None:
-            return []
+            raise NotFound("No documents available.")
         for document in documents:
             edit = self.__document_repository.get_document_edit_by_user_and_document(
                 user_id, document["id"]
