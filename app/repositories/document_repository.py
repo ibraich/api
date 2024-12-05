@@ -1,6 +1,15 @@
-from app.models import Document, DocumentState, Project, DocumentEditState, DocumentEdit
+from app.models import (
+    Document,
+    DocumentState,
+    Project,
+    DocumentEditState,
+    DocumentEdit,
+    Team,
+    User,
+    UserTeam,
+)
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy import exc
+from sqlalchemy import exc, and_
 from app.db import db
 
 
@@ -20,15 +29,33 @@ class DocumentRepository(BaseRepository):
             .filter(Document.project_id == project_id)
         ).all()
 
-    def get_document_edit_by_user_and_document(self, user_id, document_id):
+    def get_documents_by_user(self, user_id):
         return (
             db.session.query(
-                DocumentEditState.type,
-                DocumentEdit.id,
+                Document.id,
+                Document.content,
+                Document.name,
+                Document.project_id,
+                DocumentState.type,
+                Project.name.label("project_name"),
+                Team.name.label("team_name"),
+                Team.id.label("team_id"),
+                DocumentEditState.type.label("document_edit_state"),
+                DocumentEdit.id.label("document_edit_id"),
             )
-            .filter(
-                DocumentEdit.document_id == document_id, DocumentEdit.user_id == user_id
+            .select_from(User)
+            .filter(User.id == user_id)
+            .join(UserTeam, User.id == UserTeam.user_id)
+            .join(Team, UserTeam.team_id == Team.id)
+            .join(Project, Team.id == Project.team_id)
+            .join(Document, Project.id == Document.project_id)
+            .join(DocumentState, DocumentState.id == Document.state_id)
+            .outerjoin(
+                DocumentEdit,
+                and_(
+                    Document.id == DocumentEdit.document_id,
+                    DocumentEdit.user_id == user_id,
+                ),
             )
-            .join(DocumentEditState)
-            .first()
+            .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
         )

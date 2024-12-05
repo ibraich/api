@@ -40,43 +40,45 @@ class DocumentsFetchByUserTestCase(BaseTestCase):
         )
 
     @patch.object(UserService, "check_authentication")
-    @patch.object(DocumentService, "_DocumentService__get_documents_by_project_list")
-    @patch.object(ProjectService, "get_projects_by_user")
-    @patch.object(DocumentRepository, "get_document_edit_by_user_and_document")
+    @patch.object(DocumentRepository, "get_documents_by_user")
     def test_get_documents_by_user_valid(
         self,
-        get_document_edit_by_user_and_document_mock,
-        get_projects_by_user_mock,
-        get_documents_by_project_list_mock,
+        get_documents_by_user_mock,
         check_authentication_mock,
     ):
         # Mock the service to simulate no service call (validation fails early)
         check_authentication_mock.return_value = "", 200
-        get_projects_by_user_mock.return_value = None
-        get_documents_by_project_list_mock.return_value = [
-            {
-                "content": "dummy doc text2",
-                "id": 2,
-                "name": "dummy doc2",
-                "project_id": 12,
-                "project_name": "Project-Name2",
-                "type": "NEW",
-            },
-            {
-                "content": "dummy doc text2",
-                "id": 3,
-                "name": "dummy doc2",
-                "project_id": 12,
-                "project_name": "Project-Name2",
-                "type": "FINISHED",
-            },
-        ]
-        mocked_return = namedtuple("tuple", ["id", "type"])
-        get_document_edit_by_user_and_document_mock.return_value = mocked_return(
-            3,
-            "MENTIONS",
+        mocked_return = namedtuple(
+            "tuple",
+            [
+                "content",
+                "document_edit_id",
+                "document_edit_state",
+                "id",
+                "name",
+                "project_id",
+                "project_name",
+                "team_id",
+                "team_name",
+                "type",
+            ],
         )
-        # Sending POST request with invalid user ID (non-integer)
+        get_documents_by_user_mock.return_value = [
+            mocked_return(
+                "Doc1",
+                1,
+                "MENTIONS",
+                1,
+                "Doc Text1 bla1 bla2 bla3",
+                1,
+                "Project1",
+                1,
+                "Team1",
+                "NEW",
+            )
+        ]
+
+        # Sending POST request with valid user ID
         payload = json.dumps({"user_id": 1})
 
         response = self.client.post(
@@ -87,29 +89,20 @@ class DocumentsFetchByUserTestCase(BaseTestCase):
 
         # Assert the response is 200 for valid call
         self.assertEqual(200, response.status_code)
-        response_data = response.json
         self.assertEqual(
             response.json,
             [
                 {
-                    "content": "dummy doc text2",
-                    "document_edit_id": 3,
-                    "document_edit_type": "MENTIONS",
-                    "id": 2,
-                    "name": "dummy doc2",
-                    "project_id": 12,
-                    "project_name": "Project-Name2",
+                    "content": "Doc1",
+                    "document_edit_id": 1,
+                    "document_edit_state": "MENTIONS",
+                    "id": 1,
+                    "name": "Doc Text1 bla1 bla2 bla3",
+                    "project_id": 1,
+                    "project_name": "Project1",
+                    "team_id": 1,
+                    "team_name": "Team1",
                     "type": "NEW",
-                },
-                {
-                    "content": "dummy doc text2",
-                    "document_edit_id": 3,
-                    "document_edit_type": "MENTIONS",
-                    "id": 3,
-                    "name": "dummy doc2",
-                    "project_id": 12,
-                    "project_name": "Project-Name2",
-                    "type": "FINISHED",
-                },
+                }
             ],
         )
