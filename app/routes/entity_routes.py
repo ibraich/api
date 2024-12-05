@@ -31,4 +31,3 @@ def get_entities_by_document_edit(document_edit_id):
             jsonify({"message": "An unexpected error occurred.", "details": str(e)}),
             500,
         )
-

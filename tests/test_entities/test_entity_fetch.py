@@ -2,8 +2,10 @@ from unittest.mock import patch
 from tests.test_routes import BaseTestCase
 from app.services.entity_service import EntityService, entity_service
 
+
 class TestEntityFetch(BaseTestCase):
     service = EntityService
+
     def setUp(self):
         super().setUp()
         self.service = entity_service

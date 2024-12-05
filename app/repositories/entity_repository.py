@@ -1,6 +1,6 @@
-
 from app.models import Entity
 from app.db import db
+
 
 class EntityRepository:
     def __init__(self):
@@ -10,10 +10,10 @@ class EntityRepository:
         return (
             self.db_session.query(Entity)
             .filter(
-                (Entity.document_edit_id == document_edit_id) &
-                (
-                        Entity.document_recommendation_id.is_(None) |
-                        Entity.isShownRecommendation.is_(True)
+                (Entity.document_edit_id == document_edit_id)
+                & (
+                    Entity.document_recommendation_id.is_(None)
+                    | Entity.isShownRecommendation.is_(True)
                 )
             )
             .all()

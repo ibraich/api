@@ -11,10 +11,10 @@ class RelationRepository(BaseRepository):
         return (
             self.db_session.query(Relation)
             .filter(
-                (Relation.document_edit_id == document_edit_id) &
-                (
-                        Relation.document_recommendation_id.is_(None) |
-                        Relation.isShownRecommendation.is_(True)
+                (Relation.document_edit_id == document_edit_id)
+                & (
+                    Relation.document_recommendation_id.is_(None)
+                    | Relation.isShownRecommendation.is_(True)
                 )
             )
             .all()

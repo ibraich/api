@@ -1,6 +1,7 @@
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound
 
+
 class EntityService:
     def __init__(self, entity_repository):
         self.__entity_repository = entity_repository
@@ -17,7 +18,7 @@ class EntityService:
 
         entity_list = [
             {
-                "id":entity.id,
+                "id": entity.id,
                 "isShownRecommendation": entity.isShownRecommendation,
                 "document_edit_id": entity.document_edit_id,
                 "document_recommendation_id": entity.document_recommendation_id,
@@ -25,5 +26,6 @@ class EntityService:
             for entity in entities
         ]
         return {"entities": entity_list}, 200
+
 
 entity_service = EntityService(EntityRepository())

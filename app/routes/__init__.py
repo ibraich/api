@@ -19,6 +19,5 @@ from . import (
     document_routes,
     mention_routes,
     relation_routes,
-    entity_routes
+    entity_routes,
 )
-
