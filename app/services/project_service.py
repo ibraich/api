@@ -4,11 +4,13 @@ from app.services.user_service import (
     user_service,
 )
 from app.repositories.project_repository import ProjectRepository
+from app.services.team_service import TeamService, team_service
 
 
 class ProjectService:
     user_service: UserService
     schema_service: SchemaService
+
     __project_repository: ProjectRepository
 
     def __init__(self, project_repository, user_service, schema_service):

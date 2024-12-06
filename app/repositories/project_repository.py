@@ -14,3 +14,6 @@ class ProjectRepository(BaseRepository):
         )
         super().store_object(project)
         return project
+
+    def get_projects_by_team(self, team_id):
+        return db.session.query(Project).filter(Project.team_id == team_id).all()

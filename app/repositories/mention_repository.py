@@ -11,10 +11,10 @@ class MentionRepository(BaseRepository):
         return (
             self.db_session.query(Mention)
             .filter(
-                (Mention.document_edit_id == document_edit_id) &
-                (
-                        Mention.document_recommendation_id.is_(None) |
-                        Mention.isShownRecommendation.is_(True)
+                (Mention.document_edit_id == document_edit_id)
+                & (
+                    Mention.document_recommendation_id.is_(None)
+                    | Mention.isShownRecommendation.is_(True)
                 )
             )
             .all()
