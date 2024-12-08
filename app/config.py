@@ -8,6 +8,8 @@ class Config:
     db_port = os.getenv("DB_PORT", "5432")
     db_name = os.getenv("DB_NAME", "annotation_db")
 
+    pipeline_url = "http://host.docker.internal/pipeline"
+
     DEBUG = os.getenv("DEBUG", True)
 
     SQLALCHEMY_DATABASE_URI = (
