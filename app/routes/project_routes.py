@@ -3,25 +3,20 @@ from werkzeug.exceptions import BadRequest, HTTPException
 from flask_restx import Resource, fields, Namespace
 from flask import request, jsonify
 from app.services.project_service import project_service
+from app.dtos import create_project_input_model, create_project_output_model
 
-api = Namespace("projects", description="Project related operations")
-
-create_project_model = api.model(
-    "CreateProject",
-    {
-        "name": fields.String(required=True, example="example"),
-        "user_id": fields.Integer(required=True),
-        "team_id": fields.Integer(required=True),
-        "schema_id": fields.Integer(required=True),
-    },
-)
+ns = Namespace("projects", description="Project related operations")
 
 
-@api.route("/")
+@ns.route("/")
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
 class ProjectRoutes(Resource):
     service = project_service
 
-    @api.expect(create_project_model, validate=True)
+    @ns.expect(create_project_input_model, validate=True)
+    @ns.marshal_with(create_project_output_model)
     def post(self):
         try:
             request_data = request.get_json()
