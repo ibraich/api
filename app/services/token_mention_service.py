@@ -12,5 +12,8 @@ class TokenMentionService:
             token_id, mention_id
         )
 
+    def get_token_mention(self, token_id):
+        return self.__token_mention_repository.get_token_mention(token_id)
+
 
 token_mention_service = TokenMentionService(TokenMentionRepository())
