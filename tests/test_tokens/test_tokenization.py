@@ -20,8 +20,9 @@ class TokenizationTestCases(BaseTestCase):
     ):
         pipeline_tokenize_mock.return_value.json.return_value = invalid_response
         create_token_mock.return_value = ""
-        with self.assertRaises(NotFound):
-            self.service.tokenize_document(1, "Content of Document")
+        with self.app.app_context():
+            with self.assertRaises(NotFound):
+                self.service.tokenize_document(1, "Content of Document")
 
     @patch.object(requests, "post")
     @patch.object(TokenRepository, "create_token")
@@ -32,7 +33,8 @@ class TokenizationTestCases(BaseTestCase):
         create_token_mock.return_value = ""
 
         pipeline_tokenize_mock.return_value.status_code = 200
-        res = self.service.tokenize_document(1, "Content of Document")
+        with self.app.app_context():
+            res = self.service.tokenize_document(1, "Content of Document")
         self.assertEqual(res[1], 200)
         self.assertEqual(
             res[0],
