@@ -15,6 +15,7 @@ class ProjectRepository(BaseRepository):
         super().store_object(project)
         return project
 
+
     def get_team_id_by_document_edit_id(self, document_edit_id):
         project = (
             db.session.query(Project)
@@ -24,3 +25,7 @@ class ProjectRepository(BaseRepository):
             .first()
         )
         return project.team_id
+
+    def get_projects_by_team(self, team_id):
+        return db.session.query(Project).filter(Project.team_id == team_id).all()
+
