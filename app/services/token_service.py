@@ -1,5 +1,6 @@
 import json
 import requests
+from werkzeug.exceptions import NotFound
 
 import app.config
 from app.repositories.token_repository import TokenRepository
@@ -20,6 +21,8 @@ class TokenService:
             headers={"Content-Type": "application/json"},
         )
         tokens = response.json()["document"]["tokens"]
+        if not tokens:
+            raise NotFound("Tokenization failed")
         for token in tokens:
             self.__token_repository.create_token(
                 token["text"],
