@@ -10,4 +10,6 @@ class BaseRepository:
         return db.session.query(classname).filter_by(id=object_id).first()
 
     def get_by_field(self, classname, field, value):
-        return db.session.query(classname).filter(getattr(classname, field) == value).all()
+        return (
+            db.session.query(classname).filter(getattr(classname, field) == value).all()
+        )

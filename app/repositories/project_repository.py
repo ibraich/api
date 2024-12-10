@@ -24,3 +24,6 @@ class ProjectRepository(BaseRepository):
             .first()
         )
         return project.team_id
+
+    def get_projects_by_team(self, team_id):
+        return db.session.query(Project).filter(Project.team_id == team_id).all()

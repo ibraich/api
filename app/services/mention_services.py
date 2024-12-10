@@ -3,12 +3,14 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict
 from app.repositories.mention_repository import MentionRepository
 from app.services.project_service import ProjectService, project_service
 from app.services.user_service import UserService, user_service
+from app.services.document_edit_service import (
+    DocumentEditService,
+    document_edit_service,
+)
 from app.services.token_mention_service import (
     token_mention_service,
     TokenMentionService,
 )
-
-from app.dtos import mention_output_dto
 
 
 class MentionService:
@@ -16,14 +18,21 @@ class MentionService:
     token_mention_service: TokenMentionService
     user_service: UserService
     project_service: ProjectService
+    document_edit_service: DocumentEditService
 
     def __init__(
-        self, mention_repository, token_mention_service, user_service, project_service
+        self,
+        mention_repository,
+        token_mention_service,
+        user_service,
+        project_service,
+        document_edit_service,
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
         self.user_service = user_service
         self.project_service = project_service
+        self.document_edit_service = document_edit_service
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -52,27 +61,41 @@ class MentionService:
         return {"mentions": mentions_list}, 200
 
     def create_mentions(self, data):
-        team_id = user_service.get_logged_in_user_team_id()
 
-        if not isinstance(team_id, int) or team_id <= 0:
-            raise Conflict("User must be part of a team.")
-
-        if not project_service.team_is_in_project(team_id, data["document_edit_id"]):
-            raise Conflict("User is not allowed to access this resource.")
-
-        mentions = self.__mention_repository.get_mention_by_tag(self, data["tag"])
-        if len(mentions) > 1:
-            raise Conflict("There are more than one mention for this tag.")
-
-        mention = self.__mention_repository.create_mention(
-            self,
-            data["document_edit_id"],
-            data["tag"],
-            data["is_shown_recommendation"],
-            data["document_recommendation_id"],
+        # check if user is allowed to access this document edit
+        logged_in_user_id = user_service.get_logged_in_user_id()
+        document_edit_user_id = document_edit_service.get_user_id(
+            data["document_edit_id"]
         )
 
-        mention_output_dto()
+        if logged_in_user_id != document_edit_user_id:
+            raise NotFound("The logged in user does not belong to this document.")
+
+        # check duplicates
+        mentions = self.__mention_repository.get_mentions_by_document_edit(
+            data["document_edit_id"]
+        )
+        if len(mentions) > 0:
+
+            token_ids = data["token_ids"]
+            mention_ids = []
+            for mention in mentions:
+                mention_ids.append(mention.id)
+
+            duplicate_token_mention = token_mention_service.get_token_mention(
+                token_ids, mention_ids
+            )
+
+            if len(duplicate_token_mention) > 0:
+                raise Conflict("Token mention already exists.")
+
+        # save mention
+        mention = self.__mention_repository.create_mention(
+            data["document_edit_id"],
+            data["tag"],
+        )
+
+        # save token mention
         for token_id in data["token_ids"]:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
@@ -80,5 +103,9 @@ class MentionService:
 
 
 mention_service = MentionService(
-    MentionRepository(), token_mention_service, user_service, project_service
+    MentionRepository(),
+    token_mention_service,
+    user_service,
+    project_service,
+    document_edit_service,
 )

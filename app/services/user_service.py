@@ -22,10 +22,13 @@ class UserService:
         if self.__user_repository.check_user_in_team(user_id, team_id) is None:
             raise BadRequest("You have to be in a team")
 
-    def get_logged_in_user_team_id(self):
+    def get_logged_in_user_id(self):
         if "user_id" not in session or session["user_id"] is None:
             raise Forbidden("You need to be logged in")
-        return self.user_team_repository.get_user_team_id(session["user_id"])
+        return session["user_id"]
+
+    def get_logged_in_user_team_id(self):
+        return self.user_team_repository.get_user_team_id(self.get_logged_in_user_id())
 
 
 user_service = UserService(UserRepository(), UserTeamRepository())

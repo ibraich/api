@@ -1,22 +1,12 @@
-from flask import request, jsonify, make_response
-from app.services.mention_services import MentionService, mention_service
-from app.repositories.mention_repository import MentionRepository
+from flask import request, jsonify
+from . import mentions
 from werkzeug.exceptions import HTTPException, BadRequest
 from flask_restx import Resource, Namespace
 from app.dtos import mention_input_dto
 from app.dtos import mention_output_dto
+from app.services.mention_services import mention_service
 
 ns = Namespace("mentions", description="Mention related operations")
-
-
-@ns.route("/")
-class MentionResource(Resource):
-
-    @ns.expect(mention_input_dto)
-    @ns.marshal_with(mention_output_dto)
-    def post(self):
-        mention_service = MentionService(MentionRepository(), MentionRepository())
-        return mention_service.create_mentions(mention_input_dto)
 
 
 @ns.route("/<int:document_edit_id>")
@@ -42,3 +32,12 @@ class MentionQueryResource(Resource):
                 {"message": "An unexpected error occurred.", "details": str(e)},
                 500,
             )
+
+
+@ns.route("/")
+class MentionResource(Resource):
+
+    @ns.expect(mention_input_dto)
+    @ns.marshal_with(mention_output_dto)
+    def post(self):
+        return mention_service.create_mentions(request.json)
