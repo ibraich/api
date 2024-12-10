@@ -58,7 +58,7 @@ class MentionService:
             for mention in mentions
         ]
 
-        return {"mentions": mentions_list}, 200
+        return {"mentions": mentions_list}
 
     def create_mentions(self, data):
 

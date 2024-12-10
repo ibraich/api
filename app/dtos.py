@@ -42,3 +42,14 @@ create_project_output_model = api.model(
         "schema_id": fields.Integer,
     },
 )
+
+fetch_document_output_model = api.model(
+    "FetchDocumentOutput",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "creator_id": fields.Integer,
+        "team_id": fields.Integer,
+        "schema_id": fields.Integer,
+    },
+)
