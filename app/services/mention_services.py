@@ -72,22 +72,27 @@ class MentionService:
             raise NotFound("The logged in user does not belong to this document.")
 
         # check duplicates
-        duplicate_token_mention = []
-        for token_id in data["token_ids"]:
-            token_mention = token_mention_service.get_token_mention(token_id)
-            if token_mention is not None:
-                token_mention.append(token_mention)
+        mentions = self.__mention_repository.get_mentions_by_document_edit(
+            data["document_edit_id"]
+        )
+        if len(mentions) > 0:
 
-        if len(duplicate_token_mention) > 0:
-            raise Conflict("Token mention already exists.")
+            token_ids = data["token_ids"]
+            mention_ids = []
+            for mention in mentions:
+                mention_ids.append(mention.id)
+
+            duplicate_token_mention = token_mention_service.get_token_mention(
+                token_ids, mention_ids
+            )
+
+            if len(duplicate_token_mention) > 0:
+                raise Conflict("Token mention already exists.")
 
         # save mention
         mention = self.__mention_repository.create_mention(
-            self,
             data["document_edit_id"],
             data["tag"],
-            data["is_shown_recommendation"],
-            data["document_recommendation_id"],
         )
 
         # save token mention

@@ -7,8 +7,6 @@ mention_input_dto = api.model(
         "tag": fields.String,
         "document_edit_id": fields.Integer,
         "token_ids": fields.List(fields.Integer),
-        "is_shown_recommendation": fields.Boolean,
-        "document_recommendation_id": fields.Integer,
     },
 )
 

@@ -12,5 +12,12 @@ class TokenMentionRepository(BaseRepository):
         token_mention = self.store_object(token_mention)
         return token_mention
 
-    def get_token_mention(self, token_id):
-        return self.db_session.query(TokenMention).filter_by(token_id=token_id).first()
+    def get_token_mention(self, token_ids, mention_ids):
+        return (
+            self.db_session.query(TokenMention)
+            .filter(
+                TokenMention.token_id.in_(token_ids),
+                TokenMention.mention_id.in_(mention_ids),
+            )
+            .all()
+        )
