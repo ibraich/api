@@ -41,4 +41,4 @@ class MentionResource(Resource):
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
     def post(self):
-        return mention_service.create_mentions(mention_input_dto)
+        return mention_service.create_mentions(request.json)

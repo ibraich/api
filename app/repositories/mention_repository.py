@@ -28,5 +28,5 @@ class MentionRepository(BaseRepository):
             document_edit_id=document_edit_id,
             tag=tag,
         )
-        mention = self.store_object(mention)
+        self.store_object(mention)
         return mention
