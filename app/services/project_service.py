@@ -26,15 +26,13 @@ class ProjectService:
             team_id,
             schema_id,
         )
-        return (
-            {
-                "project_id": project.id,
-                "project_name": project.name,
-                "project_team_id": project.team_id,
-                "project_schema_id": project.schema_id,
-            },
-            200,
-        )
+        return {
+            "id": project.id,
+            "name": project.name,
+            "team_id": project.team_id,
+            "schema_id": project.schema_id,
+            "creator_id": project.creator_id,
+        }
 
     def team_is_in_project(self, team_id, document_edit_id):
         return team_id == self.__project_repository.get_team_id_by_document_edit_id(

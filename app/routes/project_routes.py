@@ -1,5 +1,5 @@
 from sqlalchemy import exc
-from werkzeug.exceptions import BadRequest, HTTPException
+from werkzeug.exceptions import BadRequest, HTTPException, InternalServerError
 from flask_restx import Resource, fields, Namespace
 from flask import request, jsonify
 from app.services.project_service import project_service
@@ -41,20 +41,11 @@ class ProjectRoutes(Resource):
             except:
                 raise BadRequest("User ID, Team ID, Schema ID must be a valid integer.")
 
-            response, status = self.service.create_project(
+            response = self.service.create_project(
                 user_id, team_id, schema_id, request_data["name"]
             )
 
-            return jsonify(response), status
+            return response
 
         except exc.IntegrityError as e:
-            return {"message": "Projectname already exists"}, 400
-
-        except HTTPException as e:
-            return {"message": str(e)}, e.code
-
-        except Exception as e:
-            return (
-                {"message": "An unexpected error occurred.", "details": str(e)},
-                500,
-            )
+            raise BadRequest("Projectname already exists")
