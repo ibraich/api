@@ -1,9 +1,7 @@
 from flask_restx import Namespace, Resource
-from flask import request, jsonify
 from app.services.document_service import document_service
-from werkzeug.exceptions import HTTPException, BadRequest
 
-from ..dtos import fetch_document_output_model
+from app.dtos import document_output_dto
 
 ns = Namespace("documents", description="Document related operations")
 
@@ -15,7 +13,8 @@ ns = Namespace("documents", description="Document related operations")
 class DocumentRoutes(Resource):
     service = document_service
 
-    @ns.marshal_with(fetch_document_output_model)
+    @ns.doc(description="Get all documents current user has access to")
+    @ns.marshal_with(document_output_dto, as_list=True)
     def get(self):
         response = self.service.get_documents_by_user()
         return response

@@ -99,7 +99,7 @@ class MentionService:
         for token_id in data["token_ids"]:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
-        return mention, 200
+        return mention
 
 
 mention_service = MentionService(

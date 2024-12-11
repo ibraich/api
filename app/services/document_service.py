@@ -31,7 +31,7 @@ class DocumentService:
                 "name": doc.name,
                 "project_id": doc.project_id,
                 "project_name": doc.project_name,
-                "type": doc.type,
+                "schema_id": doc.schema_id,
                 "team_name": doc.team_name,
                 "team_id": doc.team_id,
                 "document_edit_id": doc.document_edit_id,
@@ -39,7 +39,7 @@ class DocumentService:
             }
             for doc in documents
         ]
-        return document_list, 200
+        return document_list
 
 
 document_service = DocumentService(DocumentRepository(), user_service)
