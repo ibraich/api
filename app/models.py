@@ -30,6 +30,7 @@ class Schema(db.Model):
     modellingLanguage_id = db.Column(
         db.Integer, db.ForeignKey("ModellingLanguage.id"), nullable=False
     )
+    team_id = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
 
 
 class SchemaMention(db.Model):
@@ -37,6 +38,9 @@ class SchemaMention(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
     tag = db.Column(db.String, nullable=False)
+    entityPossible = db.Column(db.Boolean, nullable=False, default=True)
+    color = db.Column(db.String, nullable=True)
+    description = db.Column(db.String, nullable=True)
 
 
 class SchemaRelation(db.Model):
@@ -44,6 +48,7 @@ class SchemaRelation(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
     tag = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
 
 
 class SchemaConstraint(db.Model):
@@ -97,6 +102,7 @@ class DocumentEdit(db.Model):
     )
     document_id = db.Column(db.Integer, db.ForeignKey("Document.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
 
 
 class Token(db.Model):
@@ -106,7 +112,6 @@ class Token(db.Model):
     document_index = db.Column(db.Integer, nullable=False)
     sentence_index = db.Column(db.Integer, nullable=False)
     pos_tag = db.Column(db.String(), nullable=True)
-    bio_tag = db.Column(db.String(), nullable=True)
     document_id = db.Column(db.Integer, db.ForeignKey("Document.id"), nullable=False)
 
 
