@@ -20,3 +20,8 @@ class TeamRepository(BaseRepository):
         )
         super().store_object(team)
         return team
+
+    def add_user(self, team_id, user_id):
+        userteam = UserTeam(team_id=team_id, user_id=user_id)
+        super().store_object(userteam)
+        return userteam
