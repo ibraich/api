@@ -1,4 +1,4 @@
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, BadRequest
 
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
@@ -18,6 +18,8 @@ class SchemaService:
 
     def get_schema_by_id(self, schema_id):
         schema = self.__schema_repository.get_schema_by_id(schema_id)
+        if schema is None:
+            raise BadRequest("Schema not found")
         constraints = self.__schema_repository.get_schema_constraints_by_schema(
             schema_id
         )
@@ -78,6 +80,8 @@ class SchemaService:
     def get_schemas_by_user(self):
         user_id = 1  # self.user_service.get_logged_in_user_id()
         schemas = self.__schema_repository.get_schema_ids_by_user(user_id)
+        if schemas is None:
+            return {"schemas": []}
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
 
 
