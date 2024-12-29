@@ -1,4 +1,4 @@
-from app.models import UserTeam
+from app.models import UserTeam, DocumentEdit, User
 from app.repositories.base_repository import BaseRepository
 from app.db import db
 
@@ -10,3 +10,14 @@ class UserRepository(BaseRepository):
             .filter(UserTeam.user_id == user_id, UserTeam.team_id == team_id)
             .first()
         )
+
+    def get_user_by_mail(self, mail):
+        return (
+            db.session.query(User.id, User.username, User.email)
+            .filter(User.email == mail)
+            .first()
+        )
+
+    def get_user_by_document_edit_id(self, document_edit_id):
+        document_edit = db.session.query(DocumentEdit).get(document_edit_id)
+        return document_edit.user_id
