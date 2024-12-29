@@ -52,8 +52,5 @@ class TeamService:
             "creator_id": team.creator_id,
         }
 
-    def add_user(self, team_id, user_id):
-        return self.__team_repository.add_user(team_id, user_id)
-
 
 team_service = TeamService(TeamRepository(), user_service)
