@@ -116,3 +116,19 @@ team_output_dto = api.model(
         "creator_id": fields.Integer,
     },
 )
+
+document_edit_input_dto = api.model(
+    "DocumentInput",
+    {
+        "document_id": fields.Integer(required=True, min=1),
+    },
+)
+
+document_edit_output_dto = api.model(
+    "DocumentEditOutput",
+    {
+        "id": fields.Integer,
+        "schema_id": fields.Integer,
+        "document_id": fields.Integer,
+    },
+)
