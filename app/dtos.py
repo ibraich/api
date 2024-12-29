@@ -101,6 +101,23 @@ relation_output_list_dto = api.model(
     },
 )
 
+team_member_input_dto = api.model(
+    "TeamMemberInput",
+    {
+        "user_mail": fields.String(required=True),
+        "team_id": fields.Integer(required=True),
+    },
+)
+
+team_member_output_dto = api.model(
+    "TeamMemberOutput",
+    {
+        "id": fields.Integer,
+        "username": fields.String,
+        "email": fields.String,
+    },
+)
+
 team_input_dto = api.model(
     "TeamInput",
     {
