@@ -101,7 +101,6 @@ relation_output_list_dto = api.model(
     },
 )
 
-
 team_member_input_dto = api.model(
     "TeamMemberInput",
     {
@@ -116,5 +115,37 @@ team_member_output_dto = api.model(
         "id": fields.Integer,
         "username": fields.String,
         "email": fields.String,
+    },
+)
+
+team_input_dto = api.model(
+    "TeamInput",
+    {
+        "name": fields.String(required=True),
+    },
+)
+
+team_output_dto = api.model(
+    "TeamOutput",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "creator_id": fields.Integer,
+    },
+)
+
+document_edit_input_dto = api.model(
+    "DocumentInput",
+    {
+        "document_id": fields.Integer(required=True, min=1),
+    },
+)
+
+document_edit_output_dto = api.model(
+    "DocumentEditOutput",
+    {
+        "id": fields.Integer,
+        "schema_id": fields.Integer,
+        "document_id": fields.Integer,
     },
 )

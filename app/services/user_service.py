@@ -33,5 +33,8 @@ class UserService:
     def get_user_by_mail(self, mail):
         return self.__user_repository.get_user_by_mail(mail)
 
+    def get_user_by_document_edit_id(self, document_edit_id):
+        return self.__user_repository.get_user_by_document_edit_id(document_edit_id)
+
 
 user_service = UserService(UserRepository(), UserTeamRepository())
