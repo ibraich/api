@@ -18,6 +18,7 @@ def create_app(config_class):
     from app.routes.relation_routes import ns as relations
     from app.routes.entity_routes import ns as entities
     from app.routes.document_routes import ns as documents
+    from app.routes.schema_routes import ns as schemas
     from app.routes.team_routes import ns as teams
     from app.routes.document_edit_routes import ns as document_edit
 
@@ -26,6 +27,7 @@ def create_app(config_class):
     api.add_namespace(relations, path="/relations")
     api.add_namespace(entities, path="/entities")
     api.add_namespace(documents, path="/documents")
+    api.add_namespace(schemas, path="/schemas")
     api.add_namespace(teams, path="/teams")
     api.add_namespace(document_edit, path="/document_edits")
 
