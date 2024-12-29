@@ -1,3 +1,5 @@
+from werkzeug.exceptions import BadRequest, Conflict
+
 from app.repositories.team_repository import TeamRepository
 from app.services.user_service import UserService, user_service
 
@@ -33,6 +35,44 @@ class TeamService:
             {"id": member.id, "username": member.username, "email": member.email}
             for member in members
         ]
+
+
+    def add_user_to_team(self, user_mail, team_id):
+        new_member = self.user_service.get_user_by_mail(user_mail)
+
+        # If user does not exist, raise exception
+        if new_member is None:
+            raise BadRequest("User not found")
+
+        # Check if logged-in user is part of the team
+        user = 1  # self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user, team_id)
+
+        # Check that new member is not already part of the team
+        try:
+            self.user_service.check_user_in_team(new_member.id, team_id)
+            raise Conflict("User is already part of the team")
+        except BadRequest:
+            self.add_user(team_id, new_member.id)
+            return {
+                "id": new_member.id,
+                "username": new_member.username,
+                "email": new_member.email,
+            }
+
+    def add_user(self, team_id, user_id):
+        return self.__team_repository.add_user(team_id, user_id)
+
+    def create_team(self, team_name):
+        user_id = 1  # self.user_service.get_logged_in_user_id()
+
+        team = self.__team_repository.create_team(team_name, user_id)
+        self.add_user(team.id, user_id)
+        return {
+            "id": team.id,
+            "name": team.name,
+            "creator_id": team.creator_id,
+        }
 
 
 team_service = TeamService(TeamRepository(), user_service)

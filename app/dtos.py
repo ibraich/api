@@ -110,6 +110,91 @@ user_output_dto = api.model(
     },
 )
 
+schema_mention_output_dto = api.model(
+    "SchemaMentionOutput",
+    {
+        "id": fields.Integer,
+        "tag": fields.String,
+        "description": fields.String,
+        "color": fields.String,
+        "entity_possible": fields.Boolean,
+    },
+)
+
+schema_relation_output_dto = api.model(
+    "SchemaRelationOutput",
+    {
+        "id": fields.Integer,
+        "tag": fields.String,
+        "description": fields.String,
+    },
+)
+
+schema_constraint_output_dto = api.model(
+    "SchemaConstraintOutput",
+    {
+        "id": fields.Integer,
+        "is_directed": fields.Boolean,
+        "schema_relation": fields.Nested(schema_relation_output_dto),
+        "schema_mention_head": fields.Nested(schema_mention_output_dto),
+        "schema_mention_tail": fields.Nested(schema_mention_output_dto),
+    },
+)
+
+schema_output_dto = api.model(
+    "SchemaOutput",
+    {
+        "id": fields.Integer,
+        "is_fixed": fields.Boolean,
+        "modellingLanguage": fields.String,
+        "team_id": fields.Integer,
+        "team_name": fields.String,
+        "schema_mentions": fields.List(fields.Nested(schema_mention_output_dto)),
+        "schema_relations": fields.List(fields.Nested(schema_relation_output_dto)),
+        "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
+    },
+)
+
+schema_output_list_dto = api.model(
+    "SchemaOutputList",
+    {
+        "schemas": fields.List(fields.Nested(schema_output_dto)),
+    },
+)
+
+team_member_input_dto = api.model(
+    "TeamMemberInput",
+    {
+        "user_mail": fields.String(required=True),
+        "team_id": fields.Integer(required=True),
+    },
+)
+
+team_member_output_dto = api.model(
+    "TeamMemberOutput",
+    {
+        "id": fields.Integer,
+        "username": fields.String,
+        "email": fields.String,
+    },
+)
+
+team_input_dto = api.model(
+    "TeamInput",
+    {
+        "name": fields.String(required=True),
+    },
+)
+
+team_output_dto = api.model(
+    "TeamOutput",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "creator_id": fields.Integer,
+    },
+)
+
 team_user_output_dto = api.model(
     "TeamUserOutput",
     {
@@ -120,9 +205,25 @@ team_user_output_dto = api.model(
     },
 )
 
+document_edit_input_dto = api.model(
+    "DocumentInput",
+    {
+        "document_id": fields.Integer(required=True, min=1),
+    },
+)
+
 team_user_output_list_dto = api.model(
     "TeamUserListOutput",
     {
         "teams": fields.List(fields.Nested(team_user_output_dto)),
+    },
+)
+
+document_edit_output_dto = api.model(
+    "DocumentEditOutput",
+    {
+        "id": fields.Integer,
+        "schema_id": fields.Integer,
+        "document_id": fields.Integer,
     },
 )
