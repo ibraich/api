@@ -1,4 +1,4 @@
-from app.models import Project, Document, DocumentEdit
+from app.models import Project, Document, DocumentEdit, Team, UserTeam
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import exc
 from app.db import db
@@ -27,3 +27,20 @@ class ProjectRepository(BaseRepository):
 
     def get_projects_by_team(self, team_id):
         return db.session.query(Project).filter(Project.team_id == team_id).all()
+
+    def get_projects_by_user(self, user_id):
+        return (
+            db.session.query(
+                Project.id,
+                Project.name,
+                Project.creator_id,
+                Project.team_id,
+                Project.schema_id,
+                Team.name.label("team_name"),
+            )
+            .select_from(UserTeam)
+            .join(Team, Team.id == UserTeam.team_id)
+            .join(Project, Project.team_id == Team.id)
+            .filter(UserTeam.user_id == user_id)
+            .all()
+        )
