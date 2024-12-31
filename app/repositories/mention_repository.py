@@ -45,3 +45,33 @@ class MentionRepository(BaseRepository):
             .filter(Mention.document_recommendation_id == document_recommendation_id)
             .all()
         )
+
+    def get_mention_by_id(self, mention_id):
+        return self.db_session.query(Mention).filter_by(id=mention_id).first()
+
+    def delete_mention_by_id(self, mention_id):
+        mention = self.db_session.query(Mention).get(mention_id)
+        if not mention:
+            return False
+        self.db_session.delete(mention)
+        self.db_session.commit()
+        return True
+
+    def set_entity_id_to_null(self, entity_id):
+        mentions = (
+            self.db_session.query(Mention)
+            .filter(Mention.entity_id == entity_id)
+        ).all()
+
+        for mention in mentions:
+            mention.entity_id = None
+
+        self.db_session.commit()
+        return len(mentions)
+
+    def get_mentions_by_entity_id(self, entity_id):
+        if not isinstance(entity_id, int) or entity_id <= 0:
+            raise ValueError("Invalid entity ID. It must be a positive integer.")
+
+        return self.db_session.query(Mention).filter(Mention.entity_id == entity_id).all()
+

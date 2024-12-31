@@ -22,3 +22,16 @@ class EntityQueryResource(Resource):
 
         response = self.service.get_entities_by_document_edit(document_edit_id)
         return response
+
+@ns.route("/<int:entity_id>")
+@ns.doc(params={"entity_id": "An Entity ID"})
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class EntityDeletionResource(Resource):
+    service = entity_service
+
+    @ns.doc(description="Delete an entity")
+    def delete(self, entity_id):
+        response = self.service.delete_entity(entity_id)
+        return response

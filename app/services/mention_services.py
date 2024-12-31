@@ -3,6 +3,8 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict
 from app.repositories.mention_repository import MentionRepository
 from app.services.project_service import ProjectService, project_service
 from app.services.user_service import UserService, user_service
+from app.services.relation_services import RelationService, relation_service
+from app.services.entity_service import EntityService, entity_service
 
 from app.services.token_mention_service import (
     token_mention_service,
@@ -15,6 +17,8 @@ class MentionService:
     token_mention_service: TokenMentionService
     user_service: UserService
     project_service: ProjectService
+    relation_service: RelationService
+    entity_service: EntityService
 
     def __init__(
         self,
@@ -22,11 +26,15 @@ class MentionService:
         token_mention_service,
         user_service,
         project_service,
+        relation_service,
+        entity_service,
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
         self.user_service = user_service
         self.project_service = project_service
+        self.relation_service = relation_service
+        self.entity_service = entity_service
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -116,10 +124,47 @@ class MentionService:
                     is_shown_recommendation=True,
                 )
 
+    def delete_mention(self, mention_id):
+        if not isinstance(mention_id, int) or mention_id <= 0:
+            raise BadRequest("Invalid mention ID. It must be a positive integer.")
+
+        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        if not mention:
+            raise NotFound("Mention not found.")
+
+        if mention.document_edit_id is None:
+            raise BadRequest("Cannot delete a mention without a valid document_edit_id.")
+
+        #logged_in_user_id = user_service.get_logged_in_user_id()
+        #document_edit_user_id = user_service.get_user_by_document_edit_id(mention.document_edit_id)
+
+        #if logged_in_user_id != document_edit_user_id:
+            #raise NotFound("The logged in user does not belong to this document.")
+
+        related_relations = self.relation_service.get_relations_by_mention(mention_id)
+        for relation in related_relations:
+            self.relation_service.delete_relation_by_id(relation.id)
+
+        self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
+
+        if mention.entity_id is not None:
+            mentions_with_entity = self.__mention_repository.get_mentions_by_entity_id(mention.entity_id)
+
+            if len(mentions_with_entity) == 1 and mentions_with_entity[0].id == mention_id:
+                self.entity_service.delete_entity(mention.entity_id)
+
+        deleted = self.__mention_repository.delete_mention_by_id(mention_id)
+        if not deleted:
+            raise NotFound("Mention not found during deletion.")
+
+        return {"message": "OK"}
+
 
 mention_service = MentionService(
     MentionRepository(),
     token_mention_service,
     user_service,
     project_service,
+    relation_service,
+    entity_service,
 )

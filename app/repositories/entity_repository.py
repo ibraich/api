@@ -18,3 +18,12 @@ class EntityRepository:
             )
             .all()
         )
+
+    def delete_entity_by_id(self, entity_id):
+        entity = self.get_entity_by_id(entity_id)
+        if entity:
+            self.db_session.delete(entity)
+            self.db_session.commit()
+
+    def get_entity_by_id(self, entity_id):
+        return self.db_session.query(Entity).filter_by(id=entity_id).first()
