@@ -36,3 +36,17 @@ class MentionQueryResource(Resource):
 
         response = self.service.get_mentions_by_document_edit(document_edit_id)
         return response
+
+
+@ns.route("/<int:mention_id>")
+@ns.doc(params={"mention_id": "A Mention ID"})
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class MentionDeletionResource(Resource):
+    service = mention_service
+
+    @ns.doc(description="Delete a mention and its related relations")
+    def delete(self, mention_id):
+        response = self.service.delete_mention(mention_id)
+        return response

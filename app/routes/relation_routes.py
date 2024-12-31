@@ -22,3 +22,16 @@ class RelationQueryResource(Resource):
 
         response = self.service.get_relations_by_document_edit(document_edit_id)
         return response
+
+@ns.route("/<int:relation_id>")
+@ns.doc(params={"relation_id": "A Relation ID"})
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class RelationDeleteResource(Resource):
+    service = relation_service
+
+    @ns.doc(description="Delete a Relation by ID")
+    def delete(self, relation_id):
+        response = self.service.delete_relation(relation_id)
+        return response, 200

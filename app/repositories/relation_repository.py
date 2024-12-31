@@ -19,3 +19,26 @@ class RelationRepository(BaseRepository):
             )
             .all()
         )
+
+    def delete_relation_by_id(self, relation_id):
+        relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
+        if not relation:
+            return False
+        self.db_session.delete(relation)
+        self.db_session.commit()
+        return True
+
+    def get_relation_by_id(self, relation_id):
+        return self.db_session.query(Relation).filter_by(id=relation_id).first()
+
+    def get_relations_by_mention(self, mention_id):
+        return self.db_session.query(Relation).filter(
+            (Relation.mention_head_id == mention_id) |
+            (Relation.mention_tail_id == mention_id)
+        ).all()
+
+    def delete_relations_by_mention(self, mention_id):
+        relations = self.get_relations_by_mention(mention_id)
+        for relation in relations:
+            self.db_session.delete(relation)
+        self.db_session.commit()
