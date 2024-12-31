@@ -23,6 +23,7 @@ class RelationQueryResource(Resource):
         response = self.service.get_relations_by_document_edit(document_edit_id)
         return response
 
+
 @ns.route("/<int:relation_id>")
 @ns.doc(params={"relation_id": "A Relation ID"})
 @ns.response(400, "Invalid input")
@@ -33,5 +34,5 @@ class RelationDeleteResource(Resource):
 
     @ns.doc(description="Delete a Relation by ID")
     def delete(self, relation_id):
-        response = self.service.delete_relation(relation_id)
+        response = self.service.delete_relation_by_id(relation_id)
         return response, 200
