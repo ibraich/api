@@ -16,10 +16,13 @@ class DocumentService:
         self.token_service = token_service
 
     def get_documents_by_project(self, project_id):
-        return self.__document_repository.get_documents_by_project(project_id)
+        documents = self.get_documents_by_user()
+        return [
+            document for document in documents if document["project_id"] == project_id
+        ]
 
     def get_documents_by_user(self):
-        user_id = self.user_service.get_logged_in_user_id()
+        user_id = 1  # self.user_service.get_logged_in_user_id()
         documents = self.__document_repository.get_documents_by_user(user_id)
         if not documents:
             raise NotFound("No documents found")
