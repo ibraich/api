@@ -3,7 +3,7 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict
 from app.repositories.mention_repository import MentionRepository
 from app.services.project_service import ProjectService, project_service
 from app.services.user_service import UserService, user_service
-from app.repositories.relation_repository import RelationRepository
+from app.services.relation_services import RelationService, relation_service
 from app.services.entity_service import EntityService, entity_service
 
 from app.services.token_mention_service import (
@@ -17,7 +17,7 @@ class MentionService:
     token_mention_service: TokenMentionService
     user_service: UserService
     project_service: ProjectService
-    __relation_repository: RelationRepository
+    relation_service: RelationService
     entity_service: EntityService
 
     def __init__(
@@ -26,14 +26,14 @@ class MentionService:
         token_mention_service,
         user_service,
         project_service,
-        relation_repository,
+        relation_service,
         entity_service,
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
         self.user_service = user_service
         self.project_service = project_service
-        self.__relation_repository = relation_repository
+        self.relation_service = relation_service
         self.entity_service = entity_service
 
     def get_mentions_by_document_edit(self, document_edit_id):
@@ -141,9 +141,11 @@ class MentionService:
         #if logged_in_user_id != document_edit_user_id:
             #raise NotFound("The logged in user does not belong to this document.")
 
-        related_relations = self.__relation_repository.get_relations_by_mention(mention_id)
+        related_relations = self.relation_service.get_relations_by_mention(mention_id)
         for relation in related_relations:
-            self.__relation_repository.delete_relation_by_id(relation.id)
+            self.relation_service.delete_relation_by_id(relation.id)
+
+        self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
 
         if mention.entity_id is not None:
             mentions_with_entity = self.__mention_repository.get_mentions_by_entity_id(mention.entity_id)
@@ -163,6 +165,6 @@ mention_service = MentionService(
     token_mention_service,
     user_service,
     project_service,
-    RelationRepository(),
+    relation_service,
     entity_service,
 )

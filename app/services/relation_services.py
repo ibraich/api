@@ -34,7 +34,7 @@ class RelationService:
 
         return {"relations": relation_list}
 
-    def delete_relation(self, relation_id):
+    def delete_relation_by_id(self, relation_id):
         if not isinstance(relation_id, int) or relation_id <= 0:
             raise BadRequest("Invalid relation ID. It must be a positive integer.")
 
@@ -59,6 +59,10 @@ class RelationService:
             raise NotFound("Relation not found during deletion.")
 
         return {"message": "OK"}
+
+    def get_relations_by_mention(self, mention_id):
+        return self.__relation_repository.get_relations_by_mention(mention_id)
+
 
 
 relation_service = RelationService(RelationRepository())
