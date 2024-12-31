@@ -227,3 +227,22 @@ document_edit_output_dto = api.model(
         "document_id": fields.Integer,
     },
 )
+
+project_user_output_dto = api.model(
+    "ProjectUserOutput",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "creator_id": fields.Integer,
+        "team_id": fields.Integer,
+        "team_name": fields.String,
+        "schema_id": fields.Integer,
+    },
+)
+
+project_user_output_list_dto = api.model(
+    "ProjectUserListOutput",
+    {
+        "projects": fields.List(fields.Nested(project_user_output_dto)),
+    },
+)

@@ -3,7 +3,7 @@ from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from flask import request
 from app.services.project_service import project_service
-from app.dtos import project_input_dto, project_output_dto
+from app.dtos import project_input_dto, project_output_dto, project_user_output_list_dto
 
 ns = Namespace("projects", description="Project related operations")
 
@@ -32,3 +32,10 @@ class ProjectRoutes(Resource):
 
         except exc.IntegrityError:
             raise BadRequest("Projectname already exists")
+
+    @ns.doc(description="Fetch all projects of current logged-in user")
+    @ns.marshal_with(project_user_output_list_dto)
+    def get(self):
+
+        response = self.service.get_projects_by_user()
+        return response
