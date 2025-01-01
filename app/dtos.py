@@ -19,6 +19,7 @@ mention_output_dto = api.model(
         "document_edit_id": fields.Integer,
         "document_recommendation_id": fields.Integer,
         "entity_id": fields.Integer,
+        "tokens": fields.List(fields.Integer),
     },
 )
 
