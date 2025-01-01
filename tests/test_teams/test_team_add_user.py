@@ -41,7 +41,7 @@ class TeamAddUserTestCases(BaseTestCase):
         self.assertEqual(400, response.status_code)
 
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "get_user_by_mail")
+    @patch.object(UserService, "get_user_by_email")
     def test_team_add_user_service_user_not_exists(
         self, get_user_mock, check_auth_mock
     ):
@@ -59,7 +59,7 @@ class TeamAddUserTestCases(BaseTestCase):
         self.assertEqual(response.json.get("message"), "User not found")
 
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "get_user_by_mail")
+    @patch.object(UserService, "get_user_by_email")
     @patch.object(UserService, "check_user_in_team")
     def test_team_add_user_service_user_already_member(
         self,
@@ -91,7 +91,7 @@ class TeamAddUserTestCases(BaseTestCase):
         )
 
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "get_user_by_mail")
+    @patch.object(UserService, "get_user_eby_mail")
     @patch.object(UserService, "check_user_in_team")
     def test_team_add_user_service_user_already_member(
         self,
@@ -123,7 +123,7 @@ class TeamAddUserTestCases(BaseTestCase):
         )
 
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "get_user_by_mail")
+    @patch.object(UserService, "get_user_by_email")
     @patch.object(UserService, "check_user_in_team")
     @patch.object(TeamService, "add_user")
     def test_team_add_user_service_valid(
