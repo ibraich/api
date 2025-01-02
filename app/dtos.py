@@ -19,6 +19,7 @@ mention_output_dto = api.model(
         "document_edit_id": fields.Integer,
         "document_recommendation_id": fields.Integer,
         "entity_id": fields.Integer,
+        "tokens": fields.List(fields.Integer),
     },
 )
 
@@ -247,10 +248,27 @@ project_user_output_list_dto = api.model(
     },
 )
 
+
 # Define the response DTO for output
 team_delete_output_dto = api.model(
     "TeamDeleteOutput",
     {
         "message": fields.String(description="Message indicating the status of the operation")
     }
+)
+
+signup_input_dto = api.model(
+    "SignupInput",
+    {
+        "username": fields.String(required=True, description="Username of the new user"),
+        "email": fields.String(required=True, description="Email of the new user"),
+        "password": fields.String(required=True, description="Password for the new user"),
+    },
+)
+
+signup_output_dto = api.model(
+    "SignupOutput",
+    {
+        "message": fields.String,
+    },
 )
