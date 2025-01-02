@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, Conflict
+from werkzeug.exceptions import BadRequest, Conflict, NotFound, Unauthorized
 
 from app.repositories.team_repository import TeamRepository
 from app.services.user_service import UserService, user_service
@@ -73,6 +73,23 @@ class TeamService:
             "name": team.name,
             "creator_id": team.creator_id,
         }
+
+    # this will also have user_id for checking the creator and the current user when auth is added
+    def delete_team(self, team_id):
+        team = self.__team_repository.get_team_by_id(team_id)
+
+        if not team:
+            raise NotFound("Team not found.")
+
+        # Check if the logged-in user is the creator
+        #if team.creator_id != user_id:
+        #    raise Unauthorized("You are not authorized to delete this team.")
+
+        # Delete the team if authorized
+        deleted = self.__team_repository.delete_team_by_id(team_id)
+        if not deleted:
+            raise NotFound("Team not found during deletion.")
+
 
 
 team_service = TeamService(TeamRepository(), user_service)

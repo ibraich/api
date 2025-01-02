@@ -246,3 +246,11 @@ project_user_output_list_dto = api.model(
         "projects": fields.List(fields.Nested(project_user_output_dto)),
     },
 )
+
+# Define the response DTO for output
+team_delete_output_dto = api.model(
+    "TeamDeleteOutput",
+    {
+        "message": fields.String(description="Message indicating the status of the operation")
+    }
+)
