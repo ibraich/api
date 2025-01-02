@@ -21,7 +21,8 @@ def create_app(config_class):
     from app.routes.schema_routes import ns as schemas
     from app.routes.team_routes import ns as teams
     from app.routes.document_edit_routes import ns as document_edit
-    from app.routes.auth_routes import  ns as auth
+    from app.routes.auth_routes import ns as auth
+    from app.routes.token_routes import ns as tokens
 
     api.add_namespace(projects, path="/projects")
     api.add_namespace(mentions, path="/mentions")
@@ -32,6 +33,7 @@ def create_app(config_class):
     api.add_namespace(teams, path="/teams")
     api.add_namespace(document_edit, path="/document_edits")
     api.add_namespace(auth, path="/auth")
+    api.add_namespace(tokens, path="/tokens")
 
     if not config_class.TESTING:
         from app.db import db

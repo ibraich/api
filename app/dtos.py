@@ -251,9 +251,13 @@ project_user_output_list_dto = api.model(
 signup_input_dto = api.model(
     "SignupInput",
     {
-        "username": fields.String(required=True, description="Username of the new user"),
+        "username": fields.String(
+            required=True, description="Username of the new user"
+        ),
         "email": fields.String(required=True, description="Email of the new user"),
-        "password": fields.String(required=True, description="Password for the new user"),
+        "password": fields.String(
+            required=True, description="Password for the new user"
+        ),
     },
 )
 
@@ -261,5 +265,23 @@ signup_output_dto = api.model(
     "SignupOutput",
     {
         "message": fields.String,
+    },
+)
+
+token_output_dto = api.model(
+    "TokenOutput",
+    {
+        "id": fields.Integer,
+        "text": fields.String,
+        "document_index": fields.Integer,
+        "sentence_index": fields.Integer,
+        "pos_tag": fields.String,
+    },
+)
+
+token_output_list_dto = api.model(
+    "TokenListOutput",
+    {
+        "tokens": fields.List(fields.Nested(token_output_dto)),
     },
 )

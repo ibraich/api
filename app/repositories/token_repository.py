@@ -1,3 +1,4 @@
+from app.db import db
 from app.models import Token
 from app.repositories.base_repository import BaseRepository
 
@@ -13,3 +14,6 @@ class TokenRepository(BaseRepository):
         )
         super().store_object(token)
         return token
+
+    def get_tokens_by_document(self, document_id):
+        return db.session.query(Token).filter(Token.document_id == document_id).all()

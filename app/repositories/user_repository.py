@@ -1,4 +1,4 @@
-from app.models import UserTeam, DocumentEdit, User
+from app.models import UserTeam, DocumentEdit, User, Team, Project, Document
 from app.repositories.base_repository import BaseRepository
 from app.db import db
 
@@ -30,3 +30,13 @@ class UserRepository(BaseRepository):
         db.session.add(new_user)
         db.session.commit()
         return new_user
+
+    def check_user_document_accessible(self, user_id, document_id):
+        return (
+            db.session.query(UserTeam)
+            .join(Team, UserTeam.team_id == Team.id)
+            .join(Project, Project.team_id == Team.id)
+            .join(Document, Document.project_id == Project.id)
+            .filter((Document.id == document_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
