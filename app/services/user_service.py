@@ -1,6 +1,6 @@
 from flask import session
 from werkzeug.exceptions import BadRequest, Forbidden
-
+from werkzeug.security import generate_password_hash
 from app.repositories.user_repository import UserRepository
 from app.repositories.user_team_repository import UserTeamRepository
 
@@ -30,11 +30,30 @@ class UserService:
     def get_logged_in_user_team_id(self):
         return self.user_team_repository.get_user_team_id(self.get_logged_in_user_id())
 
-    def get_user_by_mail(self, mail):
-        return self.__user_repository.get_user_by_mail(mail)
+    def get_user_by_email(self, mail):
+        return self.__user_repository.get_user_by_email(mail)
 
     def get_user_by_document_edit_id(self, document_edit_id):
         return self.__user_repository.get_user_by_document_edit_id(document_edit_id)
+
+    def get_user_by_username(self, username):
+        return self.__user_repository.get_user_by_username(username)
+
+    def create_user(self, username, email, hashed_password):
+        return self.__user_repository.create_user(username, email, hashed_password)
+
+    def signup(self, username, email, password):
+        if self.get_user_by_username(username):
+            raise BadRequest("Username already exists")
+        if self.get_user_by_email(email):
+            raise BadRequest("Email already exists")
+
+        if not password or len(password) < 6:  # Example validation
+            raise BadRequest("Password must be at least 6 characters long")
+
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
+        self.create_user(username, email, hashed_password)
 
 
 user_service = UserService(UserRepository(), UserTeamRepository())

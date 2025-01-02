@@ -247,3 +247,19 @@ project_user_output_list_dto = api.model(
         "projects": fields.List(fields.Nested(project_user_output_dto)),
     },
 )
+
+signup_input_dto = api.model(
+    "SignupInput",
+    {
+        "username": fields.String(required=True, description="Username of the new user"),
+        "email": fields.String(required=True, description="Email of the new user"),
+        "password": fields.String(required=True, description="Password for the new user"),
+    },
+)
+
+signup_output_dto = api.model(
+    "SignupOutput",
+    {
+        "message": fields.String,
+    },
+)

@@ -38,7 +38,7 @@ class TeamService:
 
 
     def add_user_to_team(self, user_mail, team_id):
-        new_member = self.user_service.get_user_by_mail(user_mail)
+        new_member = self.user_service.get_user_by_email(user_mail)
 
         # If user does not exist, raise exception
         if new_member is None:
