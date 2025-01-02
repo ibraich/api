@@ -22,7 +22,7 @@ class TestMentionResource(BaseTestCase):
     @patch.object(TokenMentionService, "get_token_mention")
     @patch.object(UserService, "get_user_by_document_edit_id")
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(MentionRepository, "get_mentions_by_document_edit")
+    @patch.object(MentionRepository, "get_mentions_with_tokens_by_document_edit")
     def test_create_mentions_success(
         self,
         mock_get_mentions_by_document_edit,
@@ -83,7 +83,7 @@ class TestMentionResource(BaseTestCase):
     @patch.object(UserService, "get_logged_in_user_id")
     @patch.object(UserService, "get_user_by_document_edit_id")
     @patch.object(TokenMentionService, "get_token_mention")
-    @patch.object(MentionRepository, "get_mentions_by_document_edit")
+    @patch.object(MentionRepository, "get_mentions_with_tokens_by_document_edit")
     def test_create_mentions_duplicate_tokens(
         self,
         get_mentions_by_document_edit,

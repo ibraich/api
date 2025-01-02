@@ -25,6 +25,7 @@ class MentionTestCases(BaseTestCase):
                     "id": 1,
                     "is_shown_recommendation": False,
                     "tag": "tag",
+                    "tokens": [1, 2],
                 },
                 {
                     "document_edit_id": 2,
@@ -33,6 +34,7 @@ class MentionTestCases(BaseTestCase):
                     "id": 1,
                     "is_shown_recommendation": False,
                     "tag": "tag",
+                    "tokens": [3],
                 },
             ]
         }, 200
@@ -53,6 +55,7 @@ class MentionTestCases(BaseTestCase):
                     "id": 1,
                     "is_shown_recommendation": False,
                     "tag": "tag",
+                    "tokens": [1, 2],
                 },
                 {
                     "document_edit_id": 2,
@@ -61,6 +64,7 @@ class MentionTestCases(BaseTestCase):
                     "id": 1,
                     "is_shown_recommendation": False,
                     "tag": "tag",
+                    "tokens": [3],
                 },
             ],
         )
