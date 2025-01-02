@@ -40,27 +40,26 @@ class MentionService:
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        mentions = self.__mention_repository.get_mentions_by_document_edit(
+        results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(
             document_edit_id
         )
 
-        if not mentions:
-            raise NotFound("No mentions found for the given document edit.")
+        mentions_dict = {}
+        for row in results:
+            if row.mention_id not in mentions_dict:
+                mentions_dict[row.mention_id] = {
+                    "id": row.mention_id,
+                    "tag": row.tag,
+                    "isShownRecommendation": row.isShownRecommendation,
+                    "document_edit_id": row.document_edit_id,
+                    "document_recommendation_id": row.document_recommendation_id,
+                    "entity_id": row.entity_id,
+                    "tokens": [],
+                }
+            if row.token_id is not None:
+                mentions_dict[row.mention_id]["tokens"].append(row.token_id)
 
-        # Serialize mentions to JSON-compatible format
-        mentions_list = [
-            {
-                "id": mention.id,
-                "tag": mention.tag,
-                "isShownRecommendation": mention.isShownRecommendation,
-                "document_edit_id": mention.document_edit_id,
-                "document_recommendation_id": mention.document_recommendation_id,
-                "entity_id": mention.entity_id,
-            }
-            for mention in mentions
-        ]
-
-        return {"mentions": mentions_list}
+        return {"mentions": list(mentions_dict.values())}
 
     def create_mentions(self, data):
 
@@ -74,7 +73,7 @@ class MentionService:
             raise NotFound("The logged in user does not belong to this document.")
 
         # check duplicates
-        mentions = self.__mention_repository.get_mentions_by_document_edit(
+        mentions = self.__mention_repository.get_mentions_with_tokens_by_document_edit(
             data["document_edit_id"]
         )
         if len(mentions) > 0:
@@ -133,13 +132,15 @@ class MentionService:
             raise NotFound("Mention not found.")
 
         if mention.document_edit_id is None:
-            raise BadRequest("Cannot delete a mention without a valid document_edit_id.")
+            raise BadRequest(
+                "Cannot delete a mention without a valid document_edit_id."
+            )
 
-        #logged_in_user_id = user_service.get_logged_in_user_id()
-        #document_edit_user_id = user_service.get_user_by_document_edit_id(mention.document_edit_id)
+        # logged_in_user_id = user_service.get_logged_in_user_id()
+        # document_edit_user_id = user_service.get_user_by_document_edit_id(mention.document_edit_id)
 
-        #if logged_in_user_id != document_edit_user_id:
-            #raise NotFound("The logged in user does not belong to this document.")
+        # if logged_in_user_id != document_edit_user_id:
+        # raise NotFound("The logged in user does not belong to this document.")
 
         related_relations = self.relation_service.get_relations_by_mention(mention_id)
         for relation in related_relations:
@@ -148,9 +149,14 @@ class MentionService:
         self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
 
         if mention.entity_id is not None:
-            mentions_with_entity = self.__mention_repository.get_mentions_by_entity_id(mention.entity_id)
+            mentions_with_entity = self.__mention_repository.get_mentions_by_entity_id(
+                mention.entity_id
+            )
 
-            if len(mentions_with_entity) == 1 and mentions_with_entity[0].id == mention_id:
+            if (
+                len(mentions_with_entity) == 1
+                and mentions_with_entity[0].id == mention_id
+            ):
                 self.entity_service.delete_entity(mention.entity_id)
 
         deleted = self.__mention_repository.delete_mention_by_id(mention_id)

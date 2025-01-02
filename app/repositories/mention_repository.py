@@ -1,4 +1,4 @@
-from app.models import Mention
+from app.models import Mention, TokenMention
 from app.db import db
 from app.repositories.base_repository import BaseRepository
 
@@ -7,18 +7,29 @@ class MentionRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
 
-    def get_mentions_by_document_edit(self, document_edit_id):
-        return (
-            self.db_session.query(Mention)
+    def get_mentions_with_tokens_by_document_edit(self, document_edit_id):
+        results = (
+            self.db_session.query(
+                Mention.id.label("mention_id"),
+                Mention.tag,
+                Mention.isShownRecommendation,
+                Mention.document_edit_id,
+                Mention.document_recommendation_id,
+                Mention.entity_id,
+                TokenMention.token_id,
+            )
+            .outerjoin(TokenMention,Mention.id == TokenMention.mention_id)
             .filter(
                 (Mention.document_edit_id == document_edit_id)
                 & (
-                    Mention.document_recommendation_id.is_(None)
-                    | Mention.isShownRecommendation.is_(True)
+                        Mention.document_recommendation_id.is_(None)
+                        | Mention.isShownRecommendation.is_(True)
                 )
             )
             .all()
         )
+
+        return results
 
     def get_mention_by_tag(self, tag):
         return self.db_session.query(Mention).filter_by(tag=tag).all()
