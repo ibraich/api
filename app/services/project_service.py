@@ -42,7 +42,7 @@ class ProjectService:
         )
 
     def get_projects_by_user(self):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
         projects = self.__project_repository.get_projects_by_user(user_id)
         if projects is None:
             return {"projects": []}

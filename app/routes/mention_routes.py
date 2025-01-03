@@ -15,6 +15,7 @@ ns = Namespace("mentions", description="Mention related operations")
 class MentionResource(Resource):
     service = mention_service
 
+    @jwt_required()
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
     def post(self):

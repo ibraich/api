@@ -1,8 +1,8 @@
 from flask_restx import Namespace, Resource
 from app.services.document_edit_service import document_edit_service
 from flask import request
-
 from app.dtos import document_edit_output_dto, document_edit_input_dto
+from flask_jwt_extended import jwt_required
 
 ns = Namespace("annotations", description="Document-Annotation related operations")
 
@@ -14,6 +14,7 @@ ns = Namespace("annotations", description="Document-Annotation related operation
 class DocumentRoutes(Resource):
     service = document_edit_service
 
+    @jwt_required()
     @ns.doc(description="Create a new document annotation")
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_edit_input_dto, validate=True)
