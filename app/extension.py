@@ -4,7 +4,7 @@ from flask_restx import Api
 
 main = Blueprint("main", __name__, url_prefix="/api")
 authorizations = {
-    "apikey": {
+    "Bearer": {
         "type": "apiKey",
         "in": "header",
         "name": "Authorization",
@@ -16,5 +16,6 @@ api = Api(
     title="Annotation Project Backend API",
     version="1.0",
     doc="/docs",
+    security="Bearer",
     authorizations=authorizations,
 )
