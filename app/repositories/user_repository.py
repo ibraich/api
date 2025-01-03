@@ -13,7 +13,7 @@ class UserRepository(BaseRepository):
 
     def get_user_by_email(self, mail):
         return (
-            db.session.query(User.id, User.username, User.email)
+            db.session.query(User)
             .filter(User.email == mail)
             .first()
         )

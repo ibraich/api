@@ -1,13 +1,22 @@
 from flask import Flask
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
 
 from flask_migrate import Migrate
+import logging
 
 
 def create_app(config_class):
     app = Flask(__name__)
     load_dotenv()
     app.config.from_object(config_class)
+    JWTManager(app)
+
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the logging level to DEBUG
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Log format
+        handlers=[logging.StreamHandler()]  # Output logs to the console
+    )
 
     # Register blueprints
     from .extension import main, api

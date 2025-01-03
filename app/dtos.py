@@ -285,3 +285,12 @@ token_output_list_dto = api.model(
         "tokens": fields.List(fields.Nested(token_output_dto)),
     },
 )
+
+login_input_dto = api.model('LoginInput', {
+    'email': fields.String(required=True, description="The email of the user"),
+    'password': fields.String(required=True, description="The password of the user"),
+})
+
+login_output_dto = api.model('LoginOutput', {
+    'token': fields.String(required=True, description="The JWT token for authenticated user"),
+})
