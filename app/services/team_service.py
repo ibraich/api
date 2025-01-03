@@ -1,3 +1,4 @@
+from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest, Conflict
 
 from app.repositories.team_repository import TeamRepository
@@ -13,8 +14,8 @@ class TeamService:
         self.user_service = user_service
 
     def get_teams_by_user(self):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
-        teams = self.__team_repository.get_teams_by_user(user_id)
+        current_user_id = get_jwt_identity()
+        teams = self.__team_repository.get_teams_by_user(current_user_id)
         if teams is None:
             return {"teams": []}
         return {
