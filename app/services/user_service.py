@@ -55,9 +55,16 @@ class UserService:
         if not password or len(password) < 6:  # Example validation
             raise BadRequest("Password must be at least 6 characters long")
 
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
         self.create_user(username, email, hashed_password)
+
+    def check_user_document_accessible(self, user_id, document_id):
+        if (
+            self.__user_repository.check_user_document_accessible(user_id, document_id)
+            is None
+        ):
+            raise Forbidden("You cannot access this document")
 
     def login(self, email, password):
         try:
