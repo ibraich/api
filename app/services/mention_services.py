@@ -1,4 +1,5 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict
+from flask_jwt_extended import get_jwt_identity
+from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
 
 from app.repositories.mention_repository import MentionRepository
 from app.services.project_service import ProjectService, project_service
@@ -40,9 +41,13 @@ class MentionService:
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(
-            document_edit_id
-        )
+        user_id = user_service.get_user_by_document_edit_id(document_edit_id)
+        current_user_id = get_jwt_identity()
+
+        if current_user_id != str(user_id):  # Ensure types match
+            raise Unauthorized("You are not authorized to perform this action.")
+
+        results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(document_edit_id)
 
         mentions_dict = {}
         for row in results:

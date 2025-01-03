@@ -19,6 +19,11 @@ class Config:
     TESTING = False
     RESTX_MASK_SWAGGER = False
 
+    SECRET_KEY = os.getenv("SECRET_KEY", "9384758239485729384728592403484238948235")  # Used by Flask for session management
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY","7328437592749283749238749283748237589437")  # Used by Flask-JWT-Extended for signing JWTs
+    JWT_ACCESS_TOKEN_EXPIRES = 3600
+    JWT_ALGORITHM = 'HS256'
+
 
 class TestingConfig:
     DEBUG = os.getenv("DEBUG", True)

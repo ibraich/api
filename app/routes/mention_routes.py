@@ -1,4 +1,5 @@
 from flask import request
+from flask_jwt_extended import jwt_required, verify_jwt_in_request, get_jwt_identity
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from app.services.mention_services import mention_service
@@ -28,6 +29,7 @@ class MentionResource(Resource):
 class MentionQueryResource(Resource):
     service = mention_service
 
+    @jwt_required()
     @ns.doc(description="Get Mentions of document annotation")
     @ns.marshal_with(mention_output_list_dto)
     def get(self, document_edit_id):
