@@ -269,7 +269,6 @@ login_input_dto = api.model('LoginInput', {
     'password': fields.String(required=True, description="The password of the user"),
 })
 
-# Output DTO for login response (JWT token)
 login_output_dto = api.model('LoginOutput', {
     'token': fields.String(required=True, description="The JWT token for authenticated user"),
 })

@@ -44,7 +44,7 @@ class MentionService:
         user_id = user_service.get_user_by_document_edit_id(document_edit_id)
         current_user_id = get_jwt_identity()
 
-        if current_user_id != str(user_id):  # Ensure types match
+        if current_user_id != str(user_id):
             raise Unauthorized("You are not authorized to perform this action.")
 
         results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(document_edit_id)

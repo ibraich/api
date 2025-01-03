@@ -37,9 +37,8 @@ class LoginRoute(Resource):
     @ns.expect(login_input_dto, validate=True)  # Use the DTO here
     def post(self):
         try:
-            # Parse request data
             request_data = request.get_json()
-            email = request_data.get("email")  # Make sure you use 'email' here
+            email = request_data.get("email")
             password = request_data.get("password")
 
             result = self.service.login(email, password)
