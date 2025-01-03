@@ -43,3 +43,41 @@ class DocumentService:
 
 
 document_service = DocumentService(DocumentRepository(), user_service)
+
+def upload_document(self, user_id, project_id, file_name, file_content):
+    """
+    Handles the upload of a document by a user to a specific project.
+    
+    Args:
+        user_id (int): ID of the uploading user.
+        project_id (int): ID of the project to upload the document to.
+        file_name (str): Name of the file.
+        file_content (str): Content of the file.
+    
+    Raises:
+        NotFound: If the project or team is not found, or the user is not authorized.
+        ValueError: If the file content is invalid or file name is missing.
+    
+    Returns:
+        dict: Details of the uploaded document.
+    """
+    # Validate that the user belongs to the team that owns the project
+    project = self.__project_service.get_project_by_id(project_id)
+    if not project:
+        raise NotFound("Project not found.")
+
+    team_id = project.team_id
+    if not self.user_service.is_user_in_team(user_id, team_id):
+        raise NotFound("User does not belong to the team owning this project.")
+
+    # Validate file content
+    if not file_name or not file_content.strip():
+        raise ValueError("Invalid file content or file name.")
+
+    # Store the document
+    document = self.__document_repository.create_document(
+        name=file_name, 
+        content=file_content, 
+        project_id=project_id
+    )
+    return {"id": document.id, "name": document.name, "project_id": project_id}
