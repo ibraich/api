@@ -46,8 +46,6 @@ document_service = DocumentService(DocumentRepository(), user_service)
 
 def upload_document(self, user_id, project_id, file_name, file_content):
     """
-    Handles the upload of a document by a user to a specific project.
-    
     Args:
         user_id (int): ID of the uploading user.
         project_id (int): ID of the project to upload the document to.
