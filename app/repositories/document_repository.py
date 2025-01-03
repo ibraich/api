@@ -59,3 +59,19 @@ class DocumentRepository(BaseRepository):
             )
             .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
         )
+
+def create_document(self, name, content, project_id):
+    """
+    Creates and stores a document in the database.
+    
+    Args:
+        name (str): Name of the document.
+        content (str): Content of the document.
+        project_id (int): ID of the associated project.
+    
+    Returns:
+        Document: The created Document object.
+    """
+    document = Document(name=name, content=content, project_id=project_id)
+    self.store_object(document)
+    return document
