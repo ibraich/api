@@ -1,3 +1,5 @@
+from werkzeug.exceptions import NotFound
+
 from app.models import UserTeam, DocumentEdit, User, Team, Project, Document
 from app.repositories.base_repository import BaseRepository
 from app.db import db
@@ -12,14 +14,12 @@ class UserRepository(BaseRepository):
         )
 
     def get_user_by_email(self, mail):
-        return (
-            db.session.query(User)
-            .filter(User.email == mail)
-            .first()
-        )
+        return db.session.query(User).filter(User.email == mail).first()
 
     def get_user_by_document_edit_id(self, document_edit_id):
         document_edit = db.session.query(DocumentEdit).get(document_edit_id)
+        if document_edit is None:
+            raise NotFound("Document Edit not found")
         return document_edit.user_id
 
     def get_user_by_username(self, username):
