@@ -17,6 +17,8 @@ class SchemaService:
             return NotFound("Schema not found")
 
     def get_schema_by_id(self, schema_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
         schema = self.__schema_repository.get_schema_by_id(schema_id)
         if schema is None:
             raise BadRequest("Schema not found")
