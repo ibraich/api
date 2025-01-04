@@ -59,6 +59,15 @@ document_output_dto = api.model(
     },
 )
 
+entity_input_dto = api.model(
+    "EntityInput",
+    {
+        "document_edit_id": fields.Integer(required=True),
+        "mention_ids": fields.List(fields.Integer, required=True),
+    },
+)
+
+
 entity_output_dto = api.model(
     "EntityOutput",
     {
@@ -286,11 +295,21 @@ token_output_list_dto = api.model(
     },
 )
 
-login_input_dto = api.model('LoginInput', {
-    'email': fields.String(required=True, description="The email of the user"),
-    'password': fields.String(required=True, description="The password of the user"),
-})
+login_input_dto = api.model(
+    "LoginInput",
+    {
+        "email": fields.String(required=True, description="The email of the user"),
+        "password": fields.String(
+            required=True, description="The password of the user"
+        ),
+    },
+)
 
-login_output_dto = api.model('LoginOutput', {
-    'token': fields.String(required=True, description="The JWT token for authenticated user"),
-})
+login_output_dto = api.model(
+    "LoginOutput",
+    {
+        "token": fields.String(
+            required=True, description="The JWT token for authenticated user"
+        ),
+    },
+)

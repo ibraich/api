@@ -6,6 +6,21 @@ class EntityRepository:
     def __init__(self):
         self.db_session = db.session
 
+    def create_entity(
+        self,
+        document_edit_id,
+        document_recommendation_id=None,
+        is_shown_recommendation=False,
+    ):
+
+        entity = Entity(
+            document_edit_id=document_edit_id,
+            document_recommendation_id=document_recommendation_id,
+            isShownRecommendation=is_shown_recommendation,
+        )
+        self.store_object(entity)
+        return entity
+
     def get_entities_by_document_edit(self, document_edit_id):
         return (
             self.db_session.query(Entity)
