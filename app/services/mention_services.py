@@ -200,16 +200,15 @@ class MentionService:
                 self.token_mention_service.create_token_mention(token_id, mention_id)
 
         # Delete entity if it is empty after update, id = 0: clear entity_id of mention
-        if (
-            entity_id is not None
-            and mention.entity_id
-            and entity_id != mention.entity_id
-        ):
+        if entity_id is not None:
             if entity_id != 0:
                 self.entity_service.check_entity_in_document_edit(
                     entity_id, mention.document_edit_id
                 )
-            self.delete_entity_if_only_consists_mention(mention_id, mention.entity_id)
+            if mention.entity_id and entity_id != mention.entity_id:
+                self.delete_entity_if_only_consists_mention(
+                    mention_id, mention.entity_id
+                )
 
         updated_mention = self.__mention_repository.update_mention(
             mention_id, tag, entity_id
