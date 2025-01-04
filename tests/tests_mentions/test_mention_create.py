@@ -7,6 +7,7 @@ from app.repositories.mention_repository import MentionRepository
 from app.services.document_edit_service import DocumentEditService
 from app.services.mention_services import MentionService, mention_service
 from app.services.token_mention_service import TokenMentionService
+from app.services.token_service import TokenService
 from app.services.user_service import UserService
 from tests.test_routes import BaseTestCase
 
@@ -19,15 +20,17 @@ class TestMentionResource(BaseTestCase):
         self.service = mention_service
 
     @patch.object(MentionRepository, "create_mention")
-    @patch.object(TokenMentionService, "get_token_mention")
-    @patch.object(UserService, "get_user_by_document_edit_id")
+    @patch.object(MentionService, "check_token_in_mention")
+    @patch.object(UserService, "check_user_document_edit_accessible")
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(MentionRepository, "get_mentions_with_tokens_by_document_edit")
+    @patch.object(TokenService, "check_tokens_in_document_edit")
+    @patch.object(TokenMentionService, "create_token_mention")
     def test_create_mentions_success(
         self,
+        mock_create_token_mention,
         mock_get_mentions_by_document_edit,
         mock_get_logged_in_user_id,
-        mock_get_user_id,
+        mock_check_docedit,
         mock_get_token_mention,
         mock_create_mention,
     ):
@@ -40,9 +43,10 @@ class TestMentionResource(BaseTestCase):
         }
 
         # Mock services
+        mock_create_token_mention.return_value = None
         mock_get_mentions_by_document_edit.return_value = []
         mock_get_logged_in_user_id.return_value = 1
-        mock_get_user_id.return_value = 1  # Same user
+        mock_check_docedit.return_value = 1  # Same user
         mock_get_token_mention.return_value = []  # No duplicates
         mock_create_mention.return_value = {
             "id": 1,
@@ -81,14 +85,14 @@ class TestMentionResource(BaseTestCase):
         get_user_id.assert_called_once_with(123)
 
     @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "get_user_by_document_edit_id")
-    @patch.object(TokenMentionService, "get_token_mention")
-    @patch.object(MentionRepository, "get_mentions_with_tokens_by_document_edit")
+    @patch.object(UserService, "check_user_document_edit_accessible")
+    @patch.object(TokenService, "check_tokens_in_document_edit")
+    @patch.object(MentionService, "check_token_in_mention")
     def test_create_mentions_duplicate_tokens(
         self,
-        get_mentions_by_document_edit,
-        get_token_mention,
-        get_user_id,
+        check_token_in_mention,
+        check_tokens_in_document_edit,
+        check_user_document_edit_accessible,
         get_logged_in_user_id,
     ):
         # Mock input data
@@ -100,8 +104,8 @@ class TestMentionResource(BaseTestCase):
 
         # Mock services
         get_logged_in_user_id.return_value = 1
-        get_user_id.return_value = 1  # Simulate same user
-        get_token_mention.side_effect = ["exists", "duplicate"]
+        check_user_document_edit_accessible.return_value = 1  # Simulate same user
+        check_token_in_mention.side_effect = ["exists", "duplicate"]
 
         mock_mention_1 = Mock()
         mock_mention_1.id = 2
@@ -115,15 +119,13 @@ class TestMentionResource(BaseTestCase):
         mock_mention_2.tag = "sample_tag"
         mock_mention_2.entity_id = 789
 
-        get_mentions_by_document_edit.return_value = [mock_mention_1, mock_mention_2]
-
+        check_tokens_in_document_edit.return_value = None
         with self.assertRaises(Conflict):
             self.service.create_mentions(mock_input_data)
 
         # Verify methods were called
         get_logged_in_user_id.assert_called_once()
-        get_user_id.assert_called_once_with(123)
-        get_token_mention.assert_any_call([1, 2, 3], [2, 4])
+        check_user_document_edit_accessible.assert_called_once_with(1, 123)
 
 
 if __name__ == "__main__":

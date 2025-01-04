@@ -1,12 +1,11 @@
 from datetime import timedelta
 from app.config import Config
 from flask import session
-from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized
+from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized, NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.repositories.user_repository import UserRepository
 from app.repositories.user_team_repository import UserTeamRepository
 from flask_jwt_extended import create_access_token
-
 
 
 class UserService:
@@ -66,6 +65,12 @@ class UserService:
         ):
             raise Forbidden("You cannot access this document")
 
+    def check_user_document_edit_accessible(self, user_id, document_edit_id):
+        document_edit_user_id = self.get_user_by_document_edit_id(document_edit_id)
+
+        if int(user_id) != int(document_edit_user_id):
+            raise NotFound("The logged in user does not belong to this document.")
+
     def login(self, email, password):
         try:
             user = self.get_user_by_email(email)
@@ -74,9 +79,11 @@ class UserService:
 
             if not check_password_hash(user.password, password):
                 raise Unauthorized("Invalid email or password")
-            user_id_str=str(user.id)
+            user_id_str = str(user.id)
             expires_delta = timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
-            token = create_access_token(identity=user_id_str, expires_delta=expires_delta)
+            token = create_access_token(
+                identity=user_id_str, expires_delta=expires_delta
+            )
             return {"token": token}
         except Exception as e:
             raise

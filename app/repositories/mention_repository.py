@@ -18,12 +18,12 @@ class MentionRepository(BaseRepository):
                 Mention.entity_id,
                 TokenMention.token_id,
             )
-            .outerjoin(TokenMention,Mention.id == TokenMention.mention_id)
+            .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
             .filter(
                 (Mention.document_edit_id == document_edit_id)
                 & (
-                        Mention.document_recommendation_id.is_(None)
-                        | Mention.isShownRecommendation.is_(True)
+                    Mention.document_recommendation_id.is_(None)
+                    | Mention.isShownRecommendation.is_(True)
                 )
             )
             .all()
@@ -70,8 +70,7 @@ class MentionRepository(BaseRepository):
 
     def set_entity_id_to_null(self, entity_id):
         mentions = (
-            self.db_session.query(Mention)
-            .filter(Mention.entity_id == entity_id)
+            self.db_session.query(Mention).filter(Mention.entity_id == entity_id)
         ).all()
 
         for mention in mentions:
@@ -84,5 +83,17 @@ class MentionRepository(BaseRepository):
         if not isinstance(entity_id, int) or entity_id <= 0:
             raise ValueError("Invalid entity ID. It must be a positive integer.")
 
-        return self.db_session.query(Mention).filter(Mention.entity_id == entity_id).all()
+        return (
+            self.db_session.query(Mention).filter(Mention.entity_id == entity_id).all()
+        )
 
+    def update_mention(self, mention_id, tag, entity_id):
+        mention = self.get_mention_by_id(mention_id)
+        if tag:
+            mention.tag = tag
+        if entity_id:
+            mention.entity_id = entity_id
+        elif entity_id == 0:
+            mention.entity_id = None
+        super().store_object(mention)
+        return mention
