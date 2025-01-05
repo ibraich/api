@@ -3,6 +3,7 @@ import requests
 from werkzeug.exceptions import BadRequest
 from flask import current_app
 
+from app.models import Token
 from app.repositories.token_repository import TokenRepository
 from app.services.user_service import UserService, user_service
 
@@ -26,7 +27,7 @@ class TokenService:
         tokens = response.json()
         try:
             for token in tokens:
-                self.__token_repository.create_token(
+                self.save_token(
                     token["text"],
                     token["document_index"],
                     token["pos_tag"],
@@ -36,6 +37,17 @@ class TokenService:
         except:
             raise BadRequest("Tokenization failed")
         return {"tokens": tokens}
+
+    def save_token(
+        self, text, document_index, pos_tag, sentence_index, doc_id
+    ) -> Token:
+        return self.__token_repository.create_token(
+            text,
+            document_index,
+            pos_tag,
+            sentence_index,
+            doc_id,
+        )
 
     def get_tokens_by_document(self, document_id):
         user_id = 1  # self.user_service.get_logged_in_user_id()

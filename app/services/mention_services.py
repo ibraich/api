@@ -47,7 +47,9 @@ class MentionService:
         if current_user_id != str(user_id):
             raise Unauthorized("You are not authorized to perform this action.")
 
-        results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(document_edit_id)
+        results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(
+            document_edit_id
+        )
 
         mentions_dict = {}
         for row in results:
@@ -66,10 +68,9 @@ class MentionService:
 
         return {"mentions": list(mentions_dict.values())}
 
-    def create_mentions(self, data):
-
+    def create_mentions(self, data, user_id: int):
         # check if user is allowed to access this document edit
-        logged_in_user_id = user_service.get_logged_in_user_id()
+        logged_in_user_id = user_id
         document_edit_user_id = user_service.get_user_by_document_edit_id(
             data["document_edit_id"]
         )
@@ -106,6 +107,9 @@ class MentionService:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
         return mention
+
+    def add_to_entity(self, entity_id: int, mention_id: int):
+        self.__mention_repository.add_to_entity(entity_id, mention_id)
 
     def copy_mention_recommendations_to_document_edit(
         self,

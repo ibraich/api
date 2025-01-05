@@ -14,5 +14,4 @@ class DocumentRecommendationRepository(BaseRepository):
             state_id=1,
             documentEditHash="",
         )
-        super().store_object(document_recommendation)
-        return document_recommendation
+        return super().store_object_transactional(document_recommendation)

@@ -1,8 +1,9 @@
 from app.models import Entity
 from app.db import db
+from app.repositories.base_repository import BaseRepository
 
 
-class EntityRepository:
+class EntityRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session
 
@@ -17,6 +18,11 @@ class EntityRepository:
                 )
             )
             .all()
+        )
+
+    def create_in_edit(self, document_edit_id: int) -> Entity:
+        return super().store_object_transactional(
+            Entity(document_edit_id=document_edit_id, isShownRecommendation=True)
         )
 
     def delete_entity_by_id(self, entity_id):

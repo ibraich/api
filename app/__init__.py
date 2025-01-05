@@ -15,7 +15,7 @@ def create_app(config_class):
     logging.basicConfig(
         level=logging.DEBUG,  # Set the logging level to DEBUG
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Log format
-        handlers=[logging.StreamHandler()]  # Output logs to the console
+        handlers=[logging.StreamHandler()],  # Output logs to the console
     )
 
     # Register blueprints
@@ -32,6 +32,7 @@ def create_app(config_class):
     from app.routes.document_edit_routes import ns as document_edit
     from app.routes.auth_routes import ns as auth
     from app.routes.token_routes import ns as tokens
+    from app.routes.import_routes import ns as imports
 
     api.add_namespace(projects, path="/projects")
     api.add_namespace(mentions, path="/mentions")
@@ -43,6 +44,7 @@ def create_app(config_class):
     api.add_namespace(document_edit, path="/document_edits")
     api.add_namespace(auth, path="/auth")
     api.add_namespace(tokens, path="/tokens")
+    api.add_namespace(imports, path="/imports")
 
     if not config_class.TESTING:
         from app.db import db

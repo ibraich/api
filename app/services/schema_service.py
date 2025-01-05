@@ -20,11 +20,20 @@ class SchemaService:
         schema = self.__schema_repository.get_schema_by_id(schema_id)
         if schema is None:
             raise BadRequest("Schema not found")
+        return self._build_schema(schema)
+
+    def get_schema_by_project_id(self, project_id):
+        schema = self.__schema_repository.get_by_project(project_id)
+        if schema is None:
+            raise BadRequest("Project not found")
+        return self._build_schema(schema)
+
+    def _build_schema(self, schema):
         constraints = self.__schema_repository.get_schema_constraints_by_schema(
-            schema_id
+            schema.id
         )
-        mentions = self.__schema_repository.get_schema_mentions_by_schema(schema_id)
-        relations = self.__schema_repository.get_schema_relations_by_schema(schema_id)
+        mentions = self.__schema_repository.get_schema_mentions_by_schema(schema.id)
+        relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
         return {
             "id": schema.id,
             "is_fixed": schema.isFixed,

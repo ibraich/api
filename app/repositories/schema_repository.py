@@ -8,6 +8,7 @@ from app.models import (
     SchemaRelation,
     SchemaConstraint,
     UserTeam,
+    Project,
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db
@@ -52,6 +53,24 @@ class SchemaRepository(BaseRepository):
             db.session.query(SchemaRelation)
             .filter(SchemaRelation.schema_id == schema_id)
             .all()
+        )
+
+    def get_by_project(self, project_id):
+        return (
+            db.session.query(
+                Schema.id,
+                Schema.isFixed,
+                Schema.team_id,
+                Team.name.label("team_name"),
+                ModellingLanguage.type.label("modelling_language"),
+            )
+            .join(Team, Schema.team_id == Team.id)
+            .join(
+                ModellingLanguage, ModellingLanguage.id == Schema.modellingLanguage_id
+            )
+            .join(Project, Project.schema_id == Schema.id)
+            .filter(Project.id == project_id)
+            .first()
         )
 
     def get_schema_constraints_by_schema(self, schema_id):

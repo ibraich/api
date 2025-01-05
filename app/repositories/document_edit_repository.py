@@ -14,8 +14,7 @@ class DocumentEditRepository(BaseRepository):
             schema_id=schema_id,
             state_id=1,
         )
-        super().store_object(document_edit)
-        return document_edit
+        return super().store_object_transactional(document_edit)
 
     def get_document_edit_by_document(self, document_id, user_id):
         return (

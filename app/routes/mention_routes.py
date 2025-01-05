@@ -1,7 +1,9 @@
 from flask import request
-from flask_jwt_extended import jwt_required, verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
+
+from app.db import transactional
 from app.services.mention_services import mention_service
 from app.dtos import mention_output_dto, mention_output_list_dto, mention_input_dto
 
@@ -17,8 +19,11 @@ class MentionResource(Resource):
 
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
+    @jwt_required()
+    @transactional
     def post(self):
-        return self.service.create_mentions(request.json)
+        user_id: int = int(get_jwt_identity())
+        return self.service.create_mentions(request.json, user_id)
 
 
 @ns.route("/<int:document_edit_id>")

@@ -46,5 +46,12 @@ class DocumentService:
     def get_document_by_id(self, document_id):
         return self.__document_repository.get_document_by_id(document_id)
 
+    def save_document(
+        self, name: str, content: str, project_id: int, creator_id: int, state_id: int
+    ):
+        return self.__document_repository.save(
+            name, content, project_id, creator_id, state_id
+        )
+
 
 document_service = DocumentService(DocumentRepository(), user_service, token_service)
