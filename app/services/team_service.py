@@ -14,7 +14,7 @@ class TeamService:
         self.user_service = user_service
 
     def get_teams_by_user(self):
-        current_user_id = get_jwt_identity()
+        current_user_id = self.user_service.get_logged_in_user_id()
         teams = self.__team_repository.get_teams_by_user(current_user_id)
         if teams is None:
             return {"teams": []}
@@ -37,7 +37,6 @@ class TeamService:
             for member in members
         ]
 
-
     def add_user_to_team(self, user_mail, team_id):
         new_member = self.user_service.get_user_by_email(user_mail)
 
@@ -46,7 +45,7 @@ class TeamService:
             raise BadRequest("User not found")
 
         # Check if logged-in user is part of the team
-        user = 1  # self.user_service.get_logged_in_user_id()
+        user = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_in_team(user, team_id)
 
         # Check that new member is not already part of the team
@@ -65,7 +64,7 @@ class TeamService:
         return self.__team_repository.add_user(team_id, user_id)
 
     def create_team(self, team_name):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
 
         team = self.__team_repository.create_team(team_name, user_id)
         self.add_user(team.id, user_id)

@@ -5,8 +5,7 @@ from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.repositories.user_repository import UserRepository
 from app.repositories.user_team_repository import UserTeamRepository
-from flask_jwt_extended import create_access_token
-
+from flask_jwt_extended import create_access_token, get_jwt_identity
 
 class UserService:
     __user_repository: UserRepository
@@ -26,9 +25,11 @@ class UserService:
             raise BadRequest("You have to be in a team")
 
     def get_logged_in_user_id(self):
-        if "user_id" not in session or session["user_id"] is None:
-            raise Forbidden("You need to be logged in")
-        return session["user_id"]
+        try:
+            user_id = get_jwt_identity()
+            return user_id
+        except Exception as e:
+            raise Unauthorized(str(e))
 
     def get_logged_in_user_team_id(self):
         return self.user_team_repository.get_user_team_id(self.get_logged_in_user_id())

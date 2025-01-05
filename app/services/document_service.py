@@ -22,7 +22,7 @@ class DocumentService:
         ]
 
     def get_documents_by_user(self):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
         documents = self.__document_repository.get_documents_by_user(user_id)
         if not documents:
             raise NotFound("No documents found")
