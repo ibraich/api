@@ -70,6 +70,10 @@ class EntityService:
             mention = self.__mention_repository.get_mention_by_id(mention_id)
             if mention is None:
                 raise BadRequest("Invalid mention ids.")
+
+            if mention.document_edit_id != data["document_edit_id"]:
+                raise BadRequest("Invalid mention id")
+
             # counting tags to check if all tags are same or not
             if mention.tag not in tag_count:
                 tag_count[mention.tag] = 0
