@@ -1,4 +1,4 @@
-from app.models import UserTeam, DocumentEdit, User, Team, Project, Document
+from app.models import UserTeam, DocumentEdit, User, Team, Project, Document, Schema
 from app.repositories.base_repository import BaseRepository
 from app.db import db
 
@@ -12,11 +12,7 @@ class UserRepository(BaseRepository):
         )
 
     def get_user_by_email(self, mail):
-        return (
-            db.session.query(User)
-            .filter(User.email == mail)
-            .first()
-        )
+        return db.session.query(User).filter(User.email == mail).first()
 
     def get_user_by_document_edit_id(self, document_edit_id):
         document_edit = db.session.query(DocumentEdit).get(document_edit_id)
@@ -38,5 +34,14 @@ class UserRepository(BaseRepository):
             .join(Project, Project.team_id == Team.id)
             .join(Document, Document.project_id == Project.id)
             .filter((Document.id == document_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
+
+    def check_user_schema_accessible(self, user_id, schema_id):
+        return (
+            db.session.query(UserTeam)
+            .join(Team, UserTeam.team_id == Team.id)
+            .join(Schema, Schema.team_id == Team.id)
+            .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))
             .first()
         )

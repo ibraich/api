@@ -21,7 +21,7 @@ class ProjectService:
     def create_project(self, team_id, schema_id, projectname):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_in_team(user_id, team_id)
-        self.schema_service.check_schema_exists(schema_id)
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
         project = self.__project_repository.create_project(
             projectname,
             user_id,
