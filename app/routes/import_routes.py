@@ -6,7 +6,7 @@ from werkzeug.exceptions import BadRequest
 from app.db import transactional
 from app.services.import_service import import_service
 
-ns = Namespace("imports", description="Entity related operations")
+ns = Namespace("imports", description="Import data from different sources")
 
 
 @ns.route("/documents")
@@ -18,8 +18,7 @@ class Imports(Resource):
     @ns.doc(description="Import documents from other source.")
     @ns.doc(
         params={
-            "schema_id": "Used schema for the imported documents.",
-            "project_id": "Target project of the documents.",
+            "project_id": "Target project of the documents. (Defines the target schema)",
             "source": "Data source type. Only option: 'pet'",
         }
     )
@@ -33,13 +32,36 @@ class Imports(Resource):
         user_id = int(get_jwt_identity())
         import_list = request.get_json()
 
-        schema_id = int(request.args.get("schema_id"))
         project_id = int(request.args.get("project_id"))
         source = request.args.get("source")
 
         if source == "pet":
-            return import_service.import_pet_documents(
-                import_list, schema_id, project_id, user_id
-            )
+            return import_service.import_pet_documents(import_list, project_id, user_id)
         else:
             raise BadRequest(f"Invalid source {source}")
+
+
+@ns.route("/schema")
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+class Imports(Resource):
+    import_service = import_service
+
+    @ns.doc(description="Import schema.")
+    @ns.doc(
+        params={
+            "team_id": "Target team of the schema.",
+            "project_id": "Target project of the schema.",
+        }
+    )
+    @jwt_required()
+    @transactional
+    def post(self):
+        user_id = int(get_jwt_identity())
+        import_schema = request.get_json()
+
+        team_id = int(request.args.get("team_id"))
+
+        # TODO Backend Team: Check if user is part of the team
+
+        return import_service.import_schema(import_schema, team_id)

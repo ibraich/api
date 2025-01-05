@@ -1,7 +1,16 @@
+import typing
+import random
+
 from werkzeug.exceptions import NotFound, BadRequest
 
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
+
+
+def generate_random_hex_color():
+    """Generate a random hexadecimal color code."""
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
 class SchemaService:
@@ -92,6 +101,44 @@ class SchemaService:
         if schemas is None:
             return {"schemas": []}
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
+
+    def create_schema(self, modelling_language_id, team_id) -> Schema:
+        return self.__schema_repository.create_schema(modelling_language_id, team_id)
+
+    def create_schema_mention(
+        self,
+        schema_id: int,
+        tag: str,
+        description: str,
+        entity_possible: bool,
+        color: typing.Optional[str] = None,
+    ) -> SchemaMention:
+        if color is None:
+            color = generate_random_hex_color()
+        return self.__schema_repository.create_schema_mention(
+            schema_id, tag, description, entity_possible, color
+        )
+
+    def create_schema_relation(
+        self, schema_id, tag: str, description: str
+    ) -> SchemaRelation:
+        return self.__schema_repository.create_schema_relation(
+            schema_id, tag, description
+        )
+
+    def create_schema_constraint(
+        self,
+        schema_relation_id: int,
+        schema_mention_id_head: int,
+        schema_mention_id_tail: int,
+        is_directed: bool,
+    ) -> SchemaConstraint:
+        return self.__schema_repository.create_schema_constraint(
+            schema_relation_id,
+            schema_mention_id_head,
+            schema_mention_id_tail,
+            is_directed,
+        )
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)
