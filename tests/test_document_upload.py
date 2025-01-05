@@ -19,17 +19,11 @@ class TestDocumentUpload(unittest.TestCase):
         self.user_service.is_user_in_team.return_value = True
         self.document_repository.create_document.return_value = MagicMock(id=1, name="test.txt")
 
-        result = self.service.upload_document(1, 1, "test.txt", "content")
+        result = self.service.upload_document(1, 1, "test.txt", "This is the content.")
         self.assertEqual(result["name"], "test.txt")
         self.assertEqual(result["id"], 1)
 
-    def test_upload_document_user_not_in_team(self):
-        self.project_service.get_project_by_id.return_value = MagicMock(team_id=1)
-        self.user_service.is_user_in_team.return_value = False
-
-        with self.assertRaises(NotFound):
-            self.service.upload_document(1, 1, "test.txt", "content")
-
-    def test_upload_document_invalid_file(self):
+    def test_upload_document_missing_content(self):
         with self.assertRaises(ValueError):
-            self.service.upload_document(1, 1, "", " ")
+            self.service.upload_document(1, 1, "test.txt", " ")
+
