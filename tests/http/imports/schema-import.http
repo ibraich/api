@@ -1,0 +1,171 @@
+#
+# Simple endpoint for the schema import.
+#
+
+### Sign In
+
+POST http://localhost/api/auth/signup
+Content-Type: application/json
+
+{
+  "username": "test",
+  "email": "test@home.arpa",
+  "password": "s3cr3t"
+}
+
+### Log in
+
+POST http://localhost/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@home.arpa",
+  "password": "s3cr3t"
+}
+
+### Import PET documents
+
+POST http://localhost/api/imports/schema?project_id=1&team_id=1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczNjEwNDE4NywianRpIjoiNDA5YWE4MTMtM2Q1My00NWZmLTg3OWEtNzE4ZTUzMGViZmI4IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3MzYxMDQxODcsImNzcmYiOiI4ODdhZWZlZS0zNGY4LTRkNTYtYmYyYS0yZjc4Zjc4Yzc5ZjIiLCJleHAiOjE3MzYxMDc3ODd9.kXrVpqTH4WJm5EDklleBqCboVdlZMjeoUs_MywA010k
+Content-Type: application/json
+
+{
+  "modelling_language": "BPMN",
+  "schema_mentions": [
+    {
+      "tag": "Actor",
+      "description": "An individual, role, department, or system performing tasks in a process (e.g., Customer Support Agent, Inventory Management System). Usually contains a noun",
+      "entity_possible": true
+    },
+    {
+      "tag": "Activity Data",
+      "description": "Information used or produced during a task, like inputs, outputs, or processed model (e.g., Payment Details for Process Payment).",
+      "entity_possible": true
+    },
+    {
+      "tag": "Activity",
+      "description": "A specific, actionable step in a process (e.g., Verify Documents or Generate Invoice). Usually contains a verb",
+      "entity_possible": true
+    },
+    {
+      "tag": "XOR Gateway",
+      "description": "A decision point where only one path is chosen based on conditions (e.g., If Payment Approved, Ship Item; Else, Notify Customer).",
+      "entity_possible": false
+    },
+    {
+      "tag": "AND Gateway",
+      "description": "A process split where all paths run in parallel (e.g., Conduct Interview and Perform Background Check).",
+      "entity_possible": false
+    },
+    {
+      "tag": "Condition Specification",
+      "description": "Rules for decisions at gateways, defining which path to take (e.g., If Credit Score > 700, Approve Loan; Else, Manual Review).",
+      "entity_possible": true
+    },
+    {
+      "tag": "Further Specification",
+      "description": "Other Specifications, that are not given in a Condition.",
+      "entity_possible": false
+    }
+  ],
+  "schema_relations": [
+  {
+      "tag": "actor performer",
+      "description": null
+    },
+    {
+      "tag": "uses",
+      "description": null
+    },
+    {
+      "tag": "actor recipient",
+      "description": null
+    },
+    {
+      "tag": "flow",
+      "description": null
+    },
+    {
+      "tag": "same gateway",
+      "description": null
+    },
+    {
+      "tag": "further specification",
+      "description": null
+    }
+  ],
+  "schema_constraints": [
+    {
+      "is_directed": true,
+      "relation_tag": "uses",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "Activity Data"
+    },
+    {
+      "is_directed": false,
+      "relation_tag": "flow",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "XOR Gateway"
+    },
+    {
+      "is_directed": false,
+      "relation_tag": "flow",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "Activity"
+    },
+    {
+      "is_directed": false,
+      "relation_tag": "flow",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "AND Gateway"
+    },
+    {
+      "is_directed": true,
+      "relation_tag": "actor performer",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "Actor"
+    },
+    {
+      "is_directed": false,
+      "relation_tag": "flow",
+      "mention_head_tag": "XOR Gateway",
+      "mention_tail_tag": "Condition Specification"
+    },
+    {
+      "is_directed": true,
+      "relation_tag": "actor recipient",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "Actor"
+    },
+    {
+      "is_directed": false,
+      "relation_tag": "same gateway",
+      "mention_head_tag": "XOR Gateway",
+      "mention_tail_tag": "XOR Gateway"
+    },
+    {
+      "is_directed": true,
+      "relation_tag": "flow",
+      "mention_head_tag": "Condition Specification",
+      "mention_tail_tag": "Activity"
+    },
+    {
+      "is_directed": true,
+      "relation_tag": "flow",
+      "mention_head_tag": "Condition Specification",
+      "mention_tail_tag": "AND Gateway"
+    },
+    {
+      "is_directed": true,
+      "relation_tag": "further specification",
+      "mention_head_tag": "Activity",
+      "mention_tail_tag": "Further Specification"
+    },
+    {
+      "is_directed": false,
+      "relation_tag": "flow",
+      "mention_head_tag": "XOR Gateway",
+      "mention_tail_tag": "XOR Gateway"
+    }
+  ]
+}
