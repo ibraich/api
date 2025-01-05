@@ -1,8 +1,9 @@
 from app.models import Entity
 from app.db import db
+from app.repositories.base_repository import BaseRepository
 
 
-class EntityRepository:
+class EntityRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session
 
