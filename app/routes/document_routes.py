@@ -21,10 +21,17 @@ class DocumentRoutes(Resource):
         response = self.service.get_documents_by_user()
         return response
 @ns.route("/upload")
+@ns.route("/upload")
 class DocumentUpload(Resource):
     service = document_service
 
     @ns.doc(description="Upload a document to a specific project.")
+    @ns.expect(ns.model('DocumentUpload', {
+        'project_id': fields.Integer(required=True, description="ID of the project"),
+        'user_id': fields.Integer(required=True, description="ID of the user"),
+        'file_name': fields.String(required=True, description="Name of the document"),
+        'file_content': fields.String(required=True, description="Content of the document")
+    }))
     @ns.response(201, "Document uploaded successfully.")
     @ns.response(400, "Invalid input.")
     @ns.response(403, "Authorization required.")
@@ -33,25 +40,23 @@ class DocumentUpload(Resource):
         """
         Endpoint for uploading a document to a project.
         """
-        # Parse input data
-        file = request.files.get('file')
-        project_id = request.form.get('project_id')
-        user_id = request.form.get('user_id')  # Assume user_id is sent in the form
+        data = request.json
 
-        if not file or not project_id or not user_id:
-            raise BadRequest("File, project_id, and user_id are required.")
+        project_id = data.get('project_id')
+        user_id = data.get('user_id')
+        file_name = data.get('file_name')
+        file_content = data.get('file_content')
 
-        if file.filename.split('.')[-1].lower() != 'txt':
-            raise BadRequest("Only .txt files are allowed.")
-
-        file_content = file.read().decode('utf-8')
+        if not file_name or not file_content.strip():
+            raise BadRequest("File name and content are required.")
 
         # Upload document via service
         document_details = self.service.upload_document(
             user_id=int(user_id),
             project_id=int(project_id),
-            file_name=file.filename,
+            file_name=file_name,
             file_content=file_content
         )
 
         return {"message": "Document uploaded successfully.", "document": document_details}, 201
+
