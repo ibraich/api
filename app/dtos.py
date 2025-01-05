@@ -313,3 +313,13 @@ login_output_dto = api.model(
         ),
     },
 )
+
+mention_update_input_dto = api.model(
+    "UpdateMentionInput",
+    {
+        "tag": fields.String,
+        "token_ids": fields.List(fields.Integer),
+        "entity_id": fields.Integer,
+    },
+)
+

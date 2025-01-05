@@ -1,5 +1,5 @@
 from app.repositories.entity_repository import EntityRepository
-from werkzeug.exceptions import BadRequest, NotFound
+from werkzeug.exceptions import BadRequest, NotFound, Forbidden
 from app.services.user_service import UserService, user_service
 from app.repositories.mention_repository import MentionRepository
 
@@ -50,6 +50,13 @@ class EntityService:
 
         self.__entity_repository.delete_entity_by_id(entity_id)
         return {"message": "Entity deleted successfully."}
+
+    def check_entity_in_document_edit(self, entity_id, document_edit_id):
+        entity = self.__entity_repository.get_entity_by_id(entity_id)
+        if not entity:
+            raise BadRequest("Entity does not exist")
+        if entity.document_edit_id != document_edit_id:
+            raise Forbidden("Entity does not belong to this document")
 
     def create_entity(self, data):
 

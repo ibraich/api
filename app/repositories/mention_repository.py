@@ -91,3 +91,15 @@ class MentionRepository(BaseRepository):
         return (
             self.db_session.query(Mention).filter(Mention.entity_id == entity_id).all()
         )
+
+    def update_mention(self, mention_id, tag, entity_id):
+        mention = self.get_mention_by_id(mention_id)
+        if tag:
+            mention.tag = tag
+        if entity_id:
+            mention.entity_id = entity_id
+        elif entity_id == 0:
+            mention.entity_id = None
+        super().store_object(mention)
+        return mention
+

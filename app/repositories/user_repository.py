@@ -16,6 +16,8 @@ class UserRepository(BaseRepository):
 
     def get_user_by_document_edit_id(self, document_edit_id):
         document_edit = db.session.query(DocumentEdit).get(document_edit_id)
+        if document_edit is None:
+            raise NotFound("Document Edit not found")
         return document_edit.user_id
 
     def get_user_by_username(self, username):
