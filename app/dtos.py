@@ -100,3 +100,26 @@ relation_output_list_dto = api.model(
         "relations": fields.List(fields.Nested(relation_output_dto)),
     },
 )
+
+document_create_dto = api.model(
+    "DocumentUpload",
+    {
+        "project_id": fields.Integer(required=True, description="ID of the project"),
+        "file_name": fields.String(required=True, description="Name of the document"),
+        "file_content": fields.String(
+            required=True, description="Content of the document"
+        ),
+    },
+)
+
+document_create_output_dto = api.model(
+    "DocumentUploadOutput",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "content": fields.String,
+        "creator_id": fields.Integer,
+        "project_id": fields.Integer,
+        "state_id": fields.Integer,
+    },
+)

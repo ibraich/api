@@ -9,8 +9,12 @@ from app.services.project_service import ProjectService, project_service
 class DocumentService:
     __document_repository: DocumentRepository
     user_service: UserService
+    team_service: TeamService
+    project_service: ProjectService
 
-    def __init__(self, document_repository, user_service):
+    def __init__(
+        self, document_repository, user_service, team_service, project_service
+    ):
         self.__document_repository = document_repository
         self.user_service = user_service
         self.team_service = team_service
@@ -41,41 +45,49 @@ class DocumentService:
         ]
         return document_list
 
+    def upload_document(self, project_id, file_name, file_content):
+        """
+        Args:
+            project_id (int): ID of the project to upload the document to.
+            file_name (str): Name of the file.
+            file_content (str): Content of the file.
 
-document_service = DocumentService(DocumentRepository(), user_service)
+        Raises:
+            NotFound: If the project or team is not found, or the user is not authorized.
+            ValueError: If the file content is invalid or file name is missing.
 
-def upload_document(self, user_id, project_id, file_name, file_content):
-    """
-    Args:
-        user_id (int): ID of the uploading user.
-        project_id (int): ID of the project to upload the document to.
-        file_name (str): Name of the file.
-        file_content (str): Content of the file.
-    
-    Raises:
-        NotFound: If the project or team is not found, or the user is not authorized.
-        ValueError: If the file content is invalid or file name is missing.
-    
-    Returns:
-        dict: Details of the uploaded document.
-    """
-    # Validate that the user belongs to the team that owns the project
-    project = self.__project_service.get_project_by_id(project_id)
-    if not project:
-        raise NotFound("Project not found.")
+        Returns:
+            dict: Details of the uploaded document.
+        """
 
-    team_id = project.team_id
-    if not self.user_service.is_user_in_team(user_id, team_id):
-        raise NotFound("User does not belong to the team owning this project.")
+        user_id = self.user_service.get_logged_in_user_id()
 
-    # Validate file content
-    if not file_name or not file_content.strip():
-        raise ValueError("Invalid file content or file name.")
+        # Validate that the user belongs to the team that owns the project
+        project = self.project_service.get_project_by_id(project_id)
+        if not project:
+            raise NotFound("Project not found.")
 
-    # Store the document
-    document = self.__document_repository.create_document(
-        name=file_name, 
-        content=file_content, 
-        project_id=project_id
-    )
-    return {"id": document.id, "name": document.name, "project_id": project_id}
+        team_id = project.team_id
+        self.user_service.check_user_in_team(user_id, team_id)
+
+        # Validate file content
+        if not file_name or not file_content.strip():
+            raise ValueError("Invalid file content or file name.")
+
+        # Store the document
+        document = self.__document_repository.create_document(
+            name=file_name, content=file_content, project_id=project_id, user_id=user_id
+        )
+        return {
+            "id": document.id,
+            "name": document.name,
+            "project_id": document.project_id,
+            "content": document.content,
+            "state_id": document.state_id,
+            "creator_id": document.creator_id,
+        }
+
+
+document_service = DocumentService(
+    DocumentRepository(), user_service, team_service, project_service
+)
