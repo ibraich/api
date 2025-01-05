@@ -79,6 +79,11 @@ class MentionRepository(BaseRepository):
         self.db_session.commit()
         return len(mentions)
 
+    def save_mention(
+        self,
+    ):
+        self.db_session.commit()
+
     def get_mentions_by_entity_id(self, entity_id):
         if not isinstance(entity_id, int) or entity_id <= 0:
             raise ValueError("Invalid entity ID. It must be a positive integer.")
@@ -97,3 +102,4 @@ class MentionRepository(BaseRepository):
             mention.entity_id = None
         super().store_object(mention)
         return mention
+

@@ -59,6 +59,15 @@ document_output_dto = api.model(
     },
 )
 
+entity_input_dto = api.model(
+    "EntityInput",
+    {
+        "document_edit_id": fields.Integer(required=True),
+        "mention_ids": fields.List(fields.Integer, required=True),
+    },
+)
+
+
 entity_output_dto = api.model(
     "EntityOutput",
     {
@@ -313,3 +322,4 @@ mention_update_input_dto = api.model(
         "entity_id": fields.Integer,
     },
 )
+

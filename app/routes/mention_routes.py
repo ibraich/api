@@ -20,6 +20,7 @@ ns = Namespace("mentions", description="Mention related operations")
 class MentionResource(Resource):
     service = mention_service
 
+    @jwt_required()
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
     def post(self):
@@ -68,3 +69,4 @@ class MentionDeletionResource(Resource):
         entity_id = data.get("entity_id")
         response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
         return response
+

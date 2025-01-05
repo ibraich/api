@@ -1,9 +1,8 @@
 from flask_restx import Namespace, Resource
 from werkzeug.exceptions import BadRequest
-
 from app.services.document_service import document_service
-
 from app.dtos import document_output_dto
+from flask_jwt_extended import jwt_required
 
 ns = Namespace("documents", description="Document related operations")
 
@@ -15,6 +14,7 @@ ns = Namespace("documents", description="Document related operations")
 class DocumentRoutes(Resource):
     service = document_service
 
+    @jwt_required()
     @ns.doc(description="Get all documents current user has access to")
     @ns.marshal_with(document_output_dto, as_list=True)
     def get(self):
@@ -30,6 +30,7 @@ class DocumentRoutes(Resource):
 class DocumentProjectRoutes(Resource):
     service = document_service
 
+    @jwt_required()
     @ns.doc(description="Get all documents of project")
     @ns.marshal_with(document_output_dto, as_list=True)
     def get(self, project_id):

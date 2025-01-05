@@ -1,6 +1,4 @@
-from werkzeug.exceptions import NotFound
-
-from app.models import UserTeam, DocumentEdit, User, Team, Project, Document
+from app.models import UserTeam, DocumentEdit, User, Team, Project, Document, Schema
 from app.repositories.base_repository import BaseRepository
 from app.db import db
 
@@ -38,5 +36,14 @@ class UserRepository(BaseRepository):
             .join(Project, Project.team_id == Team.id)
             .join(Document, Document.project_id == Project.id)
             .filter((Document.id == document_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
+
+    def check_user_schema_accessible(self, user_id, schema_id):
+        return (
+            db.session.query(UserTeam)
+            .join(Team, UserTeam.team_id == Team.id)
+            .join(Schema, Schema.team_id == Team.id)
+            .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))
             .first()
         )
