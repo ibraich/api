@@ -28,7 +28,7 @@ class DocumentEditService:
         self.document_recommendation_service = document_recommendation_service
 
     def create_document_edit(self, document_id):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
 
         # Check if document edit already exists
         doc_edit = self.get_document_edit_by_document(document_id, user_id)

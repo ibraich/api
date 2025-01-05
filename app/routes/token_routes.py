@@ -2,6 +2,7 @@ from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from app.dtos import token_output_list_dto
 from app.services.token_service import token_service
+from flask_jwt_extended import jwt_required
 
 ns = Namespace("tokens", description="Token related operations")
 
@@ -14,6 +15,7 @@ ns = Namespace("tokens", description="Token related operations")
 class MentionQueryResource(Resource):
     service = token_service
 
+    @jwt_required()
     @ns.doc(description="Get Tokens of document")
     @ns.marshal_with(token_output_list_dto)
     def get(self, document_id):
