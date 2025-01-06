@@ -1,5 +1,5 @@
 from app.models import DocumentEdit
-from app.db import db
+from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
 
@@ -14,12 +14,11 @@ class DocumentEditRepository(BaseRepository):
             schema_id=schema_id,
             state_id=1,
         )
-        super().store_object(document_edit)
-        return document_edit
+        return super().store_object_transactional(document_edit)
 
     def get_document_edit_by_document(self, document_id, user_id):
         return (
-            self.db_session.query(DocumentEdit)
+            Session.query(DocumentEdit)
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.user_id == user_id)
             .first()

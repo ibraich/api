@@ -10,11 +10,13 @@ from app.models import (
     DocumentRecommendation,
 )
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy import exc, and_
-from app.db import db
+from sqlalchemy import and_
+from app.db import db, Session
 
 
 class DocumentRepository(BaseRepository):
+    DOCUMENT_STATE_ID_FINISHED = 3
+
     def get_documents_by_user(self, user_id):
         return (
             db.session.query(
@@ -48,7 +50,7 @@ class DocumentRepository(BaseRepository):
 
     def get_document_by_id(self, document_id):
         return (
-            db.session.query(
+            Session.query(
                 Document.content,
                 Document.name,
                 Document.project_id,
@@ -68,3 +70,13 @@ class DocumentRepository(BaseRepository):
                 ),
             )
         ).first()
+
+    def save(self, name, content, project_id, creator_id, state_id):
+        document = Document(
+            name=name,
+            content=content,
+            project_id=project_id,
+            creator_id=creator_id,
+            state_id=state_id,
+        )
+        return super().store_object_transactional(document)

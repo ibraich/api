@@ -9,8 +9,7 @@ class TokenMentionRepository(BaseRepository):
 
     def create_token_mention(self, token_id, mention_id):
         token_mention = TokenMention(token_id=token_id, mention_id=mention_id)
-        token_mention = self.store_object(token_mention)
-        return token_mention
+        return self.store_object_transactional(token_mention)
 
     def get_token_mention(self, token_ids, mention_ids):
         return (
@@ -23,10 +22,14 @@ class TokenMentionRepository(BaseRepository):
         )
 
     def get_token_mentions_by_mention_id(self, mention_id):
-        return self.db_session.query(TokenMention).filter_by(mention_id=mention_id).all()
+        return (
+            self.db_session.query(TokenMention).filter_by(mention_id=mention_id).all()
+        )
 
     def delete_token_mention_by_id(self, token_mention_id):
-        token_mention = self.db_session.query(TokenMention).filter_by(id=token_mention_id).first()
+        token_mention = (
+            self.db_session.query(TokenMention).filter_by(id=token_mention_id).first()
+        )
         if token_mention:
             self.db_session.delete(token_mention)
             self.db_session.commit()

@@ -20,6 +20,19 @@ class RelationRepository(BaseRepository):
             .all()
         )
 
+    def save_relation_in_edit(
+        self, tag, is_directed, mention_head_id, mention_tail_id, document_edit_id
+    ) -> Relation:
+        return super().store_object_transactional(
+            Relation(
+                tag=tag,
+                isDirected=is_directed,
+                mention_head_id=mention_head_id,
+                mention_tail_id=mention_tail_id,
+                document_edit_id=document_edit_id,
+            )
+        )
+
     def delete_relation_by_id(self, relation_id):
         relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
         if not relation:
@@ -32,10 +45,14 @@ class RelationRepository(BaseRepository):
         return self.db_session.query(Relation).filter_by(id=relation_id).first()
 
     def get_relations_by_mention(self, mention_id):
-        return self.db_session.query(Relation).filter(
-            (Relation.mention_head_id == mention_id) |
-            (Relation.mention_tail_id == mention_id)
-        ).all()
+        return (
+            self.db_session.query(Relation)
+            .filter(
+                (Relation.mention_head_id == mention_id)
+                | (Relation.mention_tail_id == mention_id)
+            )
+            .all()
+        )
 
     def delete_relations_by_mention(self, mention_id):
         relations = self.get_relations_by_mention(mention_id)

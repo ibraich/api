@@ -8,15 +8,20 @@ from app.models import (
     SchemaRelation,
     SchemaConstraint,
     UserTeam,
+    Project,
 )
 from app.repositories.base_repository import BaseRepository
-from app.db import db
+from app.db import db, Session
+
+ModellingLanguagesByName = {
+    "BPMN": 1,
+}
 
 
 class SchemaRepository(BaseRepository):
     def get_schema_by_id(self, schema_id):
         return (
-            db.session.query(
+            Session.query(
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
@@ -42,23 +47,41 @@ class SchemaRepository(BaseRepository):
 
     def get_schema_mentions_by_schema(self, schema_id):
         return (
-            db.session.query(SchemaMention)
+            Session.query(SchemaMention)
             .filter(SchemaMention.schema_id == schema_id)
             .all()
         )
 
     def get_schema_relations_by_schema(self, schema_id):
         return (
-            db.session.query(SchemaRelation)
+            Session.query(SchemaRelation)
             .filter(SchemaRelation.schema_id == schema_id)
             .all()
+        )
+
+    def get_by_project(self, project_id):
+        return (
+            db.session.query(
+                Schema.id,
+                Schema.isFixed,
+                Schema.team_id,
+                Team.name.label("team_name"),
+                ModellingLanguage.type.label("modelling_language"),
+            )
+            .join(Team, Schema.team_id == Team.id)
+            .join(
+                ModellingLanguage, ModellingLanguage.id == Schema.modellingLanguage_id
+            )
+            .join(Project, Project.schema_id == Schema.id)
+            .filter(Project.id == project_id)
+            .first()
         )
 
     def get_schema_constraints_by_schema(self, schema_id):
         mention_head = aliased(SchemaMention)
         mention_tail = aliased(SchemaMention)
         return (
-            db.session.query(
+            Session.query(
                 SchemaConstraint.id,
                 SchemaConstraint.isDirected,
                 SchemaRelation.id.label("relation_id"),
@@ -91,4 +114,50 @@ class SchemaRepository(BaseRepository):
                 & (SchemaConstraint.schema_relation_id == SchemaRelation.id)
             )
             .all()
+        )
+
+    def create_schema(self, modelling_language_id: int, team_id: int) -> Schema:
+        return super().store_object_transactional(
+            Schema(modellingLanguage_id=modelling_language_id, team_id=team_id)
+        )
+
+    def create_schema_mention(
+        self,
+        schema_id: int,
+        tag: str,
+        description: str,
+        entity_possible: bool,
+        color: str,
+    ) -> SchemaMention:
+        return super().store_object_transactional(
+            SchemaMention(
+                schema_id=schema_id,
+                tag=tag,
+                description=description,
+                entityPossible=entity_possible,
+                color=color,
+            )
+        )
+
+    def create_schema_relation(
+        self, schema_id: int, tag: str, description: str
+    ) -> SchemaRelation:
+        return super().store_object_transactional(
+            SchemaRelation(schema_id=schema_id, tag=tag, description=description)
+        )
+
+    def create_schema_constraint(
+        self,
+        schema_relation_id: int,
+        schema_mention_id_head: int,
+        schema_mention_id_tail: int,
+        is_directed: bool,
+    ) -> SchemaConstraint:
+        return super().store_object_transactional(
+            SchemaConstraint(
+                schema_relation_id=schema_relation_id,
+                schema_mention_id_head=schema_mention_id_head,
+                schema_mention_id_tail=schema_mention_id_tail,
+                isDirected=is_directed,
+            )
         )

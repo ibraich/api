@@ -67,7 +67,6 @@ entity_input_dto = api.model(
     },
 )
 
-
 entity_output_dto = api.model(
     "EntityOutput",
     {
@@ -322,4 +321,3 @@ mention_update_input_dto = api.model(
         "entity_id": fields.Integer,
     },
 )
-

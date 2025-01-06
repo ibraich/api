@@ -1,3 +1,4 @@
+from app.models import Entity
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
 from app.services.user_service import UserService, user_service
@@ -29,6 +30,9 @@ class EntityService:
             for entity in entities
         ]
         return {"entities": entity_list}
+
+    def create_in_edit(self, document_edit_id: int) -> Entity:
+        return self.__entity_repository.create_in_edit(document_edit_id)
 
     def delete_entity(self, entity_id):
         entity = self.__entity_repository.get_entity_by_id(entity_id)
