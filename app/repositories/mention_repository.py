@@ -81,6 +81,11 @@ class MentionRepository(BaseRepository):
     def add_to_entity(self, entity_id: int, mention_id: int):
         Session.query(Mention).filter_by(id=mention_id).update({"entity_id": entity_id})
 
+    def save_mention(
+        self,
+    ):
+        self.db_session.commit()
+
     def get_mentions_by_entity_id(self, entity_id):
         if not isinstance(entity_id, int) or entity_id <= 0:
             raise ValueError("Invalid entity ID. It must be a positive integer.")
@@ -88,3 +93,14 @@ class MentionRepository(BaseRepository):
         return (
             self.db_session.query(Mention).filter(Mention.entity_id == entity_id).all()
         )
+
+    def update_mention(self, mention_id, tag, entity_id):
+        mention = self.get_mention_by_id(mention_id)
+        if tag:
+            mention.tag = tag
+        if entity_id:
+            mention.entity_id = entity_id
+        elif entity_id == 0:
+            mention.entity_id = None
+        super().store_object(mention)
+        return mention

@@ -16,6 +16,8 @@ class UserRepository(BaseRepository):
 
     def get_user_by_document_edit_id(self, document_edit_id) -> int:
         document_edit = Session.query(DocumentEdit).get(document_edit_id)
+        if document_edit is None:
+            raise NotFound("Document Edit not found")
         return int(document_edit.user_id)
 
     def get_user_by_username(self, username):
@@ -39,7 +41,7 @@ class UserRepository(BaseRepository):
 
     def check_user_schema_accessible(self, user_id, schema_id):
         return (
-            db.session.query(UserTeam)
+            Session.query(UserTeam)
             .join(Team, UserTeam.team_id == Team.id)
             .join(Schema, Schema.team_id == Team.id)
             .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))

@@ -5,7 +5,12 @@ from flask_restx import Resource, Namespace
 
 from app.db import transactional
 from app.services.mention_services import mention_service
-from app.dtos import mention_output_dto, mention_output_list_dto, mention_input_dto
+from app.dtos import (
+    mention_output_dto,
+    mention_output_list_dto,
+    mention_input_dto,
+    mention_update_input_dto,
+)
 
 ns = Namespace("mentions", description="Mention related operations")
 
@@ -56,4 +61,15 @@ class MentionDeletionResource(Resource):
     @ns.doc(description="Delete a mention and its related relations")
     def delete(self, mention_id):
         response = self.service.delete_mention(mention_id)
+        return response
+
+    @jwt_required()
+    @ns.expect(mention_update_input_dto)
+    @ns.marshal_with(mention_output_dto)
+    def patch(self, mention_id):
+        data = request.get_json()
+        tag = data.get("tag")
+        token_ids = data.get("token_ids")
+        entity_id = data.get("entity_id")
+        response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
         return response

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from app.config import Config
 from flask import session
-from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized
+from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized, NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.repositories.user_repository import UserRepository
 from app.repositories.user_team_repository import UserTeamRepository
@@ -66,6 +66,12 @@ class UserService:
             is None
         ):
             raise Forbidden("You cannot access this document")
+
+    def check_user_document_edit_accessible(self, user_id, document_edit_id):
+        document_edit_user_id = self.get_user_by_document_edit_id(document_edit_id)
+
+        if int(user_id) != int(document_edit_user_id):
+            raise NotFound("The logged in user does not belong to this document.")
 
     def check_user_schema_accessible(self, user_id, schema_id):
         if (

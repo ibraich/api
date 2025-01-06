@@ -68,5 +68,14 @@ class TokenService:
             ]
         }
 
+    def check_tokens_in_document_edit(self, token_ids, document_edit_id):
+        document_tokens = self.__token_repository.get_tokens_by_document_edit(
+            document_edit_id
+        )
+        document_token_ids = [document_token.id for document_token in document_tokens]
+        for token_id in token_ids:
+            if token_id not in document_token_ids:
+                raise BadRequest("Tokens do not belong to this document.")
+
 
 token_service = TokenService(TokenRepository(), user_service)
