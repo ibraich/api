@@ -68,9 +68,9 @@ class MentionService:
 
         return {"mentions": list(mentions_dict.values())}
 
-    def create_mentions(self, data, user_id: int):
+    def create_mentions(self, data):
         # check if user is allowed to access this document edit
-        logged_in_user_id = user_id
+        logged_in_user_id = self.user_service.get_logged_in_user_id()
         document_edit_user_id = user_service.get_user_by_document_edit_id(
             data["document_edit_id"]
         )

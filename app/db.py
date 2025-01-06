@@ -26,7 +26,6 @@ def transactional(func):
             # Start a transaction
             with Session.begin():  # Automatically commits
                 result = func(*args, **kwargs)
-            print("Transaction committed.")
             return result
         except Exception as e:
             Session.rollback()  # Explicit rollback if needed

@@ -164,7 +164,6 @@ class ImportService:
                         for t in mention.get("tokenDocumentIndices")
                     ],
                 },
-                user_id,
             )
             mentions_by_index[index] = created_mention
 

@@ -23,8 +23,7 @@ class MentionResource(Resource):
     @jwt_required()
     @transactional
     def post(self):
-        user_id: int = int(get_jwt_identity())
-        return self.service.create_mentions(request.json, user_id)
+        return self.service.create_mentions(request.json)
 
 
 @ns.route("/<int:document_edit_id>")
