@@ -89,6 +89,13 @@ class RelationService:
         if mention_head is None or mention_tail is None:
             raise BadRequest("Invalid mention ids.")
 
+        # check if mention belongs to same edit
+        if (
+            mention_head.document_edit_id != data["document_edit_id"]
+            or mention_tail.document_edit_id != data["document_edit_id"]
+        ):
+            raise BadRequest("Invalid mention id")
+
         # get duplicate relation if any
         duplicate_relations = (
             self.__relation_repository.get_relations_by_mention_head_and_tail(
@@ -99,7 +106,7 @@ class RelationService:
         # check for duplicate mention
         if duplicate_relations is not None:
             if len(duplicate_relations) > 0:
-                raise Conflict("Token mention already exists.")
+                raise Conflict("Relation already exists.")
 
         # save relation
         relation = self.__relation_repository.create_relation(
