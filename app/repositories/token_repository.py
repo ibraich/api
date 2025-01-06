@@ -1,4 +1,4 @@
-from app.db import db
+from app.db import db, Session
 from app.models import Token, DocumentEdit
 from app.repositories.base_repository import BaseRepository
 
@@ -19,7 +19,7 @@ class TokenRepository(BaseRepository):
 
     def get_tokens_by_document_edit(self, document_edit_id):
         return (
-            db.session.query(Token)
+            Session.query(Token)
             .select_from(DocumentEdit)
             .join(Token, Token.document_id == DocumentEdit.document_id)
             .filter(DocumentEdit.id == document_edit_id)
