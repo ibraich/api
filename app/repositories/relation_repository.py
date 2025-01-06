@@ -68,15 +68,8 @@ class RelationRepository(BaseRepository):
         return (
             self.db_session.query(Relation)
             .filter(
-                (
-                    (Relation.mention_head_id == mention_head_id)
-                    & (Relation.mention_tail_id == mention_tail_id)
-                )
-                | (
-                    (Relation.mention_head_id == mention_tail_id)
-                    & (Relation.mention_tail_id == mention_head_id)
-                    & (Relation.isDirected == False)
-                )
+                (Relation.mention_head_id == mention_head_id)
+                | (Relation.mention_tail_id == mention_tail_id)
             )
             .all()
         )
