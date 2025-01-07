@@ -1,5 +1,6 @@
 from app.models import (
     Document,
+    DocumentRecommendation,
     DocumentState,
     Project,
     DocumentEditState,
@@ -11,7 +12,7 @@ from app.models import (
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import exc, and_
 from app.db import db
-
+from werkzeug.exceptions import NotFound
 
 class DocumentRepository(BaseRepository):
     def get_documents_by_project(self, project_id):
@@ -59,3 +60,35 @@ class DocumentRepository(BaseRepository):
             )
             .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
         )
+
+
+class Recommendation_a_r:
+    def get_recommendation_by_id(self, recommendation_id):
+        """Fetch a recommendation by its ID."""
+        recommendation = db.session.query(DocumentRecommendation).filter(
+            DocumentRecommendation.id == recommendation_id
+        ).first()
+        if not recommendation:
+            raise NotFound("Recommendation not found")
+        return recommendation
+
+    def mark_recommendation_as_not_shown(self, recommendation_id):
+        """Mark a recommendation as not shown."""
+        recommendation = self.get_recommendation_by_id(recommendation_id)
+        recommendation.is_shown = False
+        db.session.commit()
+
+    def copy_recommendation_to_edit(self, recommendation_id):
+        """Copy recommendation details to a document edit."""
+        recommendation = self.get_recommendation_by_id(recommendation_id)
+        if recommendation.is_entity:
+            raise ValueError("Cannot copy entity recommendations.")
+        
+        document_edit = DocumentEdit(
+            document_id=recommendation.document_id,
+            content=recommendation.content,
+            created_by=recommendation.created_by,
+        )
+        db.session.add(document_edit)
+        db.session.commit()
+        return document_edit

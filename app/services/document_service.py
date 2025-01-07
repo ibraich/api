@@ -43,3 +43,28 @@ class DocumentService:
 
 
 document_service = DocumentService(DocumentRepository(), user_service)
+
+
+
+
+
+
+
+
+class DocumentService_Reccomendation:
+    def __init__(self, document_repository):
+        self.__document_repository = document_repository
+
+    def accept_recommendation(self, recommendation_id):
+        """Accept a recommendation by copying it and marking it as not shown."""
+        recommendation = self.__document_repository.get_recommendation_by_id(recommendation_id)
+        if recommendation.is_entity:
+            raise ValueError("Cannot accept entity recommendations.")
+        
+        self.__document_repository.mark_recommendation_as_not_shown(recommendation_id)
+        return self.__document_repository.copy_recommendation_to_edit(recommendation_id)
+
+    def reject_recommendation(self, recommendation_id):
+        """Reject a recommendation by marking it as not shown."""
+        self.__document_repository.mark_recommendation_as_not_shown(recommendation_id)
+        return {"status": "Recommendation rejected"}
