@@ -6,7 +6,7 @@ from flask_restx import Api
 from app.routes.document_routes import ns as document_ns
 
 
-class TestDocumentRoutes(unittest.TestCase):
+class TestDocumentRoutes__Recomen_SingleStep(unittest.TestCase):
     def setUp(self):
         app = Flask(__name__)
         api = Api(app)

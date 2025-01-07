@@ -1,13 +1,13 @@
 
 import unittest
 from unittest.mock import MagicMock
-from app.services.document_service import DocumentService
+from app.services.document_service import DocumentService_Recomen_SingleStep
 
 
-class TestDocumentService(unittest.TestCase):
+class TestDocumentService_Recomen_SingleStep(unittest.TestCase):
     def setUp(self):
         self.mock_repository = MagicMock()
-        self.service = DocumentService(self.mock_repository)
+        self.service = DocumentService_Recomen_SingleStep(self.mock_repository)
 
     def test_regenerate_recommendations(self):
         self.mock_repository.get_user_id.return_value = 1
