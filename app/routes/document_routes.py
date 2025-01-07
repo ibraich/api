@@ -28,9 +28,9 @@ class DocumentRoutes(Resource):
 
 
 
-ns = Namespace("documents", description="Document-related operations")
 
-document_service = DocumentService_Reccomendation_a_r(DocumentService_Reccomendation_a_r())
+
+document_service = DocumentService(DocumentService_Reccomendation_a_r())
 class RecommendationRoutes(Resource):
     def put(self, recommendation_id):
         """Accept or reject a recommendation."""
