@@ -7,6 +7,29 @@ class RelationRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
 
+    def create_relation(
+        self,
+        tag,
+        document_edit_id,
+        isDirected,
+        mention_head_id,
+        mention_tail_id,
+        document_recommendation_id=None,
+        is_shown_recommendation=False,
+    ):
+
+        relation = Relation(
+            tag=tag,
+            document_edit_id=document_edit_id,
+            isDirected=isDirected,
+            mention_head_id=mention_head_id,
+            mention_tail_id=mention_tail_id,
+            document_recommendation_id=document_recommendation_id,
+            isShownRecommendation=is_shown_recommendation,
+        )
+        self.store_object(relation)
+        return relation
+
     def get_relations_by_document_edit(self, document_edit_id):
         return (
             self.db_session.query(Relation)
@@ -50,6 +73,16 @@ class RelationRepository(BaseRepository):
             .filter(
                 (Relation.mention_head_id == mention_id)
                 | (Relation.mention_tail_id == mention_id)
+            )
+            .all()
+        )
+
+    def get_relations_by_mention_head_and_tail(self, mention_head_id, mention_tail_id):
+        return (
+            self.db_session.query(Relation)
+            .filter(
+                (Relation.mention_head_id == mention_head_id)
+                | (Relation.mention_tail_id == mention_tail_id)
             )
             .all()
         )

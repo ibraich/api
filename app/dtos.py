@@ -91,6 +91,17 @@ mention_output_list_dto = api.model(
     },
 )
 
+relation_input_dto = api.model(
+    "RelationInput",
+    {
+        "tag": fields.String,
+        "document_edit_id": fields.Integer(required=True),
+        "isDirected": fields.Boolean,
+        "mention_head_id": fields.Integer(required=True),
+        "mention_tail_id": fields.Integer(required=True),
+    },
+)
+
 relation_output_dto = api.model(
     "RelationOutput",
     {
