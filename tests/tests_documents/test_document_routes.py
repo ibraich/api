@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 from flask import Flask
 from app.routes.document_routes import ns as document_ns
+from app.routes.document_routes import RecommendationRoutes
 from flask_restx import Api
 
 class TestDocumentRoutes(unittest.TestCase):

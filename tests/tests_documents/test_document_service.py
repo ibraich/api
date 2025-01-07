@@ -1,14 +1,14 @@
 
 import unittest
 from unittest.mock import MagicMock
-from app.services.document_service import DocumentService
-from app.repositories.document_repository import DocumentRepository
+from app.services.document_service import DocumentService_Reccomendation_a_r
+from app.repositories.document_repository import Recommendation_a_r
 from werkzeug.exceptions import NotFound
 
 class TestDocumentService(unittest.TestCase):
     def setUp(self):
-        self.mock_repository = MagicMock(spec=DocumentRepository)
-        self.service = DocumentService(self.mock_repository, MagicMock())
+        self.mock_repository = MagicMock(spec=Recommendation_a_r)
+        self.service = DocumentService_Reccomendation_a_r(self.mock_repository, MagicMock())
 
     def test_accept_recommendation(self):
         # Arrange
