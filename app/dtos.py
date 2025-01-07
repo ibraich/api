@@ -67,7 +67,6 @@ entity_input_dto = api.model(
     },
 )
 
-
 entity_output_dto = api.model(
     "EntityOutput",
     {

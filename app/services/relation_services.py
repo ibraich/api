@@ -1,8 +1,8 @@
 from werkzeug.exceptions import BadRequest, NotFound, Conflict
 
 from app.repositories.mention_repository import MentionRepository
+from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
-from app.services.user_service import UserService, user_service
 
 
 class RelationService:
@@ -35,6 +35,18 @@ class RelationService:
         ]
 
         return {"relations": relation_list}
+
+    def save_relation_in_edit(
+        self,
+        tag: str,
+        is_directed: bool,
+        mention_head_id: int,
+        mention_tail_id: int,
+        document_edit_id: int,
+    ) -> Relation:
+        return self.__relation_repository.save_relation_in_edit(
+            tag, is_directed, mention_head_id, mention_tail_id, document_edit_id
+        )
 
     def delete_relation_by_id(self, relation_id):
         if not isinstance(relation_id, int) or relation_id <= 0:
@@ -128,5 +140,5 @@ class RelationService:
 
         return response
 
-
 relation_service = RelationService(RelationRepository(), MentionRepository())
+

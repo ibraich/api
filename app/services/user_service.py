@@ -7,6 +7,7 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.user_team_repository import UserTeamRepository
 from flask_jwt_extended import create_access_token, get_jwt_identity
 
+
 class UserService:
     __user_repository: UserRepository
     user_team_repository: UserTeamRepository
@@ -26,7 +27,7 @@ class UserService:
 
     def get_logged_in_user_id(self):
         try:
-            user_id = get_jwt_identity()
+            user_id = int(get_jwt_identity())
             return user_id
         except Exception as e:
             raise Unauthorized(str(e))

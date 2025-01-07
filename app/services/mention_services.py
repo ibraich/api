@@ -73,7 +73,6 @@ class MentionService:
         return {"mentions": list(mentions_dict.values())}
 
     def create_mentions(self, data):
-
         # check if user is allowed to access this document edit
         logged_in_user_id = user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
@@ -103,6 +102,9 @@ class MentionService:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
         return mention
+
+    def add_to_entity(self, entity_id: int, mention_id: int):
+        self.__mention_repository.add_to_entity(entity_id, mention_id)
 
     def copy_mention_recommendations_to_document_edit(
         self,

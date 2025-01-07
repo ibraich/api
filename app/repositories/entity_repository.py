@@ -35,6 +35,11 @@ class EntityRepository(BaseRepository):
             .all()
         )
 
+    def create_in_edit(self, document_edit_id: int) -> Entity:
+        return super().store_object_transactional(
+            Entity(document_edit_id=document_edit_id, isShownRecommendation=True)
+        )
+
     def delete_entity_by_id(self, entity_id):
         entity = self.get_entity_by_id(entity_id)
         if entity:

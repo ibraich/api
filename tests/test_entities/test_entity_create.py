@@ -40,8 +40,8 @@ class TestEntityServiceCreateEntity(unittest.TestCase):
         mock_get_user_by_document_edit_id.return_value = 1
 
         # Mock mentions
-        mention1 = Mock(tag="TagA", id=1, entity_id=None)
-        mention2 = Mock(tag="TagA", id=2, entity_id=None)
+        mention1 = Mock(tag="TagA", id=1, entity_id=None, document_edit_id=123)
+        mention2 = Mock(tag="TagA", id=2, entity_id=None, document_edit_id=123)
         mock_get_mention_by_id.side_effect = [mention1, mention2]
 
         # Mock entity creation
@@ -113,8 +113,8 @@ class TestEntityServiceCreateEntity(unittest.TestCase):
         mock_get_user_by_document_edit_id.return_value = 1
 
         # Mock mentions with multiple tags
-        mention1 = Mention(tag="TagA", id=1, entity_id=None)
-        mention2 = Mention(tag="TagB", id=2, entity_id=None)
+        mention1 = Mention(tag="TagA", id=1, entity_id=None, document_edit_id=123)
+        mention2 = Mention(tag="TagB", id=2, entity_id=None, document_edit_id=123)
         mock_get_mention_by_id.side_effect = [mention1, mention2]
 
         # Expect BadRequest exception
