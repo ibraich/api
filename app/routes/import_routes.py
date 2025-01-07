@@ -18,8 +18,15 @@ class Imports(Resource):
     @ns.doc(description="Import documents from other source.")
     @ns.doc(
         params={
-            "project_id": "Target project of the documents. (Defines the target schema)",
-            "source": "Data source type. Only option: 'pet'",
+            "project_id": {
+                "description": "Target project of the documents. (Defines the target schema)",
+                "required": True,
+            },
+            "source": {
+                "description": "Data source type. Only option: 'pet'",
+                "required": True,
+                "enum": ["pet"],
+            },
         }
     )
     @jwt_required()
