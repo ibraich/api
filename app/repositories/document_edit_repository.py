@@ -23,3 +23,8 @@ class DocumentEditRepository(BaseRepository):
             .filter(DocumentEdit.user_id == user_id)
             .first()
         )
+
+    def get_document_edit_by_id(self, document_edit_id):
+        return (
+            self.db_session.query(DocumentEdit).filter_by(id=document_edit_id).first()
+        )
