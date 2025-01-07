@@ -51,7 +51,6 @@ class Imports(Resource):
     @ns.doc(
         params={
             "team_id": "Target team of the schema.",
-            "project_id": "Target project of the schema.",
         }
     )
     @jwt_required()
