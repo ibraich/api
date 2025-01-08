@@ -15,22 +15,12 @@ from app.db import db
 from werkzeug.exceptions import NotFound
 
 class DocumentRepository(BaseRepository):
-    def get_documents_by_project(self, project_id):
-        return (
-            db.session.query(
-                Document.id,
-                Document.content,
-                Document.name,
-                Document.project_id,
-                DocumentState.type,
-                Project.name.label("project_name"),
-            )
-            .join(Project)
-            .join(DocumentState)
-            .filter(Document.project_id == project_id)
-        ).all()
+    DOCUMENT_STATE_ID_FINISHED = 3
 
     def get_documents_by_user(self, user_id):
+        """
+        Fetch all documents associated with a specific user.
+        """
         return (
             db.session.query(
                 Document.id,
@@ -60,6 +50,7 @@ class DocumentRepository(BaseRepository):
             )
             .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
         )
+
     def get_recommendation_by_id(self, recommendation_id):
         """
         Fetch a recommendation by its ID.
