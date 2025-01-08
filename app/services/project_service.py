@@ -55,6 +55,7 @@ class ProjectService:
                     "team_id": project.team_id,
                     "team_name": project.team_name,
                     "schema_id": project.schema_id,
+                    "schema_name": project.schema_name,
                 }
                 for project in projects
             ]

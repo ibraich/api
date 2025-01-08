@@ -52,6 +52,7 @@ document_output_dto = api.model(
         "team_id": fields.Integer,
         "team_name": fields.String,
         "schema_id": fields.Integer,
+        "schema_name": fields.String,
         "project_id": fields.Integer,
         "project_name": fields.String,
         "document_edit_id": fields.Integer,
@@ -165,6 +166,7 @@ schema_output_dto = api.model(
     "SchemaOutput",
     {
         "id": fields.Integer,
+        "name": fields.String,
         "is_fixed": fields.Boolean,
         "modellingLanguage": fields.String,
         "team_id": fields.Integer,
@@ -257,6 +259,7 @@ project_user_output_dto = api.model(
         "team_id": fields.Integer,
         "team_name": fields.String,
         "schema_id": fields.Integer,
+        "schema_name": fields.String,
     },
 )
 

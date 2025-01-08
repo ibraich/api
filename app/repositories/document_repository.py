@@ -8,6 +8,7 @@ from app.models import (
     User,
     UserTeam,
     DocumentRecommendation,
+    Schema,
 )
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import and_
@@ -26,6 +27,7 @@ class DocumentRepository(BaseRepository):
                 Document.project_id,
                 Project.name.label("project_name"),
                 Project.schema_id,
+                Schema.name.label("schema_name"),
                 Team.name.label("team_name"),
                 Team.id.label("team_id"),
                 DocumentEditState.type.label("document_edit_state"),
@@ -38,6 +40,7 @@ class DocumentRepository(BaseRepository):
             .join(Project, Team.id == Project.team_id)
             .join(Document, Project.id == Document.project_id)
             .join(DocumentState, DocumentState.id == Document.state_id)
+            .join(Schema, Schema.id == Project.schema_id)
             .outerjoin(
                 DocumentEdit,
                 and_(
@@ -56,12 +59,14 @@ class DocumentRepository(BaseRepository):
                 Document.project_id,
                 Project.name.label("project_name"),
                 Project.schema_id,
+                Schema.name.label("schema_name"),
                 Project.team_id,
                 DocumentRecommendation.id.label("document_recommendation_id"),
             )
             .select_from(Document)
             .filter(Document.id == document_id)
             .join(Project, Project.id == Document.project_id)
+            .join(Schema, Schema.id == Project.schema_id)
             .outerjoin(
                 DocumentRecommendation,
                 and_(
