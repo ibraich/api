@@ -35,6 +35,7 @@ class DocumentRepository(BaseRepository):
             )
             .select_from(User)
             .filter(User.id == user_id)
+            .filter(Document.active == True)
             .join(UserTeam, User.id == UserTeam.user_id)
             .join(Team, UserTeam.team_id == Team.id)
             .join(Project, Team.id == Project.team_id)
@@ -65,6 +66,7 @@ class DocumentRepository(BaseRepository):
             )
             .select_from(Document)
             .filter(Document.id == document_id)
+            .filter(Document.active == True)
             .join(Project, Project.id == Document.project_id)
             .join(Schema, Schema.id == Project.schema_id)
             .outerjoin(
@@ -83,5 +85,6 @@ class DocumentRepository(BaseRepository):
             project_id=project_id,
             creator_id=creator_id,
             state_id=state_id,
+            active=True,
         )
         return super().store_object_transactional(document)

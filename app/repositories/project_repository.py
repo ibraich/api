@@ -11,6 +11,7 @@ class ProjectRepository(BaseRepository):
             creator_id=creator_id,
             team_id=team_id,
             schema_id=schema_id,
+            active=True,
         )
         super().store_object(project)
         return project
@@ -26,7 +27,12 @@ class ProjectRepository(BaseRepository):
         return project.team_id
 
     def get_projects_by_team(self, team_id):
-        return db.session.query(Project).filter(Project.team_id == team_id).all()
+        return (
+            db.session.query(Project)
+            .filter(Project.team_id == team_id)
+            .filter(Project.active == True)
+            .all()
+        )
 
     def get_projects_by_user(self, user_id):
         return (
@@ -44,5 +50,6 @@ class ProjectRepository(BaseRepository):
             .join(Project, Project.team_id == Team.id)
             .join(Schema, Schema.id == Project.schema_id)
             .filter(UserTeam.user_id == user_id)
+            .filter(Project.active == True)
             .all()
         )
