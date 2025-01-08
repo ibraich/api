@@ -152,4 +152,3 @@ class DocumentRepository(BaseRepository):
         db.session.add(document)
         db.session.commit()
         return document
-
