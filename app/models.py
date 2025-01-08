@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from app.db import db
 
 
@@ -14,7 +16,9 @@ class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(), unique=True, nullable=False)
     creator_id = db.Column(db.Integer, db.ForeignKey("User.id"))
-    active = db.Column(db.Boolean, nullable=False, default=True)
+    active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
 
 class UserTeam(db.Model):
@@ -33,7 +37,9 @@ class Schema(db.Model):
         db.Integer, db.ForeignKey("ModellingLanguage.id"), nullable=False
     )
     team_id = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
-    active = db.Column(db.Boolean, nullable=False, default=True)
+    active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
 
 class SchemaMention(db.Model):
@@ -72,7 +78,9 @@ class Project(db.Model):
     creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey("Team.id"), nullable=False)
     schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
-    active = db.Column(db.Boolean, nullable=False, default=True)
+    active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
 
 class Document(db.Model):
@@ -83,7 +91,9 @@ class Document(db.Model):
     creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
     state_id = db.Column(db.Integer, db.ForeignKey("DocumentState.id"), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey("Project.id"), nullable=False)
-    active = db.Column(db.Boolean, nullable=False, default=True)
+    active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
 
 class DocumentRecommendation(db.Model):
@@ -108,7 +118,9 @@ class DocumentEdit(db.Model):
     document_id = db.Column(db.Integer, db.ForeignKey("Document.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
     schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
-    active = db.Column(db.Boolean, nullable=False, default=True)
+    active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
 
 class Token(db.Model):
