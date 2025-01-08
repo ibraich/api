@@ -15,7 +15,12 @@ class UserRepository(BaseRepository):
         return db.session.query(User).filter(User.email == mail).first()
 
     def get_user_by_document_edit_id(self, document_edit_id) -> int:
-        document_edit = Session.query(DocumentEdit).get(document_edit_id)
+        document_edit = (
+            Session.query(DocumentEdit)
+            .filter(DocumentEdit.id == document_edit_id)
+            .filter(DocumentEdit.active == True)
+            .first()
+        )
         if document_edit is None:
             raise NotFound("Document Edit not found")
         return int(document_edit.user_id)
