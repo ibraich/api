@@ -60,9 +60,6 @@ class DocumentRepository(BaseRepository):
             )
             .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
         )
-
-
-class Recommendation_a_r:
     def get_recommendation_by_id(self, recommendation_id):
         """Fetch a recommendation by its ID."""
         recommendation = db.session.query(DocumentRecommendation).filter(
@@ -92,3 +89,4 @@ class Recommendation_a_r:
         db.session.add(document_edit)
         db.session.commit()
         return document_edit
+
