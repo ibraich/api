@@ -8,6 +8,8 @@ class Config:
     db_port = os.getenv("DB_PORT", "5432")
     db_name = os.getenv("DB_NAME", "annotation_db")
 
+    PIPELINE_URL = "http://host.docker.internal/pipeline"
+
     DEBUG = os.getenv("DEBUG", True)
 
     SQLALCHEMY_DATABASE_URI = (
@@ -17,7 +19,13 @@ class Config:
     TESTING = False
     RESTX_MASK_SWAGGER = False
 
+    SECRET_KEY = os.getenv("SECRET_KEY", "9384758239485729384728592403484238948235")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY","7328437592749283749238749283748237589437")
+    JWT_ACCESS_TOKEN_EXPIRES = 3600
+    JWT_ALGORITHM = 'HS256'
+
 
 class TestingConfig:
     DEBUG = os.getenv("DEBUG", True)
+    PIPELINE_URL = "http://host.docker.internal/pipeline"
     TESTING = True

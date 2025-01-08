@@ -1,4 +1,5 @@
 from flask_restx import Namespace, Resource
+from werkzeug.exceptions import BadRequest
 from app.services.document_service import document_service
 from flask import request
 from app.dtos import (
@@ -6,6 +7,7 @@ from app.dtos import (
     document_create_dto,
     document_output_dto,
 )
+from flask_jwt_extended import jwt_required
 
 ns = Namespace("documents", description="Document related operations")
 
@@ -17,16 +19,12 @@ ns = Namespace("documents", description="Document related operations")
 class DocumentRoutes(Resource):
     service = document_service
 
+    @jwt_required()
     @ns.doc(description="Get all documents current user has access to")
     @ns.marshal_with(document_output_dto, as_list=True)
     def get(self):
         response = self.service.get_documents_by_user()
         return response
-
-
-@ns.route("/upload")
-class DocumentUpload(Resource):
-    service = document_service
 
     @ns.doc(description="Upload a document to a specific project.")
     @ns.expect(document_create_dto, validate=True)
@@ -51,3 +49,20 @@ class DocumentUpload(Resource):
         )
 
         return document_details, 201
+
+@ns.route("/project/<int:project_id>")
+@ns.doc(params={"project_id": "A Project ID"})
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentProjectRoutes(Resource):
+    service = document_service
+
+    @jwt_required()
+    @ns.doc(description="Get all documents of project")
+    @ns.marshal_with(document_output_dto, as_list=True)
+    def get(self, project_id):
+        if not project_id:
+            raise BadRequest("Project ID is required")
+        response = self.service.get_documents_by_project(project_id)
+        return response

@@ -1,13 +1,22 @@
 from flask import Flask
 from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager
 
 from flask_migrate import Migrate
+import logging
 
 
 def create_app(config_class):
     app = Flask(__name__)
     load_dotenv()
     app.config.from_object(config_class)
+    JWTManager(app)
+
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the logging level to DEBUG
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Log format
+        handlers=[logging.StreamHandler()],  # Output logs to the console
+    )
 
     # Register blueprints
     from .extension import main, api
@@ -18,12 +27,24 @@ def create_app(config_class):
     from app.routes.relation_routes import ns as relations
     from app.routes.entity_routes import ns as entities
     from app.routes.document_routes import ns as documents
+    from app.routes.schema_routes import ns as schemas
+    from app.routes.team_routes import ns as teams
+    from app.routes.document_edit_routes import ns as document_edit
+    from app.routes.auth_routes import ns as auth
+    from app.routes.token_routes import ns as tokens
+    from app.routes.import_routes import ns as imports
 
     api.add_namespace(projects, path="/projects")
     api.add_namespace(mentions, path="/mentions")
     api.add_namespace(relations, path="/relations")
     api.add_namespace(entities, path="/entities")
     api.add_namespace(documents, path="/documents")
+    api.add_namespace(schemas, path="/schemas")
+    api.add_namespace(teams, path="/teams")
+    api.add_namespace(document_edit, path="/document_edits")
+    api.add_namespace(auth, path="/auth")
+    api.add_namespace(tokens, path="/tokens")
+    api.add_namespace(imports, path="/imports")
 
     if not config_class.TESTING:
         from app.db import db
