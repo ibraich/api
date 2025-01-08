@@ -19,3 +19,23 @@ class RelationRepository(BaseRepository):
             )
             .all()
         )
+    def set_is_shown_recommendation_false(self, relation_id):
+        relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
+        if relation:
+            relation.is_shown_recommendation = False
+            self.db_session.commit()
+        return relation
+
+    def copy_to_document_edit(self, relation, user_id):
+        new_relation = Relation(
+            source=relation.source,
+            target=relation.target,
+            tag=relation.tag,
+            document_edit_id=relation.document_edit_id,
+            user_id=user_id,
+            is_shown_recommendation=False,
+            document_recommendation_id=None,
+        )
+        self.db_session.add(new_relation)
+        self.db_session.commit()
+        return new_relation

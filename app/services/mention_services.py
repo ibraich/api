@@ -100,6 +100,31 @@ class MentionService:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
         return mention
+    
+
+    def accept_mention(self, mention_id: int, user_id: int):
+        mention = self.mention_repository.get_by_id(mention_id)
+        if not mention:
+            raise NotFound(f"Mention with id {mention_id} not found.")
+        if mention.user_id != user_id:
+            raise Conflict("Mention does not belong to the current user.")
+        if not mention.is_shown_recommendation:
+            raise BadRequest("Mention recommendation is not active.")
+
+        new_mention = self.mention_repository.copy_to_document_edit(mention, user_id)
+        self.mention_repository.set_is_shown_recommendation_false(mention_id)
+        return new_mention
+
+    def reject_mention(self, mention_id: int, user_id: int):
+        mention = self.mention_repository.get_by_id(mention_id)
+        if not mention:
+            raise NotFound(f"Mention with id {mention_id} not found.")
+        if mention.user_id != user_id:
+            raise Conflict("Mention does not belong to the current user.")
+        if not mention.is_shown_recommendation:
+            raise BadRequest("Mention recommendation is not active.")
+
+        self.mention_repository.set_is_shown_recommendation_false(mention_id)
 
 
 mention_service = MentionService(

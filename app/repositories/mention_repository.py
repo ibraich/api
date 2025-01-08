@@ -30,3 +30,24 @@ class MentionRepository(BaseRepository):
         )
         self.store_object(mention)
         return mention
+
+
+    def set_is_shown_recommendation_false(self, mention_id):
+        mention = self.db_session.query(Mention).filter_by(id=mention_id).first()
+        if mention:
+            mention.is_shown_recommendation = False
+            self.db_session.commit()
+        return mention
+
+    def copy_to_document_edit(self, mention, user_id):
+        new_mention = Mention(
+            content=mention.content,
+            document_edit_id=mention.document_edit_id,
+            user_id=user_id,
+            is_shown_recommendation=False,
+            document_recommendation_id=None,
+        )
+        self.db_session.add(new_mention)
+        self.db_session.commit()
+        return new_mention
+    
