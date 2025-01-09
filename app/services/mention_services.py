@@ -11,6 +11,7 @@ from app.services.token_mention_service import (
     token_mention_service,
     TokenMentionService,
 )
+from app.repositories import mention_repository, relation_repository
 
 
 class MentionService:
@@ -125,7 +126,49 @@ class MentionService:
             raise BadRequest("Mention recommendation is not active.")
 
         self.mention_repository.set_is_shown_recommendation_false(mention_id)
+    
+    def accept_mention(session, mention_id, user_id):
+      # Holen der Mention und Validierung
+        mention = mention_repository.get_mention_by_id_and_user(session, mention_id, user_id)
+        if not mention:
+            raise ValueError("Mention not found or does not belong to the user.")
+    
+        if not mention.is_shown_recommendation:
+            raise ValueError("Mention is not a valid recommendation.")
+    
+        # Erstellen der neuen Mention-Daten
+        try:
+         new_mention_data = {
+            "text": mention.text,
+            "start_offset": mention.start_offset,
+            "end_offset": mention.end_offset,
+            "document_id": mention.document_id,
+            "is_shown_recommendation": False,
+            "document_recommendation_id": None,
+        }
+        except AttributeError as e:
+            raise ValueError(f"Missing required mention data: {e}")
+    
+        # Erstellen der neuen Mention in der Dokumentbearbeitung
+        try:
+            mention_repository.create_mention_in_edit(session, new_mention_data)
+        except Exception as e:
+            raise ValueError(f"Failed to create mention in edit: {e}")
+    
+         # Aktualisieren des Recommendation-Status
+        try:
+            mention_repository.update_is_shown_recommendation(session, mention_id, False)
+        except Exception as e:
+            raise ValueError(f"Failed to update recommendation status: {e}")
+    
+        return new_mention_data
 
+    def reject_relation(session, relation_id, user_id):
+        relation = relation_repository.get_relation_by_id_and_user(session, relation_id, user_id)
+        if not relation or not relation.is_shown_recommendation:
+            raise ValueError("Invalid or non-recommendation relation.")
+        relation_repository.update_is_shown_recommendation(session, relation_id, False)
+        return {"message": "Relation recommendation rejected."}
 
 mention_service = MentionService(
     MentionRepository(),

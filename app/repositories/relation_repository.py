@@ -1,6 +1,7 @@
-from app.models import Relation
+from app.models import Mention,Relation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
+from sqlalchemy.orm import Session 
 
 
 class RelationRepository(BaseRepository):
@@ -38,4 +39,20 @@ class RelationRepository(BaseRepository):
         )
         self.db_session.add(new_relation)
         self.db_session.commit()
+        return new_relation
+    
+
+
+    def update_is_shown_recommendation(session, relation_id, is_shown: bool):
+        relation = session.query(Relation).filter(Relation.id == relation_id).one_or_none()
+        if relation:
+            relation.is_shown_recommendation = is_shown
+            session.commit()
+            return relation
+        return None
+
+    def create_relation_in_edit(session, relation_data):
+        new_relation = Relation(**relation_data)
+        session.add(new_relation)
+        session.commit()
         return new_relation

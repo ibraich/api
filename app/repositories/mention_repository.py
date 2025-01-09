@@ -1,6 +1,8 @@
-from app.models import Mention
+from app.models import Mention, Relation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
+from sqlalchemy.orm import Session
+
 
 
 class MentionRepository(BaseRepository):
@@ -50,4 +52,20 @@ class MentionRepository(BaseRepository):
         self.db_session.add(new_mention)
         self.db_session.commit()
         return new_mention
+    
+    def update_is_shown_recommendation(session, mention_id, is_shown: bool):
+     mention = session.query(Mention).filter(Mention.id == mention_id).one_or_none()
+     if mention:
+        mention.is_shown_recommendation = is_shown
+        session.commit()
+        return mention
+     return None
+    
+    def create_mention_in_edit(session, mention_data):
+        new_mention = Mention(**mention_data)
+        session.add(new_mention)
+        session.commit()
+        return new_mention
+
+   
     

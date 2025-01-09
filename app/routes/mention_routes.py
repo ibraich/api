@@ -1,8 +1,9 @@
-from flask import request
+from flask import jsonify, request
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from app.services.mention_services import mention_service, MentionService
 from app.dtos import mention_output_dto, mention_output_list_dto, mention_input_dto
+from app import db
 
 ns = Namespace("mentions", description="Mention related operations")
 
@@ -52,3 +53,39 @@ class MentionDeleteResource(Resource):
         if not user_id:
             raise BadRequest("User-ID header is required.")
         return mention_service.reject_mention(mention_id, int(user_id))
+    
+
+@ns.route("/<int:mention_id>/accept")
+class AcceptMentionResource(Resource):
+    def post(self, mention_id):
+        """
+        Accepts a recommendation for a mention by its ID.
+        """
+        user_id = request.headers.get("X-User-ID")  # Simuliert die Benutzer-ID aus den Headern
+        if not user_id:
+            return jsonify({"error": "User ID missing in request headers"}), 400
+
+        with db.session as session:
+            try:
+                result = mention_service.accept_mention(session, mention_id, int(user_id))
+                return jsonify(result), 200
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
+
+
+@ns.route("/<int:mention_id>/reject")
+class RejectMentionResource(Resource):
+    def post(self, mention_id):
+        """
+        Rejects a recommendation for a mention by its ID.
+        """
+        user_id = request.headers.get("X-User-ID")  # Simuliert die Benutzer-ID aus den Headern
+        if not user_id:
+            return jsonify({"error": "User ID missing in request headers"}), 400
+
+        with db.session as session:
+            try:
+                result = mention_service.reject_mention(session, mention_id, int(user_id))
+                return jsonify(result), 200
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400

@@ -1,4 +1,5 @@
 from werkzeug.exceptions import BadRequest, NotFound, Conflict
+from app.repositories import relation_repository
 
 from app.repositories.relation_repository import RelationRepository
 
@@ -58,5 +59,29 @@ class RelationService:
 
         self.relation_repository.set_is_shown_recommendation_false(relation_id)
 
+
+    def accept_relation(session, relation_id, user_id):
+        relation = relation_repository.get_relation_by_id_and_user(session, relation_id, user_id)
+        if not relation or not relation.is_shown_recommendation:
+            raise ValueError("Invalid or non-recommendation relation.")
+
+        new_relation_data = {
+            "type": relation.type,
+            "source_id": relation.source_id,
+            "target_id": relation.target_id,
+            "document_id": relation.document_id,
+            "is_shown_recommendation": False,
+            "document_recommendation_id": None,
+        }
+        relation_repository.create_relation_in_edit(session, new_relation_data)
+        relation_repository.update_is_shown_recommendation(session, relation_id, False)
+        return new_relation_data
+
+    def reject_relation(session, relation_id, user_id):
+        relation = relation_repository.get_relation_by_id_and_user(session, relation_id, user_id)
+        if not relation or not relation.is_shown_recommendation:
+         raise ValueError("Invalid or non-recommendation relation.")
+        relation_repository.update_is_shown_recommendation(session, relation_id, False)
+        return {"message": "Relation recommendation rejected."}
 
 relation_service = RelationService(RelationRepository())
