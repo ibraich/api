@@ -4,6 +4,8 @@ from app.models import (
     Project,
     DocumentEditState,
     DocumentEdit,
+    Mention,
+    Relation,
     Team,
     User,
     UserTeam,
@@ -104,3 +106,51 @@ class DocumentRepository(BaseRepository):
             active=True,
         )
         return super().store_object_transactional(document)
+
+    def delete_existing_recommendations(self, document_id):
+        """Delete existing recommendations for a document."""
+        db.session.query(DocumentRecommendation).filter(
+            DocumentRecommendation.document_id == document_id
+        ).delete()
+        db.session.commit()
+
+    def store_new_recommendations(self, document_id, recommendations):
+        """Store new recommendations for a document."""
+        for recommendation in recommendations:
+            new_recommendation = DocumentRecommendation(
+                document_id=document_id,
+                recommendation_type=recommendation["type"],
+                content=recommendation["content"],
+            )
+            db.session.add(new_recommendation)
+        db.session.commit()
+    
+    def delete_existing_mentions_or_relations(self, document_id, step):
+        """Delete mentions or relations for a specific step of a document."""
+        if step == "mentions":
+            db.session.query(Mention).filter(Mention.document_id == document_id).delete()
+        elif step == "relations":
+            db.session.query(Relation).filter(Relation.document_id == document_id).delete()
+        db.session.commit()
+
+    def store_new_mentions_or_relations(self, document_id, recommendations, step):
+        """Store mentions or relations for a specific step of a document."""
+        if step == "mentions":
+            for mention in recommendations:
+                new_mention = Mention(
+                    document_id=document_id,
+                    content=mention["content"],
+                    start=mention["start"],
+                    end=mention["end"],
+                )
+                db.session.add(new_mention)
+        elif step == "relations":
+            for relation in recommendations:
+                new_relation = Relation(
+                    document_id=document_id,
+                    type=relation["type"],
+                    source=relation["source"],
+                    target=relation["target"],
+                )
+                db.session.add(new_relation)
+        db.session.commit()

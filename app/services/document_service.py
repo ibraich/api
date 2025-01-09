@@ -16,6 +16,7 @@ class DocumentService:
 
     def __init__(
         self, document_repository, user_service, team_service, project_service, token_service
+        
     ):
         self.__document_repository = document_repository
         self.user_service = user_service
@@ -102,6 +103,35 @@ class DocumentService:
         return self.__document_repository.save(
             name, content, project_id, creator_id, state_id
         )
+    
+
+
+    def regenerate_recommendations(self, document_id, step, user_id):
+        """(Re-)generate recommendations for a specific step of a document."""
+        # Validate user permissions for the document
+        document = self.__document_repository.get_by_id(document_id)
+        if not document or document.user_id != user_id:
+            raise ValueError("Document does not belong to the logged-in user or does not exist.")
+        
+        # Query recommendation system (mocked for now)
+        recommendations = self.query_recommendation_system(document_id, step)
+        if not recommendations:
+            raise ValueError("Failed to fetch recommendations from the recommendation system.")
+
+        # Delete existing mentions or relations
+        self.__document_repository.delete_existing_mentions_or_relations(document_id, step)
+
+        # Store new mentions or relations
+        self.__document_repository.store_new_mentions_or_relations(document_id, recommendations, step)
+
+        return {"message": f"{step.capitalize()} recommendations regenerated successfully."}
+
+    def query_recommendation_system(self, document_id, step):
+        """Mock querying the recommendation system."""
+        # Simulate response from a recommendation system
+        return [
+            {"type": step, "content": f"Recommendation for {step} in document {document_id}"},
+        ]
 
 
 document_service = DocumentService(

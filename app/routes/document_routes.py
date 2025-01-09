@@ -1,6 +1,7 @@
 from flask_restx import Namespace, Resource
 from werkzeug.exceptions import BadRequest
 from app.services.document_service import document_service
+from app.services.user_service import user_service
 from flask import request
 from app.dtos import (
     document_create_output_dto,
@@ -66,3 +67,24 @@ class DocumentProjectRoutes(Resource):
             raise BadRequest("Project ID is required")
         response = self.service.get_documents_by_project(project_id)
         return response
+
+@ns.route("/<int:document_id>/regenerate-recommendations")
+@ns.response(200, "Success")
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+class RegenerateRecommendations(Resource):
+    def post(self, document_id):
+        """(Re-)generate recommendations for a specific step of a document."""
+        step = request.args.get("step")
+        if step not in ["mentions", "relations", "entities"]:
+            return {"error": "Invalid step provided."}, 400
+
+        try:
+            # Fetch the logged-in user's ID
+            user_id = user_service.get_logged_in_user_id()
+            response = document_service.regenerate_recommendations(document_id, step, user_id)
+            return response, 200
+        except ValueError as e:
+            return {"error": str(e)}, 400
+        except Exception as e:
+            return {"error": "An unexpected error occurred."}, 500
