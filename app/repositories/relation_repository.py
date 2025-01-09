@@ -92,3 +92,38 @@ class RelationRepository(BaseRepository):
         for relation in relations:
             self.db_session.delete(relation)
         self.db_session.commit()
+
+
+
+
+
+    def accept_relation(self, relation_id, document_edit_id):
+        relation = self.db_session.query(Relation).filter_by(id=relation_id, document_edit_id=document_edit_id).first()
+        if not relation or not relation.isShownRecommendation:
+            raise ValueError("Invalid or already processed relation.")
+
+        # Reuse existing create_relation method
+        new_relation = self.create_relation(
+        tag=relation.tag,
+        document_edit_id=document_edit_id,
+        isDirected=relation.isDirected,
+        mention_head_id=relation.mention_head_id,
+        mention_tail_id=relation.mention_tail_id,
+        document_recommendation_id=None,
+        is_shown_recommendation=False,
+        )
+
+        # Update original relation
+        relation.isShownRecommendation = False
+        self.db_session.commit()
+        return new_relation
+
+    def reject_relation(self, relation_id, document_edit_id):
+        relation = self.db_session.query(Relation).filter_by(id=relation_id, document_edit_id=document_edit_id).first()
+        if not relation or not relation.isShownRecommendation:
+            raise ValueError("Invalid or already processed relation.")
+
+         # Update original relation
+        relation.isShownRecommendation = False
+        self.db_session.commit()
+        return relation

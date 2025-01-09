@@ -139,6 +139,36 @@ class RelationService:
         }
 
         return response
+    
+
+
+    def accept_relation(self, relation_id, document_edit_id):
+        """
+        Accepts a relation by copying it to the document edit and setting its isShownRecommendation to False.
+        """
+        relation = self.relation_repository.get_relation_by_id(relation_id)
+        if not relation or relation.document_edit_id != document_edit_id:
+            raise ValueError("Invalid relation or unauthorized access.")
+
+        if not relation.isShownRecommendation:
+            raise ValueError("Relation recommendation already processed.")
+
+        # Use the repository method to copy the relation and update is_ShownRecommendation
+        return self.relation_repository.accept_relation(relation_id, document_edit_id)
+
+    def reject_relation(self, relation_id, document_edit_id):
+        """
+        Rejects a relation by setting its is_ShownRecommendation to False.
+        """
+        relation = self.relation_repository.get_relation_by_id(relation_id)
+        if not relation or relation.document_edit_id != document_edit_id:
+            raise ValueError("Invalid relation or unauthorized access.")
+
+        if not relation.isShownRecommendation:
+            raise ValueError("Relation recommendation already processed.")
+
+        # Use the repository method to update isShownRecommendation
+        return self.relation_repository.reject_relation(relation_id, document_edit_id)
 
 relation_service = RelationService(RelationRepository(), MentionRepository())
 

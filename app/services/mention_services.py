@@ -244,6 +244,35 @@ class MentionService:
             )
             return duplicate_token_mention
         return []
+    
+
+    def accept_mention(self, mention_id, document_edit_id):
+        """
+        Accepts a mention by copying it to the document edit and setting its isShownRecommendation to False.
+        """
+        mention = self.mention_repository.get_mention_by_id(mention_id)
+        if not mention or mention.document_edit_id != document_edit_id:
+            raise ValueError("Invalid mention or unauthorized access.")
+
+        if not mention.isShownRecommendation:
+            raise ValueError("Mention recommendation already processed.")
+
+        # Use the repository methode to copy the mention and update is_ShownRecommendation
+        return self.mention_repository.accept_mention(mention_id, document_edit_id)
+
+    def reject_mention(self, mention_id, document_edit_id):
+        """
+        Rejects a mention by setting its is_ShownRecommendation to False.
+        """
+        mention = self.mention_repository.get_mention_by_id(mention_id)
+        if not mention or mention.document_edit_id != document_edit_id:
+            raise ValueError("Invalid mention or unauthorized access.")
+
+        if not mention.isShownRecommendation:
+            raise ValueError("Mention recommendation already processed.")
+
+        # Use the repository method to update isShownRecommendation
+        return self.mention_repository.reject_mention(mention_id, document_edit_id)
 
 
 mention_service = MentionService(
