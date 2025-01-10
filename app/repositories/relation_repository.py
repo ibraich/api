@@ -92,3 +92,19 @@ class RelationRepository(BaseRepository):
         for relation in relations:
             self.db_session.delete(relation)
         self.db_session.commit()
+
+    def update_relation(
+        self, relation_id, tag, mention_head_id, mention_tail_id, is_directed
+    ):
+        relation = self.get_relation_by_id(relation_id)
+        if tag:
+            relation.tag = tag
+        if mention_head_id:
+            relation.mention_head_id = mention_head_id
+        if mention_tail_id:
+            relation.mention_tail_id = mention_tail_id
+        if is_directed:
+            relation.isDirected = is_directed
+
+        super().store_object(relation)
+        return relation
