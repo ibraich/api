@@ -103,7 +103,7 @@ class RelationRepository(BaseRepository):
             relation.mention_head_id = mention_head_id
         if mention_tail_id:
             relation.mention_tail_id = mention_tail_id
-        if is_directed:
+        if is_directed is not None:
             relation.isDirected = is_directed
 
         super().store_object(relation)
