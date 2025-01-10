@@ -4,7 +4,7 @@ from app.repositories.document_repository import DocumentRepository
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
 from app.services.project_service import ProjectService, project_service
-from app.services.token_service import TeamService, team_service
+from app.services.team_service import TeamService, team_service
 
 
 class DocumentService:
@@ -15,7 +15,12 @@ class DocumentService:
     token_service: TokenService
 
     def __init__(
-        self, document_repository, user_service, team_service, project_service, token_service
+        self,
+        document_repository,
+        user_service,
+        team_service,
+        project_service,
+        token_service,
     ):
         self.__document_repository = document_repository
         self.user_service = user_service
