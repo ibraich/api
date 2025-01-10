@@ -13,6 +13,7 @@ class DocumentEditRepository(BaseRepository):
             user_id=user_id,
             schema_id=schema_id,
             state_id=1,
+            active=True,
         )
         return super().store_object_transactional(document_edit)
 
@@ -21,5 +22,6 @@ class DocumentEditRepository(BaseRepository):
             Session.query(DocumentEdit)
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.user_id == user_id)
+            .filter(DocumentEdit.active == True)
             .first()
         )

@@ -42,6 +42,7 @@ class DocumentService:
                 "project_id": doc.project_id,
                 "project_name": doc.project_name,
                 "schema_id": doc.schema_id,
+                "schema_name": doc.schema_name,
                 "team_name": doc.team_name,
                 "team_id": doc.team_id,
                 "document_edit_id": doc.document_edit_id,
