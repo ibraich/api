@@ -15,9 +15,13 @@ class DocumentService:
     token_service: TokenService
 
     def __init__(
-        self, document_repository, user_service, team_service, project_service, token_service
-        
-    ):
+        self,
+        document_repository,
+        user_service,
+        team_service,
+        project_service,
+        token_service
+     ):
         self.__document_repository = document_repository
         self.user_service = user_service
         self.team_service = team_service
