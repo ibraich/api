@@ -21,7 +21,7 @@ class DocumentService:
         team_service,
         project_service,
         token_service,
-     ):
+    ):
         self.__document_repository = document_repository
         self.user_service = user_service
         self.team_service = team_service
