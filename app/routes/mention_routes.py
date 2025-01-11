@@ -73,3 +73,35 @@ class MentionDeletionResource(Resource):
         entity_id = data.get("entity_id")
         response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
         return response
+    
+
+
+@ns.route("/<int:mention_id>/accept")
+class MentionAcceptResource(Resource):
+    def post(self, mention_id):
+        """
+        Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
+        """
+        # Extract document_edit_id from request arguments
+        document_edit_id = request.args.get("document_edit_id")
+        if not document_edit_id:
+            raise BadRequest("Document Edit ID is required.")
+        
+        # Call the MentionService to handle the accept logic
+        return mention_service.accept_mention(mention_id, int(document_edit_id))
+
+@ns.route("/<int:mention_id>/reject")
+class MentionRejectResource(Resource):
+    def post(self, mention_id):
+        """
+        Reject a mention by setting isShownRecommendation to False.
+        """
+        # Extract document_edit_id from request arguments
+        document_edit_id = request.args.get("document_edit_id")
+        if not document_edit_id:
+            raise BadRequest("Document Edit ID is required.")
+        
+        # Call the MentionService to handle the reject logic
+        return mention_service.reject_mention(mention_id, int(document_edit_id))
+
+

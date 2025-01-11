@@ -104,3 +104,32 @@ class MentionRepository(BaseRepository):
             mention.entity_id = None
         super().store_object(mention)
         return mention
+
+
+    def accept_mention(self, mention_id, document_edit_id):
+        mention = self.get_mention_by_id(mention_id)
+        if not mention or not mention.isShownRecommendation or mention.document_edit_id != document_edit_id:
+            raise ValueError("Invalid or already processed mention.")
+
+        # Reuse existing create_mention method
+        new_mention = self.create_mention(
+        tag=mention.tag,
+        document_edit_id=document_edit_id,
+        document_recommendation_id=None,
+        is_shown_recommendation=False,
+        )
+
+        # Update original mention
+        mention.isShownRecommendation = False
+        self.db_session.commit()
+        return new_mention
+
+    def reject_mention(self, mention_id, document_edit_id):
+        mention = self.get_mention_by_id(mention_id)
+        if not mention or not mention.isShownRecommendation or mention.document_edit_id != document_edit_id:
+            raise ValueError("Invalid or already processed mention.")
+
+        # Update original mention
+        mention.isShownRecommendation = False
+        self.db_session.commit()
+        return mention
