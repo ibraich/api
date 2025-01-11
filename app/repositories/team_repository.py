@@ -36,3 +36,12 @@ class TeamRepository(BaseRepository):
         userteam = UserTeam(team_id=team_id, user_id=user_id)
         super().store_object(userteam)
         return userteam
+
+    def remove_user(self, team_id, user_id):
+        userteam = (
+            db.session.query(UserTeam)
+            .filter(UserTeam.team_id == team_id, UserTeam.user_id == user_id)
+            .first()
+        )
+        db.session.delete(userteam)
+        db.session.commit()

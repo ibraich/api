@@ -74,5 +74,29 @@ class TeamService:
             "creator_id": team.creator_id,
         }
 
+    def remove_user_from_team(self, user_mail, team_id):
+        member = self.user_service.get_user_by_email(user_mail)
+
+        # If user does not exist, raise exception
+        if member is None:
+            raise BadRequest("User not found")
+
+        # Check if logged-in user is part of the team
+        user = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user, team_id)
+
+        # Check that member is currently part of the team
+        try:
+            self.user_service.check_user_in_team(member.id, team_id)
+        except:
+            raise BadRequest("User is not part of the team")
+
+        self.__team_repository.remove_user(team_id, member.id)
+        return {
+            "id": member.id,
+            "username": member.username,
+            "email": member.email,
+        }
+
 
 team_service = TeamService(TeamRepository(), user_service)

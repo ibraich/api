@@ -36,6 +36,20 @@ class TeamMemberRoutes(Resource):
 
         return response
 
+    @jwt_required()
+    @ns.doc(description="Remove a user from a team")
+    @ns.expect(team_member_input_dto, validate=True)
+    @ns.marshal_with(team_member_output_dto)
+    def delete(self):
+        request_data = request.get_json()
+
+        response = self.service.remove_user_from_team(
+            request_data["user_mail"],
+            request_data["team_id"],
+        )
+
+        return response
+
 
 @ns.route("/")
 @ns.response(400, "Invalid input")

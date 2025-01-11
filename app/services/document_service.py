@@ -90,6 +90,10 @@ class DocumentService:
         document = self.__document_repository.create_document(
             name=file_name, content=file_content, project_id=project_id, user_id=user_id
         )
+
+        # Tokenize document
+        self.token_service.tokenize_document(document.id, document.content)
+
         return {
             "id": document.id,
             "name": document.name,
