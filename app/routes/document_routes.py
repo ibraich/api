@@ -5,7 +5,8 @@ from flask import request
 from app.dtos import (
     document_create_output_dto,
     document_create_dto,
-    document_output_dto, document_delete_input_dto, document_delete_output_dto,
+    document_output_dto,
+    document_delete_output_dto,
 )
 from flask_jwt_extended import jwt_required
 
@@ -51,6 +52,7 @@ class DocumentRoutes(Resource):
 
         return document_details, 201
 
+
 @ns.route("/project/<int:project_id>")
 @ns.doc(params={"project_id": "A Project ID"})
 @ns.response(400, "Invalid input")
@@ -67,6 +69,7 @@ class DocumentProjectRoutes(Resource):
             raise BadRequest("Project ID is required")
         response = self.service.get_documents_by_project(project_id)
         return response
+
 
 @ns.route("/<int:document_id>")
 @ns.doc(params={"document_id": "Document ID to soft-delete"})

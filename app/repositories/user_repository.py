@@ -1,6 +1,16 @@
+from sqlalchemy import and_
 from werkzeug.exceptions import NotFound
 
-from app.models import UserTeam, DocumentEdit, User, Team, Project, Document, Schema
+from app.models import (
+    UserTeam,
+    DocumentEdit,
+    User,
+    Team,
+    Project,
+    Document,
+    Schema,
+    DocumentRecommendation,
+)
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
 
@@ -38,10 +48,22 @@ class UserRepository(BaseRepository):
 
     def check_user_document_accessible(self, user_id, document_id):
         return (
-            db.session.query(UserTeam)
+            db.session.query(
+                Document,
+                Project.schema_id,
+                DocumentRecommendation.id.label("document_recommendation_id"),
+            )
+            .select_from(UserTeam)
             .join(Team, UserTeam.team_id == Team.id)
             .join(Project, Project.team_id == Team.id)
             .join(Document, Document.project_id == Project.id)
+            .outerjoin(
+                DocumentRecommendation,
+                and_(
+                    Document.id == DocumentRecommendation.document_id,
+                    DocumentRecommendation.document_edit_id is None,
+                ),
+            )
             .filter((Document.id == document_id) & (UserTeam.user_id == user_id))
             .first()
         )
@@ -52,5 +74,13 @@ class UserRepository(BaseRepository):
             .join(Team, UserTeam.team_id == Team.id)
             .join(Schema, Schema.team_id == Team.id)
             .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
+
+    def check_user_project_accessible(self, user_id, project_id):
+        return (
+            Session.query(UserTeam)
+            .join(Project, Project.team_id == UserTeam.team_id)
+            .filter((Project.id == project_id) & (UserTeam.user_id == user_id))
             .first()
         )

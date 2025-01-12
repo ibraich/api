@@ -3,8 +3,12 @@ from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from flask import request
 from app.services.project_service import project_service
-from app.dtos import project_input_dto, project_output_dto, project_user_output_list_dto, project_delete_input_model, \
-    project_delete_output_model
+from app.dtos import (
+    project_input_dto,
+    project_output_dto,
+    project_user_output_list_dto,
+    project_delete_output_model,
+)
 from flask_jwt_extended import jwt_required
 
 ns = Namespace("projects", description="Project related operations")
