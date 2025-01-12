@@ -12,7 +12,7 @@ from app.models import (
     UserTeam,
     DocumentRecommendation,
     Schema,
-   
+
 )
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import and_
@@ -21,8 +21,6 @@ from app.db import db, Session
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
-    def __init__(self):
-        self.db_session = db.session
         
     def get_documents_by_user(self, user_id):
         return (
@@ -112,7 +110,13 @@ class DocumentRepository(BaseRepository):
         )
         return super().store_object_transactional(document)
 
-    # Allgemeine Löschmethode
+    def __init__(self, db_session=None):
+        """
+        Initialisiert das Repository mit einer DB-Session.
+        :param db_session: Optional, benutzerdefinierte DB-Session.
+        """
+        self.db_session = db_session or db.session
+     # Allgemeine Löschmethode
     def delete_entries(self, model, filter_conditions: dict):
         """
         Generische Methode zum Löschen von Einträgen basierend auf Modell und Filterbedingungen.
