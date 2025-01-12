@@ -5,6 +5,8 @@ from app.db import db
 
 
 class ProjectRepository(BaseRepository):
+    def __init__(self):
+        self.db_session = db.session
     def create_project(self, name, creator_id, team_id, schema_id):
         project = Project(
             name=name,
@@ -56,3 +58,16 @@ class ProjectRepository(BaseRepository):
             .filter(Project.active == True)
             .all()
         )
+
+    def soft_delete_project(self, project_id):
+        project = (
+            self.db_session.query(Project)
+            .filter(Project.id == project_id, Project.active == True)
+            .first()
+        )
+        if not project:
+            return False
+
+        project.active = False
+        self.db_session.commit()
+        return True

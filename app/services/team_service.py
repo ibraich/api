@@ -1,5 +1,5 @@
 from flask_jwt_extended import get_jwt_identity
-from werkzeug.exceptions import BadRequest, Conflict
+from werkzeug.exceptions import BadRequest, Conflict, NotFound
 
 from app.repositories.team_repository import TeamRepository
 from app.services.user_service import UserService, user_service
@@ -97,6 +97,15 @@ class TeamService:
             "username": member.username,
             "email": member.email,
         }
+
+    def get_team_by_project_id(self, project_id):
+        if not isinstance(project_id, int) or project_id <= 0:
+            raise BadRequest("Invalid project ID. Must be a positive integer.")
+
+        team_id = self.__team_repository.get_team_by_project_id(project_id)
+        if not team_id:
+            raise NotFound("No team found for this project or project doesn't exist.")
+        return team_id
 
 
 team_service = TeamService(TeamRepository(), user_service)

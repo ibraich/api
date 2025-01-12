@@ -358,3 +358,34 @@ mention_update_input_dto = api.model(
         "entity_id": fields.Integer,
     },
 )
+
+document_edit_output_soft_delete_dto = api.model(
+    "DeleteDocumentEditOutput",
+    {
+        "message": fields.String,
+    },
+)
+
+document_delete_output_dto = api.model(
+    "DeleteDocumentOutput",
+    {
+        "message": fields.String,
+    },
+)
+
+project_delete_output_model = api.model(
+    "DeleteProjectOutput",
+    {
+        "message": fields.String,
+    },
+)
+
+relation_update_input_dto = api.model(
+    "UpdateRelationInput",
+    {
+        "tag": fields.String,
+        "isDirected": fields.Boolean,
+        "mention_head_id": fields.Integer,
+        "mention_tail_id": fields.Integer,
+    },
+)

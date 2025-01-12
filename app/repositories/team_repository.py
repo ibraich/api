@@ -1,4 +1,4 @@
-from app.models import UserTeam, Team, User
+from app.models import UserTeam, Team, User, Project
 from app.repositories.base_repository import BaseRepository
 from app.db import db
 
@@ -45,3 +45,14 @@ class TeamRepository(BaseRepository):
         )
         db.session.delete(userteam)
         db.session.commit()
+
+    def get_team_by_project_id(self, project_id):
+
+        project = (
+            db.session.query(Project)
+            .filter(Project.id == project_id)
+            .first()
+        )
+        if project:
+            return project.team_id
+        return None
