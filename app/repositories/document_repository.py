@@ -109,69 +109,101 @@ class DocumentRepository(BaseRepository):
         )
         return super().store_object_transactional(document)
 
-    def delete_existing_entries(self, model, document_id):
-        """Generische Methode zum Löschen von Einträgen basierend auf dem Modell und der Dokument-ID."""
+    def delete_existing_entries(self, model, filter_conditions: dict):
+        """Generische Methode zum Löschen von Einträgen basierend auf Filterbedingungen."""
         try:
-            self.db_session.query(model).filter(model.document_id == document_id).delete()
+            query = self.db_session.query(model)
+            for key, value in filter_conditions.items():
+                query = query.filter(getattr(model, key) == value)
+            query.delete()
             self.db_session.commit()
         except Exception as e:
             self.db_session.rollback()
-            raise RuntimeError(f"Fehler beim Löschen von Einträgen: {e}")
+            raise RuntimeError(f"Fehler beim Löschen von {model.__name__}: {e}")
 
-    def store_entries(self, model, entries, document_id, mapper_function):
-        """
-        Generische Methode zum Speichern von Einträgen.
-        
-        :param model: Datenbankmodell.
-        :param entries: Liste der Einträge.
-        :param document_id: ID des Dokuments.
-        :param mapper_function: Funktion, die einen Eintrag in ein Modell-Objekt umwandelt.
-        """
+    # Allgemeine Methode zum Speichern
+    def store_entries(self, model, entries, mapper_function):
+        """Generische Methode zum Speichern von Einträgen."""
         try:
             for entry in entries:
-                new_entry = mapper_function(entry, document_id)
+                new_entry = mapper_function(entry)
                 self.db_session.add(new_entry)
             self.db_session.commit()
         except Exception as e:
             self.db_session.rollback()
-            raise RuntimeError(f"Fehler beim Speichern von Einträgen: {e}")
+            raise RuntimeError(f"Fehler beim Speichern von {model.__name__}: {e}")
 
-    def delete_recommendations(self, document_id):
-        """Lösche alle Empfehlungen für ein Dokument."""
-        self.delete_existing_entries(DocumentRecommendation, document_id)
+    # Methoden für Empfehlungen
+    def delete_existing_recommendations(self, document_id):
+        """Lösche bestehende Empfehlungen für ein Dokument."""
+        self.delete_existing_entries(DocumentRecommendation, {"document_id": document_id})
 
-    def store_recommendations(self, document_id, recommendations):
+    def store_new_recommendations(self, document_id, recommendations):
         """Speichere neue Empfehlungen für ein Dokument."""
-        def recommendation_mapper(recommendation, document_id):
+        def recommendation_mapper(recommendation):
             return DocumentRecommendation(
                 document_id=document_id,
                 recommendation_type=recommendation["type"],
                 content=recommendation["content"],
             )
-        self.store_entries(DocumentRecommendation, recommendations, document_id, recommendation_mapper)
+        self.store_entries(DocumentRecommendation, recommendations, recommendation_mapper)
 
-    def delete_mentions_or_relations(self, document_id, step):
-        """Lösche Erwähnungen oder Relationen für ein spezifisches Dokument."""
+    # Methoden für Erwähnungen und Relationen
+    def delete_existing_mentions_or_relations(self, document_id, step):
+        """Lösche Erwähnungen oder Relationen für einen Schritt eines Dokuments."""
         model = Mention if step == "mentions" else Relation
-        self.delete_existing_entries(model, document_id)
+        self.delete_existing_entries(model, {"document_id": document_id})
 
-    def store_mentions_or_relations(self, document_id, entries, step):
-        """Speichere Erwähnungen oder Relationen für ein spezifisches Dokument."""
+    def store_new_mentions_or_relations(self, document_id, entries, step):
+        """Speichere Erwähnungen oder Relationen für einen Schritt eines Dokuments."""
         if step == "mentions":
-            def mention_mapper(entry, document_id):
+            def mention_mapper(entry):
                 return Mention(
                     document_id=document_id,
                     content=entry["content"],
                     start=entry["start"],
                     end=entry["end"],
                 )
-            self.store_entries(Mention, entries, document_id, mention_mapper)
+            self.store_entries(Mention, entries, mention_mapper)
         elif step == "relations":
-            def relation_mapper(entry, document_id):
+            def relation_mapper(entry):
                 return Relation(
                     document_id=document_id,
                     type=entry["type"],
                     source=entry["source"],
                     target=entry["target"],
                 )
-            self.store_entries(Relation, entries, document_id, relation_mapper)
+            self.store_entries(Relation, entries, relation_mapper)
+
+    # Soft-Deletion Methoden
+    def soft_delete_document(self, document_id: int) -> bool:
+        """Soft-Delete eines einzelnen Dokuments."""
+        document = self.db_session.query(Document).filter(
+            Document.id == document_id,
+            Document.active == True
+        ).first()
+        if not document:
+            return False
+        document.active = False
+        self.db_session.commit()
+        return True
+
+    def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
+        """Soft-Delete für alle Dokumente eines Projekts."""
+        # Schritt 1: Dokument-IDs abrufen
+        doc_ids = self.db_session.query(Document.id).filter(
+            Document.project_id == project_id,
+            Document.active == True
+        ).all()  # Gibt [(1,), (2,), ...] zurück
+        doc_ids = [row[0] for row in doc_ids]
+
+        if not doc_ids:
+            return []
+
+        # Schritt 2: Bulk-Update
+        self.db_session.query(Document).filter(
+            Document.id.in_(doc_ids)
+        ).update({Document.active: False}, synchronize_session=False)
+        self.db_session.commit()
+
+        return doc_ids
