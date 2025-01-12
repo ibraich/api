@@ -49,7 +49,7 @@ class UserRepository(BaseRepository):
 
     def check_user_document_accessible(self, user_id, document_id):
         return (
-            db.session.query(
+            Session.query(
                 Document,
                 Project.schema_id,
                 DocumentRecommendation.id.label("document_recommendation_id"),

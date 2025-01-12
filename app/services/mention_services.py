@@ -2,6 +2,7 @@ from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
 
 from app.repositories.mention_repository import MentionRepository
+from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 from app.services.user_service import UserService, user_service
 from app.services.relation_services import RelationService, relation_service
@@ -20,6 +21,7 @@ class MentionService:
     relation_service: RelationService
     entity_service: EntityService
     token_service: TokenService
+    schema_service: SchemaService
 
     def __init__(
         self,
@@ -29,6 +31,7 @@ class MentionService:
         relation_service,
         entity_service,
         token_service,
+        schema_service,
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
@@ -36,6 +39,7 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
+        self.schema_service = schema_service
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -86,6 +90,12 @@ class MentionService:
         )
         if len(duplicate_token_mention) > 0:
             raise Conflict("Token mention already exists.")
+
+        # Check Tag is allowed
+        schema = self.schema_service.get_schema_by_document_edit(
+            data["document_edit_id"]
+        )
+        self.schema_service.verify_schema_mention(schema.id, data["tag"])
 
         # save mention
         mention = self.__mention_repository.create_mention(
@@ -173,11 +183,19 @@ class MentionService:
         if mention.document_recommendation_id:
             raise BadRequest("You cannot update a recommendation")
 
+        schema = self.schema_service.get_schema_by_document_edit(
+            mention.document_edit_id
+        )
+
         # Check that user owns this document edit
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
             user_id, mention.document_edit_id
         )
+
+        # Check for valid tag
+        if tag is not None:
+            self.schema_service.verify_schema_mention(schema.id, tag)
 
         if token_ids:
             # Check that tokens belong to this document
@@ -196,6 +214,11 @@ class MentionService:
             self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
             for token_id in token_ids:
                 self.token_mention_service.create_token_mention(token_id, mention_id)
+
+        if entity_id is not None or mention.entity_id is not None:
+            # Check that entity is allowed for tag
+            updated_tag = tag if tag is not None else mention.tag
+            self.schema_service.verify_entity_possible(schema.id, updated_tag)
 
         # Delete entity if it is empty after update, id = 0: clear entity_id of mention
         if entity_id is not None:
@@ -249,4 +272,5 @@ mention_service = MentionService(
     relation_service,
     entity_service,
     token_service,
+    schema_service,
 )
