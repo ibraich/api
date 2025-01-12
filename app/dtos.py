@@ -401,3 +401,13 @@ project_delete_output_model = api.model(
         "message": fields.String,
     }
 )
+
+relation_update_input_dto = api.model(
+    "UpdateRelationInput",
+    {
+        "tag": fields.String,
+        "isDirected": fields.Boolean,
+        "mention_head_id": fields.Integer,
+        "mention_tail_id": fields.Integer,
+    },
+)
