@@ -108,13 +108,5 @@ class DocumentDeletionResource(Resource):
     @ns.marshal_with(document_delete_output_dto)
     @ns.doc(description="Soft-delete a Document by setting 'active' to False")
     def delete(self, document_id):
-        """Soft-delete a document by setting its 'active' flag to False."""
-        try:
-            success = self.service.soft_delete_document(document_id)
-            if not success:
-                return {"error": "Document not found."}, 404
-            return {"message": "Document set to inactive successfully."}, 200
-        except ValueError as e:
-            return {"error": str(e)}, 400
-        except Exception as e:
-            return {"error": "An unexpected error occurred."}, 500
+        response = self.service.soft_delete_document(document_id)
+        return response, 200
