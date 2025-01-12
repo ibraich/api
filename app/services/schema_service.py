@@ -47,6 +47,7 @@ class SchemaService:
         relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
         return {
             "id": schema.id,
+            "name": schema.name,
             "is_fixed": schema.isFixed,
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
@@ -104,8 +105,10 @@ class SchemaService:
             return {"schemas": []}
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
 
-    def create_schema(self, modelling_language_id, team_id) -> Schema:
-        return self.__schema_repository.create_schema(modelling_language_id, team_id)
+    def create_schema(self, modelling_language_id, team_id, name) -> Schema:
+        return self.__schema_repository.create_schema(
+            modelling_language_id, team_id, name
+        )
 
     def create_schema_mention(
         self,

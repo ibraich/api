@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from werkzeug.exceptions import HTTPException, InternalServerError
 
 from app.config import Config
 
@@ -27,9 +28,12 @@ def transactional(func):
             with Session.begin():  # Automatically commits
                 result = func(*args, **kwargs)
             return result
-        except Exception as e:
+        except HTTPException as e:  # Reraise HTTP Exceptions
             Session.rollback()  # Explicit rollback if needed
             raise e
+        except Exception as e:  # Raise Internal Server Error on any other exception
+            Session.rollback()  # Explicit rollback if needed
+            raise InternalServerError(str(e))
         finally:
             Session.remove()  # Remove the session from the scope
 

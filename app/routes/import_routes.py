@@ -63,11 +63,8 @@ class Imports(Resource):
     @jwt_required()
     @transactional
     def post(self):
-        user_id = int(get_jwt_identity())
         import_schema = request.get_json()
 
         team_id = int(request.args.get("team_id"))
-
-        # TODO Backend Team: Check if user is part of the team
 
         return import_service.import_schema(import_schema, team_id)

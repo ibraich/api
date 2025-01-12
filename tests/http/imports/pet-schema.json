@@ -1,5 +1,6 @@
 {
   "modelling_language": "BPMN",
+  "name": "PET-Schema",
   "schema_mentions": [
     {
       "tag": "Actor",

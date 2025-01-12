@@ -72,6 +72,7 @@ class DocumentProjectRoutes(Resource):
         return response
 
 
+
 @ns.route("/<int:document_id>/regenerate-recommendations")
 @ns.response(200, "Success")
 @ns.response(400, "Invalid input")
@@ -93,6 +94,7 @@ class RegenerateRecommendations(Resource):
             return {"error": str(e)}, 400
         except Exception as e:
             return {"error": "An unexpected error occurred."}, 500
+
 
 
 @ns.route("/<int:document_id>")

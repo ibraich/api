@@ -20,6 +20,8 @@ from app.db import db, Session
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
+    def __init__(self):
+        self.db_session = db.session
 
     def __init__(self):
         """
@@ -150,5 +152,6 @@ class DocumentRepository(BaseRepository):
             Document.id.in_(doc_ids)
         ).update({Document.active: False}, synchronize_session=False)
         self.db_session.commit()
+
 
         return doc_ids
