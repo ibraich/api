@@ -18,7 +18,9 @@ from app.db import db, Session
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
-
+    def __init__(self, db_session):
+        self.db_session = db_session
+        
     def get_documents_by_user(self, user_id):
         return (
             db.session.query(
@@ -107,50 +109,69 @@ class DocumentRepository(BaseRepository):
         )
         return super().store_object_transactional(document)
 
-    def delete_existing_recommendations(self, document_id):
-        """Delete existing recommendations for a document."""
-        db.session.query(DocumentRecommendation).filter(
-            DocumentRecommendation.document_id == document_id
-        ).delete()
-        db.session.commit()
+    def delete_existing_entries(self, model, document_id):
+        """Generische Methode zum Löschen von Einträgen basierend auf dem Modell und der Dokument-ID."""
+        try:
+            self.db_session.query(model).filter(model.document_id == document_id).delete()
+            self.db_session.commit()
+        except Exception as e:
+            self.db_session.rollback()
+            raise RuntimeError(f"Fehler beim Löschen von Einträgen: {e}")
 
-    def store_new_recommendations(self, document_id, recommendations):
-        """Store new recommendations for a document."""
-        for recommendation in recommendations:
-            new_recommendation = DocumentRecommendation(
+    def store_entries(self, model, entries, document_id, mapper_function):
+        """
+        Generische Methode zum Speichern von Einträgen.
+        
+        :param model: Datenbankmodell.
+        :param entries: Liste der Einträge.
+        :param document_id: ID des Dokuments.
+        :param mapper_function: Funktion, die einen Eintrag in ein Modell-Objekt umwandelt.
+        """
+        try:
+            for entry in entries:
+                new_entry = mapper_function(entry, document_id)
+                self.db_session.add(new_entry)
+            self.db_session.commit()
+        except Exception as e:
+            self.db_session.rollback()
+            raise RuntimeError(f"Fehler beim Speichern von Einträgen: {e}")
+
+    def delete_recommendations(self, document_id):
+        """Lösche alle Empfehlungen für ein Dokument."""
+        self.delete_existing_entries(DocumentRecommendation, document_id)
+
+    def store_recommendations(self, document_id, recommendations):
+        """Speichere neue Empfehlungen für ein Dokument."""
+        def recommendation_mapper(recommendation, document_id):
+            return DocumentRecommendation(
                 document_id=document_id,
                 recommendation_type=recommendation["type"],
                 content=recommendation["content"],
             )
-            db.session.add(new_recommendation)
-        db.session.commit()
-    
-    def delete_existing_mentions_or_relations(self, document_id, step):
-        """Delete mentions or relations for a specific step of a document."""
-        if step == "mentions":
-            db.session.query(Mention).filter(Mention.document_id == document_id).delete()
-        elif step == "relations":
-            db.session.query(Relation).filter(Relation.document_id == document_id).delete()
-        db.session.commit()
+        self.store_entries(DocumentRecommendation, recommendations, document_id, recommendation_mapper)
 
-    def store_new_mentions_or_relations(self, document_id, recommendations, step):
-        """Store mentions or relations for a specific step of a document."""
+    def delete_mentions_or_relations(self, document_id, step):
+        """Lösche Erwähnungen oder Relationen für ein spezifisches Dokument."""
+        model = Mention if step == "mentions" else Relation
+        self.delete_existing_entries(model, document_id)
+
+    def store_mentions_or_relations(self, document_id, entries, step):
+        """Speichere Erwähnungen oder Relationen für ein spezifisches Dokument."""
         if step == "mentions":
-            for mention in recommendations:
-                new_mention = Mention(
+            def mention_mapper(entry, document_id):
+                return Mention(
                     document_id=document_id,
-                    content=mention["content"],
-                    start=mention["start"],
-                    end=mention["end"],
+                    content=entry["content"],
+                    start=entry["start"],
+                    end=entry["end"],
                 )
-                db.session.add(new_mention)
+            self.store_entries(Mention, entries, document_id, mention_mapper)
         elif step == "relations":
-            for relation in recommendations:
-                new_relation = Relation(
+            def relation_mapper(entry, document_id):
+                return Relation(
                     document_id=document_id,
-                    type=relation["type"],
-                    source=relation["source"],
-                    target=relation["target"],
+                    type=entry["type"],
+                    source=entry["source"],
+                    target=entry["target"],
                 )
-                db.session.add(new_relation)
-        db.session.commit()
+            self.store_entries(Relation, entries, document_id, relation_mapper)
