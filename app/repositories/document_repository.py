@@ -12,7 +12,6 @@ from app.models import (
     UserTeam,
     DocumentRecommendation,
     Schema,
-
 )
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import and_
@@ -24,6 +23,7 @@ class DocumentRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session
     
+
     def get_documents_by_user(self, user_id):
         return (
             db.session.query(
@@ -210,9 +210,13 @@ class DocumentRepository(BaseRepository):
         self.db_session.commit()
         return True
 
-    # Soft-Deletion für mehrere Dokumente eines Projekts
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
-        # Step 1: Get all doc IDs first
+        """
+        Setzt das 'active'-Flag aller Dokumente eines Projekts auf False.
+        :param project_id: ID des Projekts
+        :return: Liste der IDs der deaktivierten Dokumente
+        """
+        # Schritt 1: Dokument-IDs abrufen
         doc_ids = self.db_session.query(Document.id).filter(
             Document.project_id == project_id,
             Document.active == True
@@ -222,6 +226,7 @@ class DocumentRepository(BaseRepository):
         if not doc_ids:
             return []
 
+        # Schritt 2: Bulk-Update durchführen
         self.db_session.query(Document).filter(
             Document.id.in_(doc_ids)
         ).update({Document.active: False}, synchronize_session=False)
