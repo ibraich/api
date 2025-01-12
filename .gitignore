@@ -165,3 +165,6 @@ cython_debug/
 
 # Ignore macOS metadata files
 .DS_Store
+
+# IntelliJ http client environment file
+tests/http/http-client.env.json

@@ -52,10 +52,19 @@ document_output_dto = api.model(
         "team_id": fields.Integer,
         "team_name": fields.String,
         "schema_id": fields.Integer,
+        "schema_name": fields.String,
         "project_id": fields.Integer,
         "project_name": fields.String,
         "document_edit_id": fields.Integer,
         "document_edit_state": fields.String,
+    },
+)
+
+entity_input_dto = api.model(
+    "EntityInput",
+    {
+        "document_edit_id": fields.Integer(required=True),
+        "mention_ids": fields.List(fields.Integer, required=True),
     },
 )
 
@@ -83,6 +92,17 @@ mention_output_list_dto = api.model(
     },
 )
 
+relation_input_dto = api.model(
+    "RelationInput",
+    {
+        "tag": fields.String,
+        "document_edit_id": fields.Integer(required=True),
+        "isDirected": fields.Boolean,
+        "mention_head_id": fields.Integer(required=True),
+        "mention_tail_id": fields.Integer(required=True),
+    },
+)
+
 relation_output_dto = api.model(
     "RelationOutput",
     {
@@ -99,6 +119,29 @@ relation_output_list_dto = api.model(
     "RelationOutputList",
     {
         "relations": fields.List(fields.Nested(relation_output_dto)),
+    },
+)
+
+document_create_dto = api.model(
+    "DocumentUpload",
+    {
+        "project_id": fields.Integer(required=True, description="ID of the project"),
+        "file_name": fields.String(required=True, description="Name of the document"),
+        "file_content": fields.String(
+            required=True, description="Content of the document"
+        ),
+    },
+)
+
+document_create_output_dto = api.model(
+    "DocumentUploadOutput",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "content": fields.String,
+        "creator_id": fields.Integer,
+        "project_id": fields.Integer,
+        "state_id": fields.Integer,
     },
 )
 
@@ -146,6 +189,7 @@ schema_output_dto = api.model(
     "SchemaOutput",
     {
         "id": fields.Integer,
+        "name": fields.String,
         "is_fixed": fields.Boolean,
         "modellingLanguage": fields.String,
         "team_id": fields.Integer,
@@ -238,6 +282,7 @@ project_user_output_dto = api.model(
         "team_id": fields.Integer,
         "team_name": fields.String,
         "schema_id": fields.Integer,
+        "schema_name": fields.String,
     },
 )
 
@@ -260,9 +305,13 @@ team_delete_output_dto = api.model(
 signup_input_dto = api.model(
     "SignupInput",
     {
-        "username": fields.String(required=True, description="Username of the new user"),
+        "username": fields.String(
+            required=True, description="Username of the new user"
+        ),
         "email": fields.String(required=True, description="Email of the new user"),
-        "password": fields.String(required=True, description="Password for the new user"),
+        "password": fields.String(
+            required=True, description="Password for the new user"
+        ),
     },
 )
 
@@ -270,5 +319,61 @@ signup_output_dto = api.model(
     "SignupOutput",
     {
         "message": fields.String,
+    },
+)
+
+token_output_dto = api.model(
+    "TokenOutput",
+    {
+        "id": fields.Integer,
+        "text": fields.String,
+        "document_index": fields.Integer,
+        "sentence_index": fields.Integer,
+        "pos_tag": fields.String,
+    },
+)
+
+token_output_list_dto = api.model(
+    "TokenListOutput",
+    {
+        "tokens": fields.List(fields.Nested(token_output_dto)),
+    },
+)
+
+login_input_dto = api.model(
+    "LoginInput",
+    {
+        "email": fields.String(required=True, description="The email of the user"),
+        "password": fields.String(
+            required=True, description="The password of the user"
+        ),
+    },
+)
+
+login_output_dto = api.model(
+    "LoginOutput",
+    {
+        "token": fields.String(
+            required=True, description="The JWT token for authenticated user"
+        ),
+    },
+)
+
+mention_update_input_dto = api.model(
+    "UpdateMentionInput",
+    {
+        "tag": fields.String,
+        "token_ids": fields.List(fields.Integer),
+        "entity_id": fields.Integer,
+    },
+)
+
+relation_update_input_dto = api.model(
+    "UpdateRelationInput",
+    {
+        "tag": fields.String,
+        "isDirected": fields.Boolean,
+        "mention_head_id": fields.Integer,
+        "mention_tail_id": fields.Integer,
     },
 )

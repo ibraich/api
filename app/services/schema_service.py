@@ -1,7 +1,16 @@
+import typing
+import random
+
 from werkzeug.exceptions import NotFound, BadRequest
 
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
+
+
+def generate_random_hex_color():
+    """Generate a random hexadecimal color code."""
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
 class SchemaService:
@@ -17,16 +26,28 @@ class SchemaService:
             return NotFound("Schema not found")
 
     def get_schema_by_id(self, schema_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
         schema = self.__schema_repository.get_schema_by_id(schema_id)
         if schema is None:
             raise BadRequest("Schema not found")
+        return self._build_schema(schema)
+
+    def get_schema_by_project_id(self, project_id):
+        schema = self.__schema_repository.get_by_project(project_id)
+        if schema is None:
+            raise BadRequest("Project not found")
+        return self._build_schema(schema)
+
+    def _build_schema(self, schema):
         constraints = self.__schema_repository.get_schema_constraints_by_schema(
-            schema_id
+            schema.id
         )
-        mentions = self.__schema_repository.get_schema_mentions_by_schema(schema_id)
-        relations = self.__schema_repository.get_schema_relations_by_schema(schema_id)
+        mentions = self.__schema_repository.get_schema_mentions_by_schema(schema.id)
+        relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
         return {
             "id": schema.id,
+            "name": schema.name,
             "is_fixed": schema.isFixed,
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
@@ -78,11 +99,51 @@ class SchemaService:
         }
 
     def get_schemas_by_user(self):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
         schemas = self.__schema_repository.get_schema_ids_by_user(user_id)
         if schemas is None:
             return {"schemas": []}
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
+
+    def create_schema(self, modelling_language_id, team_id, name) -> Schema:
+        return self.__schema_repository.create_schema(
+            modelling_language_id, team_id, name
+        )
+
+    def create_schema_mention(
+        self,
+        schema_id: int,
+        tag: str,
+        description: str,
+        entity_possible: bool,
+        color: typing.Optional[str] = None,
+    ) -> SchemaMention:
+        if color is None:
+            color = generate_random_hex_color()
+        return self.__schema_repository.create_schema_mention(
+            schema_id, tag, description, entity_possible, color
+        )
+
+    def create_schema_relation(
+        self, schema_id, tag: str, description: str
+    ) -> SchemaRelation:
+        return self.__schema_repository.create_schema_relation(
+            schema_id, tag, description
+        )
+
+    def create_schema_constraint(
+        self,
+        schema_relation_id: int,
+        schema_mention_id_head: int,
+        schema_mention_id_tail: int,
+        is_directed: bool,
+    ) -> SchemaConstraint:
+        return self.__schema_repository.create_schema_constraint(
+            schema_relation_id,
+            schema_mention_id_head,
+            schema_mention_id_tail,
+            is_directed,
+        )
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)

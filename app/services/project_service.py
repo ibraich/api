@@ -1,3 +1,5 @@
+from werkzeug.exceptions import BadRequest
+
 from app.services.schema_service import SchemaService, schema_service
 from app.services.user_service import (
     UserService,
@@ -21,7 +23,7 @@ class ProjectService:
     def create_project(self, team_id, schema_id, projectname):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_in_team(user_id, team_id)
-        self.schema_service.check_schema_exists(schema_id)
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
         project = self.__project_repository.create_project(
             projectname,
             user_id,
@@ -41,8 +43,14 @@ class ProjectService:
             document_edit_id
         )
 
+    def get_project_by_id(self, project_id):
+        project = self.__project_repository.get_project_by_id(project_id)
+        if project is None:
+            raise BadRequest("Project not found")
+        return project
+
     def get_projects_by_user(self):
-        user_id = 1  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
         projects = self.__project_repository.get_projects_by_user(user_id)
         if projects is None:
             return {"projects": []}
@@ -55,6 +63,7 @@ class ProjectService:
                     "team_id": project.team_id,
                     "team_name": project.team_name,
                     "schema_id": project.schema_id,
+                    "schema_name": project.schema_name,
                 }
                 for project in projects
             ]

@@ -1,26 +1,29 @@
-from app.models import UserTeam, DocumentEdit, User
+from app.models import UserTeam, DocumentEdit, User, Team, Project, Document, Schema
 from app.repositories.base_repository import BaseRepository
-from app.db import db
+from app.db import db, Session
 
 
 class UserRepository(BaseRepository):
     def check_user_in_team(self, user_id, team_id):
         return (
-            db.session.query(UserTeam)
+            Session.query(UserTeam)
             .filter(UserTeam.user_id == user_id, UserTeam.team_id == team_id)
             .first()
         )
 
     def get_user_by_email(self, mail):
-        return (
-            db.session.query(User.id, User.username, User.email)
-            .filter(User.email == mail)
+        return db.session.query(User).filter(User.email == mail).first()
+
+    def get_user_by_document_edit_id(self, document_edit_id) -> int:
+        document_edit = (
+            Session.query(DocumentEdit)
+            .filter(DocumentEdit.id == document_edit_id)
+            .filter(DocumentEdit.active == True)
             .first()
         )
-
-    def get_user_by_document_edit_id(self, document_edit_id):
-        document_edit = db.session.query(DocumentEdit).get(document_edit_id)
-        return document_edit.user_id
+        if document_edit is None:
+            raise NotFound("Document Edit not found")
+        return int(document_edit.user_id)
 
     def get_user_by_username(self, username):
         return User.query.filter_by(username=username).first()
@@ -30,3 +33,22 @@ class UserRepository(BaseRepository):
         db.session.add(new_user)
         db.session.commit()
         return new_user
+
+    def check_user_document_accessible(self, user_id, document_id):
+        return (
+            db.session.query(UserTeam)
+            .join(Team, UserTeam.team_id == Team.id)
+            .join(Project, Project.team_id == Team.id)
+            .join(Document, Document.project_id == Project.id)
+            .filter((Document.id == document_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
+
+    def check_user_schema_accessible(self, user_id, schema_id):
+        return (
+            Session.query(UserTeam)
+            .join(Team, UserTeam.team_id == Team.id)
+            .join(Schema, Schema.team_id == Team.id)
+            .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
