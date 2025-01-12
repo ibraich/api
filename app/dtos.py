@@ -293,6 +293,15 @@ project_user_output_list_dto = api.model(
     },
 )
 
+
+# Define the response DTO for output
+team_delete_output_dto = api.model(
+    "TeamDeleteOutput",
+    {
+        "message": fields.String(description="Message indicating the status of the operation")
+    }
+)
+
 signup_input_dto = api.model(
     "SignupInput",
     {

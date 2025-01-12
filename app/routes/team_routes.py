@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import BadRequest, Unauthorized
 from flask_restx import Resource, Namespace
 from flask import request
+from app.dtos import team_input_dto, team_output_dto, team_member_input_dto, team_member_output_dto, \
+    team_user_output_list_dto, team_delete_output_dto
 from app.dtos import (
     team_input_dto,
     team_output_dto,
@@ -67,3 +69,21 @@ class TeamRoutes(Resource):
 
         except exc.IntegrityError:
             raise BadRequest("Teamname already exists")
+
+    @ns.route("/<int:team_id>")
+    @ns.response(404, "Team not found")
+    @ns.response(401, "Unauthorized")
+    @ns.response(200, "Team deleted successfully")
+    class TeamDeleteResource(Resource):
+        service = team_service
+
+        @ns.doc(description="Delete a team by ID")
+        @ns.marshal_with(team_delete_output_dto)
+        def delete(self, team_id):
+            # Get the logged-in user's ID (this can be from session or token)
+            #user_id = user_service.get_logged_in_user_id()  # Assuming you have a method to get user ID
+
+           self.service.delete_team(team_id)
+
+           return {"message": "Team deleted successfully."}
+
