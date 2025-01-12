@@ -109,36 +109,45 @@ class DocumentRepository(BaseRepository):
         )
         return super().store_object_transactional(document)
 
-    def delete_existing_entries(self, model, filter_conditions: dict):
-        """Generische Methode zum Löschen von Einträgen basierend auf Filterbedingungen."""
+    # Allgemeine Löschmethode
+    def delete_entries(self, model, filter_conditions: dict):
+        """
+        Generische Methode zum Löschen von Einträgen basierend auf Modell und Filterbedingungen.
+        :param model: Datenbankmodell
+        :param filter_conditions: Bedingungen als Dictionary (z. B. {"document_id": 1})
+        """
         try:
             query = self.db_session.query(model)
-            for key, value in filter_conditions.items():
-                query = query.filter(getattr(model, key) == value)
+            for field, value in filter_conditions.items():
+                query = query.filter(getattr(model, field) == value)
             query.delete()
             self.db_session.commit()
         except Exception as e:
             self.db_session.rollback()
             raise RuntimeError(f"Fehler beim Löschen von {model.__name__}: {e}")
 
-    # Allgemeine Methode zum Speichern
+    # Allgemeine Speichermethode
     def store_entries(self, model, entries, mapper_function):
-        """Generische Methode zum Speichern von Einträgen."""
+        """
+        Generische Methode zum Speichern von Einträgen in die Datenbank.
+        :param model: Datenbankmodell
+        :param entries: Liste der zu speichernden Einträge
+        :param mapper_function: Funktion, die einen Eintrag in ein Modell-Objekt umwandelt
+        """
         try:
             for entry in entries:
-                new_entry = mapper_function(entry)
-                self.db_session.add(new_entry)
+                self.db_session.add(mapper_function(entry))
             self.db_session.commit()
         except Exception as e:
             self.db_session.rollback()
             raise RuntimeError(f"Fehler beim Speichern von {model.__name__}: {e}")
 
-    # Methoden für Empfehlungen
-    def delete_existing_recommendations(self, document_id):
-        """Lösche bestehende Empfehlungen für ein Dokument."""
-        self.delete_existing_entries(DocumentRecommendation, {"document_id": document_id})
+    # Empfehlungen verwalten
+    def delete_recommendations(self, document_id):
+        """Lösche alle Empfehlungen für ein Dokument."""
+        self.delete_entries(DocumentRecommendation, {"document_id": document_id})
 
-    def store_new_recommendations(self, document_id, recommendations):
+    def store_recommendations(self, document_id, recommendations):
         """Speichere neue Empfehlungen für ein Dokument."""
         def recommendation_mapper(recommendation):
             return DocumentRecommendation(
@@ -148,14 +157,23 @@ class DocumentRepository(BaseRepository):
             )
         self.store_entries(DocumentRecommendation, recommendations, recommendation_mapper)
 
-    # Methoden für Erwähnungen und Relationen
-    def delete_existing_mentions_or_relations(self, document_id, step):
-        """Lösche Erwähnungen oder Relationen für einen Schritt eines Dokuments."""
+    # Erwähnungen und Relationen verwalten
+    def delete_mentions_or_relations(self, document_id, step):
+        """
+        Lösche Erwähnungen oder Relationen für ein spezifisches Dokument.
+        :param document_id: ID des Dokuments
+        :param step: "mentions" oder "relations"
+        """
         model = Mention if step == "mentions" else Relation
-        self.delete_existing_entries(model, {"document_id": document_id})
+        self.delete_entries(model, {"document_id": document_id})
 
-    def store_new_mentions_or_relations(self, document_id, entries, step):
-        """Speichere Erwähnungen oder Relationen für einen Schritt eines Dokuments."""
+    def store_mentions_or_relations(self, document_id, entries, step):
+        """
+        Speichere Erwähnungen oder Relationen für ein Dokument.
+        :param document_id: ID des Dokuments
+        :param entries: Einträge zum Speichern
+        :param step: "mentions" oder "relations"
+        """
         if step == "mentions":
             def mention_mapper(entry):
                 return Mention(
@@ -175,9 +193,13 @@ class DocumentRepository(BaseRepository):
                 )
             self.store_entries(Relation, entries, relation_mapper)
 
-    # Soft-Deletion Methoden
+    # Soft-Deletion eines Dokuments
     def soft_delete_document(self, document_id: int) -> bool:
-        """Soft-Delete eines einzelnen Dokuments."""
+        """
+        Setzt das 'active'-Flag eines Dokuments auf False.
+        :param document_id: ID des Dokuments
+        :return: True, wenn erfolgreich, False, wenn das Dokument nicht gefunden wurde
+        """
         document = self.db_session.query(Document).filter(
             Document.id == document_id,
             Document.active == True
@@ -188,19 +210,22 @@ class DocumentRepository(BaseRepository):
         self.db_session.commit()
         return True
 
+    # Soft-Deletion für mehrere Dokumente eines Projekts
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
-        """Soft-Delete für alle Dokumente eines Projekts."""
-        # Schritt 1: Dokument-IDs abrufen
+        """
+        Setzt das 'active'-Flag aller Dokumente eines Projekts auf False.
+        :param project_id: ID des Projekts
+        :return: Liste der IDs der deaktivierten Dokumente
+        """
         doc_ids = self.db_session.query(Document.id).filter(
             Document.project_id == project_id,
             Document.active == True
-        ).all()  # Gibt [(1,), (2,), ...] zurück
+        ).all()
         doc_ids = [row[0] for row in doc_ids]
 
         if not doc_ids:
             return []
 
-        # Schritt 2: Bulk-Update
         self.db_session.query(Document).filter(
             Document.id.in_(doc_ids)
         ).update({Document.active: False}, synchronize_session=False)
