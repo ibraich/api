@@ -102,7 +102,7 @@ class DocumentRepository(BaseRepository):
                 DocumentRecommendation,
                 and_(
                     Document.id == DocumentRecommendation.document_id,
-                    DocumentRecommendation.document_edit_id is None,
+                    DocumentRecommendation.document_edit_id.is_(None),
                 ),
             )
         ).first()
@@ -118,7 +118,7 @@ class DocumentRepository(BaseRepository):
         )
         return super().store_object_transactional(document)
 
-    def soft_delete_document(self, document_id: int):
+    def soft_delete_document(self, document_id: int) -> bool:
         """
         Setzt das 'active'-Flag eines Dokuments auf False.
         :param document_id: ID des Dokuments
