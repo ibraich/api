@@ -121,7 +121,6 @@ class DocumentRepository(BaseRepository):
         return super().store_object_transactional(document)
 
     def soft_delete_document(self, document_id: int):
-
         document = (
             self.db_session.query(Document)
             .filter(Document.id == document_id, Document.active == True)
