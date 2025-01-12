@@ -134,21 +134,20 @@ class DocumentRepository(BaseRepository):
         return True
 
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
-        """
-        Setzt das 'active'-Flag aller Dokumente eines Projekts auf False.
-        """
+        # Step 1: Get all doc IDs first
         doc_ids = self.db_session.query(Document.id).filter(
             Document.project_id == project_id,
             Document.active == True
-        ).all()
+        ).all()  # returns list of tuples like [(1,), (2,)...]
         doc_ids = [row[0] for row in doc_ids]
 
-        if doc_ids:  # Überprüfen, ob es Dokumente gibt
-         self.db_session.query(Document).filter(
-            Document.id.in_(doc_ids)
-        ).update({"active": False}, synchronize_session=False)
+        if not doc_ids:
+            return []
 
-        # Änderungen in der Datenbank speichern
+        # Step 2: Bulk update
+        self.db_session.query(Document).filter(
+            Document.id.in_(doc_ids)
+        ).update({Document.active: False}, synchronize_session=False)
         self.db_session.commit()
 
         return doc_ids
