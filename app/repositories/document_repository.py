@@ -27,6 +27,9 @@ class DocumentRepository(BaseRepository):
         self.db_session = db.session
 
     def get_documents_by_user(self, user_id):
+        """
+        Ruft Dokumente für einen bestimmten Benutzer ab.
+        """
         return (
             db.session.query(
                 Document.id,
@@ -62,16 +65,7 @@ class DocumentRepository(BaseRepository):
 
     def create_document(self, name, content, project_id, user_id):
         """
-        Creates and stores a document in the database.
-
-        Args:
-            name (str): Name of the document.
-            content (str): Content of the document.
-            project_id (int): ID of the associated project.
-            user_id (int): ID of the associated creator.
-
-        Returns:
-            Document: The created Document object.
+        Erstellt und speichert ein neues Dokument in der Datenbank.
         """
         document = Document(
             name=name,
@@ -84,6 +78,9 @@ class DocumentRepository(BaseRepository):
         return document
 
     def get_document_by_id(self, document_id):
+        """
+        Ruft ein Dokument anhand seiner ID ab.
+        """
         return (
             Session.query(
                 Document.content,
@@ -110,6 +107,9 @@ class DocumentRepository(BaseRepository):
         ).first()
 
     def save(self, name, content, project_id, creator_id, state_id):
+        """
+        Speichert ein neues Dokument transaktional in der Datenbank.
+        """
         document = Document(
             name=name,
             content=content,
@@ -123,8 +123,6 @@ class DocumentRepository(BaseRepository):
     def soft_delete_document(self, document_id: int) -> bool:
         """
         Setzt das 'active'-Flag eines Dokuments auf False.
-        :param document_id: ID des Dokuments
-        :return: True, wenn erfolgreich, False, wenn das Dokument nicht gefunden wurde
         """
         document = (
             self.db_session.query(Document)
@@ -140,8 +138,6 @@ class DocumentRepository(BaseRepository):
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
         """
         Setzt das 'active'-Flag aller Dokumente eines Projekts auf False.
-        :param project_id: ID des Projekts
-        :return: Liste der IDs der deaktivierten Dokumente
         """
         doc_ids = self.db_session.query(Document.id).filter(
             Document.project_id == project_id,
