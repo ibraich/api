@@ -152,5 +152,4 @@ class DocumentRepository(BaseRepository):
             Document.id.in_(doc_ids)
         ).update({Document.active: False}, synchronize_session=False)
         self.db_session.commit()
-
         return doc_ids
