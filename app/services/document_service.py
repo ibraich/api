@@ -1,10 +1,12 @@
 from werkzeug.exceptions import NotFound, BadRequest
 
 from app.repositories.document_repository import DocumentRepository
-from app.services.document_edit_service import document_edit_service, DocumentEditService
+from app.services.document_edit_service import (
+    document_edit_service,
+    DocumentEditService,
+)
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
-from app.services.project_document_service import ProjectDocumentService, project_document_service
 from app.services.team_service import TeamService, team_service
 
 
@@ -12,25 +14,20 @@ class DocumentService:
     __document_repository: DocumentRepository
     user_service: UserService
     team_service: TeamService
-    project_document_service_service: ProjectDocumentService
     token_service: TokenService
     document_edit_service: DocumentEditService
-
-
 
     def __init__(
         self,
         document_repository,
         user_service,
         team_service,
-        project_document_service,
         token_service,
         document_edit_service,
     ):
         self.__document_repository = document_repository
         self.user_service = user_service
         self.team_service = team_service
-        self.project_document_service = project_document_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
 
@@ -67,13 +64,8 @@ class DocumentService:
 
         user_id = self.user_service.get_logged_in_user_id()
 
-        # Validate that the user belongs to the team that owns the project
-        project = self.project_document_service.get_project_by_id(project_id)
-        if not project:
-            raise NotFound("Project not found.")
-
-        team_id = project.team_id
-        self.user_service.check_user_in_team(user_id, team_id)
+        # Validate that the user has access to the project
+        self.user_service.check_user_project_accessible(user_id, project_id)
 
         # Validate file content
         if not file_name or not file_content.strip():
@@ -117,12 +109,22 @@ class DocumentService:
         return {"message": "Document set to inactive successfully."}
 
     def bulk_soft_delete_documents_by_project_id(self, project_id):
-        document_ids = self.__document_repository.bulk_soft_delete_documents_by_project_id(project_id)
+        document_ids = (
+            self.__document_repository.bulk_soft_delete_documents_by_project_id(
+                project_id
+            )
+        )
 
         if document_ids:
-            self.document_edit_service.bulk_soft_delete_edits_for_documents(document_ids)
+            self.document_edit_service.bulk_soft_delete_edits_for_documents(
+                document_ids
+            )
 
 
 document_service = DocumentService(
-    DocumentRepository(), user_service, team_service, project_document_service, token_service, document_edit_service
+    DocumentRepository(),
+    user_service,
+    team_service,
+    token_service,
+    document_edit_service,
 )

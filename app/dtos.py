@@ -366,40 +366,18 @@ document_edit_output_soft_delete_dto = api.model(
     },
 )
 
-document_edit_input_soft_delete_dto = api.model(
-    "DeleteDocumentEditInput",
-    {
-        "document_edit_id": fields.Integer(required=True, min=1),
-    }
-)
-
-document_delete_input_dto = api.model(
-    "DeleteDocumentInput",
-    {
-        "document_id": fields.String(required=False)
-
-    }
-)
-
 document_delete_output_dto = api.model(
     "DeleteDocumentOutput",
     {
         "message": fields.String,
-    }
-)
-
-project_delete_input_model = api.model(
-    "DeleteProjectInput",
-    {
-        "project_id": fields.String(required=False)
-    }
+    },
 )
 
 project_delete_output_model = api.model(
     "DeleteProjectOutput",
     {
         "message": fields.String,
-    }
+    },
 )
 
 relation_update_input_dto = api.model(
