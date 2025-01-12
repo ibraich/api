@@ -1,6 +1,5 @@
 from sqlalchemy import and_
 from werkzeug.exceptions import NotFound
-
 from app.models import (
     UserTeam,
     DocumentEdit,
@@ -19,7 +18,9 @@ class UserRepository(BaseRepository):
     def check_user_in_team(self, user_id, team_id):
         return (
             Session.query(UserTeam)
+            .join(Team, Team.id == UserTeam.team_id)
             .filter(UserTeam.user_id == user_id, UserTeam.team_id == team_id)
+            .filter(Team.active == True)
             .first()
         )
 
@@ -65,6 +66,7 @@ class UserRepository(BaseRepository):
                 ),
             )
             .filter((Document.id == document_id) & (UserTeam.user_id == user_id))
+            .filter(Document.active == True)
             .first()
         )
 
@@ -74,6 +76,7 @@ class UserRepository(BaseRepository):
             .join(Team, UserTeam.team_id == Team.id)
             .join(Schema, Schema.team_id == Team.id)
             .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))
+            .filter(Schema.active == True)
             .first()
         )
 
