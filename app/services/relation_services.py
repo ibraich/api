@@ -9,6 +9,7 @@ class RelationService:
     def __init__(self, relation_repository, mention_repository):
         self.__relation_repository = relation_repository
         self.__mention_repository = mention_repository
+        self.relation_repository = RelationRepository()
 
     def get_relations_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -142,33 +143,30 @@ class RelationService:
     
 
 
-    def accept_relation(self, relation_id, document_edit_id):
+    def accept_relation(self, relation_id: str):
         """
-        Accepts a relation by copying it to the document edit and setting its isShownRecommendation to False.
-        """
-        relation = self.relation_repository.get_relation_by_id(relation_id)
-        if not relation or relation.document_edit_id != document_edit_id:
-            raise ValueError("Invalid relation or unauthorized access.")
-
-        if not relation.isShownRecommendation:
-            raise ValueError("Relation recommendation already processed.")
-
-        # Use the repository method to copy the relation and update is_ShownRecommendation
-        return self.relation_repository.accept_relation(relation_id, document_edit_id)
-
-    def reject_relation(self, relation_id, document_edit_id):
-        """
-        Rejects a relation by setting its is_ShownRecommendation to False.
+        Accept a relation recommendation.
         """
         relation = self.relation_repository.get_relation_by_id(relation_id)
-        if not relation or relation.document_edit_id != document_edit_id:
-            raise ValueError("Invalid relation or unauthorized access.")
+        if not relation:
+            raise NotFound(f"Relation with ID {relation_id} not found.")
+        if not relation["isShownRecommendation"]:
+            raise BadRequest(f"Relation with ID {relation_id} has already been handled.")
 
-        if not relation.isShownRecommendation:
-            raise ValueError("Relation recommendation already processed.")
+        self.relation_repository.create_in_document_edit(relation)
+        self.relation_repository.update_is_shown(relation_id, False)
 
-        # Use the repository method to update isShownRecommendation
-        return self.relation_repository.reject_relation(relation_id, document_edit_id)
+    def reject_relation(self, relation_id: str):
+        """
+        Reject a relation recommendation.
+        """
+        relation = self.relation_repository.get_relation_by_id(relation_id)
+        if not relation:
+            raise NotFound(f"Relation with ID {relation_id} not found.")
+        if not relation["isShownRecommendation"]:
+            raise BadRequest(f"Relation with ID {relation_id} has already been handled.")
+
+        self.relation_repository.update_is_shown(relation_id, False)
 
 relation_service = RelationService(RelationRepository(), MentionRepository())
 

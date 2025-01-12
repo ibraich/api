@@ -1,5 +1,5 @@
-from app.services.relation_services import relation_service
-from werkzeug.exceptions import BadRequest
+from app.services.relation_services import relation_service, RelationService
+from werkzeug.exceptions import NotFound,BadRequest
 from flask_restx import Namespace, Resource
 from app.dtos import relation_output_list_dto, relation_output_dto, relation_input_dto
 from flask import request
@@ -54,31 +54,38 @@ class RelationCreationResource(Resource):
         return response
 
 
-@ns.route("/<int:relation_id>/accept")
-class RelationAcceptResource(Resource):
+relation_service = RelationService()
+
+@ns.route('/<string:relation_id>/accept')
+class AcceptRelation(Resource):
+    @ns.response(200, 'Relation successfully accepted.')
+    @ns.response(400, 'Bad Request')
+    @ns.response(404, 'Relation not found')
     def post(self, relation_id):
         """
-        Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
+        Accept a relation recommendation.
         """
-        # Extract document_edit_id from request arguments
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        # Call the RelationService to handle the accept logic
-        return relation_service.accept_relation(relation_id, int(document_edit_id))
+        try:
+            relation_service.accept_relation(relation_id)
+            return {"message": f"Relation {relation_id} successfully accepted."}, 200
+        except NotFound as e:
+            return {"error": str(e)}, 404
+        except BadRequest as e:
+            return {"error": str(e)}, 400
 
-@ns.route("/<int:relation_id>/reject")
-class RelationRejectResource(Resource):
+@ns.route('/<string:relation_id>/reject')
+class RejectRelation(Resource):
+    @ns.response(200, 'Relation successfully rejected.')
+    @ns.response(400, 'Bad Request')
+    @ns.response(404, 'Relation not found')
     def post(self, relation_id):
         """
-        Reject a relation by setting isShownRecommendation to False.
+        Reject a relation recommendation.
         """
-        # Extract document_edit_id from request arguments
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        # Call the RelationService to handle the reject logic
-        return relation_service.reject_relation(relation_id, int(document_edit_id))
-
+        try:
+            relation_service.reject_relation(relation_id)
+            return {"message": f"Relation {relation_id} successfully rejected."}, 200
+        except NotFound as e:
+            return {"error": str(e)}, 404
+        except BadRequest as e:
+            return {"error": str(e)}, 400

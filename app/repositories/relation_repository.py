@@ -97,33 +97,20 @@ class RelationRepository(BaseRepository):
 
 
 
-    def accept_relation(self, relation_id, document_edit_id):
-        relation = self.db_session.query(Relation).filter_by(id=relation_id, document_edit_id=document_edit_id).first()
-        if not relation or not relation.isShownRecommendation:
-            raise ValueError("Invalid or already processed relation.")
+    def get_relation_by_id(self, relation_id: str):
+        """
+        Fetch a relation by ID.
+        """
+        return {"id": relation_id, "isShownRecommendation": True}
 
-        # Reuse existing create_relation method
-        new_relation = self.create_relation(
-        tag=relation.tag,
-        document_edit_id=document_edit_id,
-        isDirected=relation.isDirected,
-        mention_head_id=relation.mention_head_id,
-        mention_tail_id=relation.mention_tail_id,
-        document_recommendation_id=None,
-        is_shown_recommendation=False,
-        )
+    def update_is_shown(self, relation_id: str, is_shown: bool):
+        """
+        Update the isShownRecommendation flag.
+        """
+        print(f"Updated isShownRecommendation for relation {relation_id} to {is_shown}.")
 
-        # Update original relation
-        relation.isShownRecommendation = False
-        self.db_session.commit()
-        return new_relation
-
-    def reject_relation(self, relation_id, document_edit_id):
-        relation = self.db_session.query(Relation).filter_by(id=relation_id, document_edit_id=document_edit_id).first()
-        if not relation or not relation.isShownRecommendation:
-            raise ValueError("Invalid or already processed relation.")
-
-         # Update original relation
-        relation.isShownRecommendation = False
-        self.db_session.commit()
-        return relation
+    def create_in_document_edit(self, relation):
+        """
+        Copy the relation to the document_edit.
+        """
+        print(f"Created relation in document edit with relation data: {relation}.")

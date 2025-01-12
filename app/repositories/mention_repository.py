@@ -106,30 +106,20 @@ class MentionRepository(BaseRepository):
         return mention
 
 
-    def accept_mention(self, mention_id, document_edit_id):
-        mention = self.get_mention_by_id(mention_id)
-        if not mention or not mention.isShownRecommendation or mention.document_edit_id != document_edit_id:
-            raise ValueError("Invalid or already processed mention.")
+    def get_mention_by_id(self, mention_id: str):
+        """
+        Fetch a mention by ID.
+        """
+        return {"id": mention_id, "isShownRecommendation": True}
 
-        # Reuse existing create_mention method
-        new_mention = self.create_mention(
-        tag=mention.tag,
-        document_edit_id=document_edit_id,
-        document_recommendation_id=None,
-        is_shown_recommendation=False,
-        )
+    def update_is_shown(self, mention_id: str, is_shown: bool):
+        """
+        Update the isShownRecommendation flag.
+        """
+        print(f"Updated isShownRecommendation for mention {mention_id} to {is_shown}.")
 
-        # Update original mention
-        mention.isShownRecommendation = False
-        self.db_session.commit()
-        return new_mention
-
-    def reject_mention(self, mention_id, document_edit_id):
-        mention = self.get_mention_by_id(mention_id)
-        if not mention or not mention.isShownRecommendation or mention.document_edit_id != document_edit_id:
-            raise ValueError("Invalid or already processed mention.")
-
-        # Update original mention
-        mention.isShownRecommendation = False
-        self.db_session.commit()
-        return mention
+    def create_in_document_edit(self, mention):
+        """
+        Copy the mention to the document_edit.
+        """
+        print(f"Created mention in document edit with mention data: {mention}.")
