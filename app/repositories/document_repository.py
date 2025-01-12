@@ -18,8 +18,8 @@ from app.db import db, Session
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
-    def __init__(self, db_session=None):
-        self.db_session = db_session or db.session
+    def __init__(self):
+        self.db_session = db.session
         
     def get_documents_by_user(self, user_id):
         return (
