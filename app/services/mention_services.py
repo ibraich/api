@@ -74,7 +74,7 @@ class MentionService:
 
     def create_mentions(self, data):
         # check if user is allowed to access this document edit
-        logged_in_user_id = user_service.get_logged_in_user_id()
+        logged_in_user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
             logged_in_user_id, data["document_edit_id"]
         )
@@ -178,7 +178,7 @@ class MentionService:
             raise BadRequest("You cannot update a recommendation")
 
         # Check that user owns this document edit
-        user_id = get_jwt_identity()  # self.user_service.get_logged_in_user_id()
+        user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
             user_id, mention.document_edit_id
         )

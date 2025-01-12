@@ -358,3 +358,13 @@ mention_update_input_dto = api.model(
         "entity_id": fields.Integer,
     },
 )
+
+relation_update_input_dto = api.model(
+    "UpdateRelationInput",
+    {
+        "tag": fields.String,
+        "isDirected": fields.Boolean,
+        "mention_head_id": fields.Integer,
+        "mention_tail_id": fields.Integer,
+    },
+)
