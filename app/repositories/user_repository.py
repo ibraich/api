@@ -1,3 +1,5 @@
+from werkzeug.exceptions import NotFound
+
 from app.models import UserTeam, DocumentEdit, User, Team, Project, Document, Schema
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
