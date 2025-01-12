@@ -68,6 +68,7 @@ class DocumentProjectRoutes(Resource):
         response = self.service.get_documents_by_project(project_id)
         return response
 
+
 @ns.route("/<int:document_id>/regenerate-recommendations")
 @ns.response(200, "Success")
 @ns.response(400, "Invalid input")
@@ -84,6 +85,30 @@ class RegenerateRecommendations(Resource):
             user_id = user_service.get_logged_in_user_id()
             response = document_service.regenerate_recommendations(document_id, step, user_id)
             return response, 200
+        except ValueError as e:
+            return {"error": str(e)}, 400
+        except Exception as e:
+            return {"error": "An unexpected error occurred."}, 500
+
+
+@ns.route("/<int:document_id>")
+@ns.doc(params={"document_id": "Document ID to soft-delete"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Document not found")
+@ns.response(200, "Document set to inactive successfully")
+class DocumentDeletionResource(Resource):
+    service = document_service  # An instance of DocumentService
+
+    @jwt_required()
+    @ns.marshal_with(document_delete_output_dto)
+    @ns.doc(description="Soft-delete a Document by setting 'active' to False")
+    def delete(self, document_id):
+        """Soft-delete a document by setting its 'active' flag to False."""
+        try:
+            success = self.service.soft_delete_document(document_id)
+            if not success:
+                return {"error": "Document not found."}, 404
+            return {"message": "Document set to inactive successfully."}, 200
         except ValueError as e:
             return {"error": str(e)}, 400
         except Exception as e:
