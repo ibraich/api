@@ -19,7 +19,6 @@ class DocumentService:
         document_repository,
         user_service,
         team_service,
-        project_service,
         token_service,
         document_edit_service,
     ):
