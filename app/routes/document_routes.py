@@ -7,6 +7,7 @@ from app.dtos import (
     document_create_output_dto,
     document_create_dto,
     document_output_dto,
+    document_delete_output_dto,
 )
 from flask_jwt_extended import jwt_required
 
@@ -27,6 +28,7 @@ class DocumentRoutes(Resource):
         response = self.service.get_documents_by_user()
         return response
 
+    @jwt_required()
     @ns.doc(description="Upload a document to a specific project.")
     @ns.expect(document_create_dto, validate=True)
     @ns.response(201, "Document uploaded successfully.")
@@ -50,6 +52,7 @@ class DocumentRoutes(Resource):
         )
 
         return document_details, 201
+
 
 @ns.route("/project/<int:project_id>")
 @ns.doc(params={"project_id": "A Project ID"})
