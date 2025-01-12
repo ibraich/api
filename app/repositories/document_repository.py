@@ -10,7 +10,6 @@ from app.models import (
     Team,
     User,
     UserTeam,
-    DocumentRecommendation,
     Schema,
 )
 from app.repositories.base_repository import BaseRepository
@@ -22,6 +21,9 @@ class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
 
     def __init__(self):
+        """
+        Initialisiert die Datenbank-Session.
+        """
         self.db_session = db.session
 
     def get_documents_by_user(self, user_id):
@@ -141,7 +143,6 @@ class DocumentRepository(BaseRepository):
         :param project_id: ID des Projekts
         :return: Liste der IDs der deaktivierten Dokumente
         """
-        # Schritt 1: Dokument-IDs abrufen
         doc_ids = self.db_session.query(Document.id).filter(
             Document.project_id == project_id,
             Document.active == True
@@ -151,7 +152,6 @@ class DocumentRepository(BaseRepository):
         if not doc_ids:
             return []
 
-        # Schritt 2: Bulk-Update durchführen
         self.db_session.query(Document).filter(
             Document.id.in_(doc_ids)
         ).update({Document.active: False}, synchronize_session=False)
