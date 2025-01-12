@@ -73,6 +73,7 @@ class DocumentProjectRoutes(Resource):
 @ns.response(200, "Success")
 @ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
+@ns.response(500, "Unexpected error")
 class RegenerateRecommendations(Resource):
     def post(self, document_id):
         """(Re-)generate recommendations for a specific step of a document."""
@@ -93,9 +94,10 @@ class RegenerateRecommendations(Resource):
 
 @ns.route("/<int:document_id>")
 @ns.doc(params={"document_id": "Document ID to soft-delete"})
+@ns.response(200, "Document set to inactive successfully")
 @ns.response(400, "Invalid input")
 @ns.response(404, "Document not found")
-@ns.response(200, "Document set to inactive successfully")
+@ns.response(500, "Unexpected error")
 class DocumentDeletionResource(Resource):
     service = document_service  # An instance of DocumentService
 
