@@ -21,7 +21,9 @@ from app.db import db, Session
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
-        
+    def __init__(self):
+        self.db_session = db.session
+    
     def get_documents_by_user(self, user_id):
         return (
             db.session.query(
@@ -110,12 +112,7 @@ class DocumentRepository(BaseRepository):
         )
         return super().store_object_transactional(document)
 
-    def __init__(self, db_session=None):
-        """
-        Initialisiert das Repository mit einer DB-Session.
-        :param db_session: Optional, benutzerdefinierte DB-Session.
-        """
-        self.db_session = db_session or db.session
+    
      # Allgemeine Löschmethode
     def delete_entries(self, model, filter_conditions: dict):
         """
@@ -201,16 +198,12 @@ class DocumentRepository(BaseRepository):
             self.store_entries(Relation, entries, relation_mapper)
 
     # Soft-Deletion eines Dokuments
-    def soft_delete_document(self, document_id: int) -> bool:
-        """
-        Setzt das 'active'-Flag eines Dokuments auf False.
-        :param document_id: ID des Dokuments
-        :return: True, wenn erfolgreich, False, wenn das Dokument nicht gefunden wurde
-        """
-        document = self.db_session.query(Document).filter(
-            Document.id == document_id,
-            Document.active == True
-        ).first()
+    def soft_delete_document(self, document_id: int):
+        document = (
+            self.db_session.query(Document)
+            .filter(Document.id == document_id, Document.active == True)
+            .first()
+        )
         if not document:
             return False
         document.active = False
@@ -219,11 +212,7 @@ class DocumentRepository(BaseRepository):
 
     # Soft-Deletion für mehrere Dokumente eines Projekts
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
-        """
-        Setzt das 'active'-Flag aller Dokumente eines Projekts auf False.
-        :param project_id: ID des Projekts
-        :return: Liste der IDs der deaktivierten Dokumente
-        """
+        # Step 1: Get all doc IDs first
         doc_ids = self.db_session.query(Document.id).filter(
             Document.project_id == project_id,
             Document.active == True
