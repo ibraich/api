@@ -128,7 +128,7 @@ class DocumentRepository(BaseRepository):
         )
         if not document:
             return False
-        
+
         document.active = False
         self.db_session.commit()
         return True
@@ -143,12 +143,12 @@ class DocumentRepository(BaseRepository):
         ).all()
         doc_ids = [row[0] for row in doc_ids]
 
-        if not doc_ids:
-            return []
-
-        self.db_session.query(Document).filter(
+        if doc_ids:  # Überprüfen, ob es Dokumente gibt
+         self.db_session.query(Document).filter(
             Document.id.in_(doc_ids)
-        ).update({Document.active: False}, synchronize_session=False)
+        ).update({"active": False}, synchronize_session=False)
+
+        # Änderungen in der Datenbank speichern
         self.db_session.commit()
-        
+
         return doc_ids
