@@ -97,12 +97,11 @@ class RegenerateRecommendations(Resource):
 
 @ns.route("/<int:document_id>")
 @ns.doc(params={"document_id": "Document ID to soft-delete"})
-@ns.response(200, "Document set to inactive successfully")
 @ns.response(400, "Invalid input")
 @ns.response(404, "Document not found")
-@ns.response(500, "Unexpected error")
+@ns.response(200, "Document set to inactive successfully")
 class DocumentDeletionResource(Resource):
-    service = document_service  # An instance of DocumentService
+    service = document_service  # an instance of DocumentService
 
     @jwt_required()
     @ns.marshal_with(document_delete_output_dto)
