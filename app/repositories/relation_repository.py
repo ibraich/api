@@ -97,20 +97,18 @@ class RelationRepository(BaseRepository):
 
 
 
-    def get_relation_by_id(self, relation_id: str):
-        """
-        Fetch a relation by ID.
-        """
-        return {"id": relation_id, "isShownRecommendation": True}
+    def update_relation(
+        self, relation_id, tag, mention_head_id, mention_tail_id, is_directed
+    ):
+        relation = self.get_relation_by_id(relation_id)
+        if tag:
+            relation.tag = tag
+        if mention_head_id:
+            relation.mention_head_id = mention_head_id
+        if mention_tail_id:
+            relation.mention_tail_id = mention_tail_id
+        if is_directed is not None:
+            relation.isDirected = is_directed
 
-    def update_is_shown(self, relation_id: str, is_shown: bool):
-        """
-        Update the isShownRecommendation flag.
-        """
-        print(f"Updated isShownRecommendation for relation {relation_id} to {is_shown}.")
-
-    def create_in_document_edit(self, relation):
-        """
-        Copy the relation to the document_edit.
-        """
-        print(f"Created relation in document edit with relation data: {relation}.")
+        super().store_object(relation)
+        return relation
