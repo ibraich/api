@@ -15,3 +15,10 @@ class DocumentRecommendationRepository(BaseRepository):
             documentEditHash="",
         )
         return super().store_object_transactional(document_recommendation)
+    
+    def find_by_id(self, recommendation_id):
+        return self.db_session.query(DocumentRecommendation).filter_by(id=recommendation_id).first()
+
+    def update(self, recommendation):
+        self.db_session.add(recommendation)
+        self.db_session.commit()

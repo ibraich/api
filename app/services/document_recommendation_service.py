@@ -30,6 +30,28 @@ class DocumentRecommendationService:
         )
 
 
+
+    def accept_recommendation(self, recommendation_id):
+        recommendation = self.__document_recommendation_repository.find_by_id(recommendation_id)
+        if not recommendation:
+            raise ValueError("Recommendation not found.")
+
+        document_edit = self.__document_edit_repository.create_from_recommendation(recommendation)
+        recommendation.is_shown = False
+        self.__document_recommendation_repository.update(recommendation)
+
+        return {"status": "accepted", "document_edit_id": document_edit.id}
+
+    def reject_recommendation(self, recommendation_id):
+        recommendation = self.__document_recommendation_repository.find_by_id(recommendation_id)
+        if not recommendation:
+            raise ValueError("Recommendation not found.")
+
+        recommendation.is_shown = False
+        self.__document_recommendation_repository.update(recommendation)
+
+        return {"status": "rejected"}
+    
 document_recommendation_service = DocumentRecommendationService(
     DocumentRecommendationRepository(), mention_service
 )
