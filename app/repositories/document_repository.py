@@ -1,6 +1,7 @@
 from app.models import (
     Document,
     DocumentState,
+    DocumentRecommendation,
     Project,
     DocumentEditState,
     DocumentEdit,
@@ -9,7 +10,7 @@ from app.models import (
     Team,
     User,
     UserTeam,
-    DocumentRecommendation,
+   
 )
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import and_
