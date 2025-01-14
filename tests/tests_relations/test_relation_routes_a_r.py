@@ -1,41 +1,69 @@
 import unittest
-from flask import Flask
-from flask_restx import Api
-from relation_routes import ns as relation_ns
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from app import app
 
 class TestRelationRoutes(unittest.TestCase):
     def setUp(self):
-        # Flask-App und Namespace für Tests initialisieren
-        self.app = Flask(__name__)
-        self.api = Api(self.app)
-        self.api.add_namespace(relation_ns)
-        self.client = self.app.test_client()
+        self.client = app.test_client()
 
-    @patch('services.relation_service.RelationService.accept_relation')
-    def test_accept_relation_success(self, mock_accept_relation):
-        mock_accept_relation.return_value = None
-        response = self.client.post('/relation/relation123/accept')
+    @patch("app.routes.relation_routes.relation_service")
+    def test_accept_relation_success(self, mock_relation_service):
+        relation_id = 1
+        document_edit_id = 2
+        mock_response = {"message": "Relation accepted"}
+
+        # Mocking the service
+        mock_relation_service.accept_relation.return_value = mock_response
+
+        # Request
+        response = self.client.post(
+            f"/relations/{relation_id}/accept",
+            query_string={"document_edit_id": document_edit_id},
+        )
+
+        # Assertions
         self.assertEqual(response.status_code, 200)
-        self.assertIn('successfully accepted', response.json['message'])
+        self.assertEqual(response.json, mock_response)
+        mock_relation_service.accept_relation.assert_called_once_with(relation_id, document_edit_id)
 
-    @patch('services.relation_service.RelationService.reject_relation')
-    def test_reject_relation_success(self, mock_reject_relation):
-        mock_reject_relation.return_value = None
-        response = self.client.post('/relation/relation123/reject')
+    @patch("app.routes.relation_routes.relation_service")
+    def test_accept_relation_missing_document_edit_id(self, mock_relation_service):
+        relation_id = 1
+
+        # Request without document_edit_id
+        response = self.client.post(f"/relations/{relation_id}/accept")
+
+        # Assertions
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Document Edit ID is required", response.json["message"])
+
+    @patch("app.routes.relation_routes.relation_service")
+    def test_reject_relation_success(self, mock_relation_service):
+        relation_id = 1
+        document_edit_id = 2
+        mock_response = {"message": "Relation rejected"}
+
+        # Mocking the service
+        mock_relation_service.reject_relation.return_value = mock_response
+
+        # Request
+        response = self.client.post(
+            f"/relations/{relation_id}/reject",
+            query_string={"document_edit_id": document_edit_id},
+        )
+
+        # Assertions
         self.assertEqual(response.status_code, 200)
-        self.assertIn('successfully rejected', response.json['message'])
+        self.assertEqual(response.json, mock_response)
+        mock_relation_service.reject_relation.assert_called_once_with(relation_id, document_edit_id)
 
-    @patch('services.relation_service.RelationService.accept_relation')
-    def test_accept_relation_not_found(self, mock_accept_relation):
-        mock_accept_relation.side_effect = Exception('Relation not found.')
-        response = self.client.post('/relation/invalid_id/accept')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn('Relation not found', response.json['error'])
+    @patch("app.routes.relation_routes.relation_service")
+    def test_reject_relation_missing_document_edit_id(self, mock_relation_service):
+        relation_id = 1
 
-    @patch('services.relation_service.RelationService.reject_relation')
-    def test_reject_relation_bad_request(self, mock_reject_relation):
-        mock_reject_relation.side_effect = Exception('Bad Request.')
-        response = self.client.post('/relation/invalid_id/reject')
-        self.assertEqual(response.status_code, 500)
-        self.assertIn('Bad Request', response.json['error'])
+        # Request without document_edit_id
+        response = self.client.post(f"/relations/{relation_id}/reject")
+
+        # Assertions
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Document Edit ID is required", response.json["message"])

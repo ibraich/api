@@ -1,30 +1,81 @@
 import unittest
 from unittest.mock import MagicMock
-from services.relation_service import RelationService
-
+from app.services.relation_services import RelationService
 
 class TestRelationService(unittest.TestCase):
     def setUp(self):
-        self.service = RelationService()
-        self.service.relation_repository = MagicMock()
+        self.relation_repository = MagicMock()
+        self.relation_service = RelationService(self.relation_repository)
 
     def test_accept_relation_success(self):
-        self.service.relation_repository.get_relation_by_id.return_value = {"id": "relation123", "isShownRecommendation": True}
-        self.service.accept_relation("relation123")
-        self.service.relation_repository.create_in_document_edit.assert_called_once()
-        self.service.relation_repository.update_is_shown.assert_called_once_with("relation123", False)
+        # Mock-Daten
+        relation_id = 1
+        document_edit_id = 2
+        relation_mock = MagicMock(
+            id=relation_id,
+            document_edit_id=document_edit_id,
+            isShownRecommendation=True,
+            tag="relation-tag",
+            isDirected=True,
+            mention_head_id=10,
+            mention_tail_id=20
+        )
 
-    def test_accept_relation_not_found(self):
-        self.service.relation_repository.get_relation_by_id.return_value = None
-        with self.assertRaises(Exception):
-            self.service.accept_relation("invalid_id")
+        self.relation_repository.get_relation_by_id.return_value = relation_mock
+
+        # Test
+        result = self.relation_service.accept_relation(relation_id, document_edit_id)
+
+        # Assertions
+        self.relation_repository.get_relation_by_id.assert_called_once_with(relation_id)
+        self.relation_repository.create_relation.assert_called_once_with(
+            tag="relation-tag",
+            document_edit_id=document_edit_id,
+            is_directed=True,
+            mention_head_id=10,
+            mention_tail_id=20,
+            document_recommendation_id=None,
+            is_shown_recommendation=False,
+        )
+        self.relation_repository.update_is_shown_recommendation.assert_called_once_with(relation_id, False)
+        self.assertIsNotNone(result)
+
+    def test_accept_relation_invalid_document_edit_id(self):
+        relation_id = 1
+        document_edit_id = 2
+        relation_mock = MagicMock(id=relation_id, document_edit_id=99, isShownRecommendation=True)
+
+        self.relation_repository.get_relation_by_id.return_value = relation_mock
+
+        with self.assertRaises(ValueError):
+            self.relation_service.accept_relation(relation_id, document_edit_id)
 
     def test_reject_relation_success(self):
-        self.service.relation_repository.get_relation_by_id.return_value = {"id": "relation123", "isShownRecommendation": True}
-        self.service.reject_relation("relation123")
-        self.service.relation_repository.update_is_shown.assert_called_once_with("relation123", False)
+        # Mock-Daten
+        relation_id = 1
+        document_edit_id = 2
+        relation_mock = MagicMock(
+            id=relation_id,
+            document_edit_id=document_edit_id,
+            isShownRecommendation=True
+        )
 
-    def test_reject_relation_not_found(self):
-        self.service.relation_repository.get_relation_by_id.return_value = None
-        with self.assertRaises(Exception):
-            self.service.reject_relation("invalid_id")
+        self.relation_repository.get_relation_by_id.return_value = relation_mock
+
+        # Test
+        result = self.relation_service.reject_relation(relation_id, document_edit_id)
+
+        # Assertions
+        self.relation_repository.get_relation_by_id.assert_called_once_with(relation_id)
+        self.relation_repository.update_is_shown_recommendation.assert_called_once_with(relation_id, False)
+        self.assertIsNotNone(result)
+
+    def test_reject_relation_invalid_state(self):
+        relation_id = 1
+        document_edit_id = 2
+        relation_mock = MagicMock(id=relation_id, document_edit_id=document_edit_id, isShownRecommendation=False)
+
+        self.relation_repository.get_relation_by_id.return_value = relation_mock
+
+        with self.assertRaises(ValueError):
+            self.relation_service.reject_relation(relation_id, document_edit_id)
