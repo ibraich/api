@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict
+from werkzeug.exceptions import BadRequest, NotFound, Conflict,InternalServerError
 
 from app.repositories.mention_repository import MentionRepository
 from app.models import Relation
@@ -11,6 +11,7 @@ class RelationService:
         self.__relation_repository = relation_repository
         self.__mention_repository = mention_repository
         self.user_service = user_service
+        self.relation_repository = relation_repository
 
     def get_relations_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -199,19 +200,17 @@ class RelationService:
 
 
     def regenerate_relations(self, document_edit_id: int):
-        # Platzhalterlogik für das Generieren von Relations
+        # Logic to generate relations
         relations = self.generate_relations(document_edit_id)
         if not relations:
-            raise RuntimeError("No relations could be generated")
+            raise InternalServerError("Could not generate relations.")
 
-        # Bestehende Relations löschen und neue hinzufügen
         self.relation_repository.delete_relations(document_edit_id)
         self.relation_repository.add_relations(document_edit_id, relations)
         return relations
 
     def generate_relations(self, document_edit_id: int):
-        # Beispiel-Logik für Relations
-        return [{"data": f"Relation for document {document_edit_id}"}]
+        return [{"data": f"Generated relation for document {document_edit_id}"}]
 relation_service = RelationService(
     RelationRepository(), MentionRepository(), user_service
 )

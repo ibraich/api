@@ -1,6 +1,6 @@
 from flask import Blueprint,request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, InternalServerError, Conflict
 from flask_restx import Resource, Namespace
 from http import HTTPStatus
 from app.db import transactional
@@ -74,15 +74,25 @@ class MentionDeletionResource(Resource):
         response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
         return response
     
-mention_blueprint = Blueprint('mentions', __name__)
+@ns.mentions.route("/<int:document_edit_id>")
+@ns.mentions.doc(params={"document_edit_id": "ID of the document edit"})
+@ns.mentions.response(400, "Invalid input")
+@ns.mentions.response(500, "Internal server error")
+class MentionRegenerationResource(Resource):
+    service = mention_service
 
-def create_mention_routes(mention_service):
-    @mention_blueprint.route('/mentions/<int:document_edit_id>', methods=['POST'])
-    def regenerate_mentions(document_edit_id):
+    @jwt_required()
+    @ns._mentions.doc(description="Regenerate mentions for a document edit")
+    def post(self, document_edit_id):
         try:
-            mentions = mention_service.regenerate_mentions(document_edit_id)
-            return jsonify({"success": True, "mentions": mentions}), HTTPStatus.OK
-        except RuntimeError as e:
-            return jsonify({"error": str(e)}), HTTPStatus.SERVICE_UNAVAILABLE
+            if not document_edit_id:
+                raise BadRequest("Document edit ID is required.")
+
+            mentions = self.service.regenerate_mentions(document_edit_id)
+            return jsonify({"success": True, "mentions": mentions}), 200
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400
+        except InternalServerError as e:
+            return jsonify({"error": str(e)}), 500
         except Exception as e:
-            return jsonify({"error": "Internal Server Error"}), HTTPStatus.INTERNAL_SERVER_ERROR
+            return jsonify({"error": "Unexpected error occurred."}), 500

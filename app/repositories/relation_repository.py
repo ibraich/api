@@ -1,10 +1,11 @@
 from app.models import Relation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
-
+from typing import List 
 class RelationRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
+        self.db = db
 
     def create_relation(
         self,

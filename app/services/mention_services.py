@@ -1,5 +1,5 @@
 from flask_jwt_extended import get_jwt_identity
-from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
+from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized,InternalServerError
 
 from app.repositories.mention_repository import MentionRepository
 from app.services.token_service import TokenService, token_service
@@ -37,7 +37,7 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
-        
+        self.mention_repository = mention_repository 
 
 
     def get_mentions_by_document_edit(self, document_edit_id):
@@ -245,19 +245,17 @@ class MentionService:
         return []
 
     def regenerate_mentions(self, document_edit_id: int):
-        # Platzhalterlogik für das Generieren von Mentions
+        # Logic to generate mentions
         mentions = self.generate_mentions(document_edit_id)
         if not mentions:
-            raise RuntimeError("No mentions could be generated")
+            raise InternalServerError("Could not generate mentions.")
 
-        # Bestehende Mentions löschen und neue hinzufügen
         self.mention_repository.delete_mentions(document_edit_id)
         self.mention_repository.add_mentions(document_edit_id, mentions)
         return mentions
 
     def generate_mentions(self, document_edit_id: int):
-        # Beispiel-Logik für Mentions
-        return [{"data": f"Mention for document {document_edit_id}"}]
+        return [{"data": f"Generated mention for document {document_edit_id}"}]
 
 mention_service = MentionService(
     MentionRepository(),
