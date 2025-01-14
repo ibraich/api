@@ -2,7 +2,6 @@ from app.models import Relation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
 
-
 class RelationRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
@@ -108,3 +107,12 @@ class RelationRepository(BaseRepository):
 
         super().store_object(relation)
         return relation
+    
+    def delete_relations(self, document_edit_id: int):
+        query = "DELETE FROM relations WHERE document_edit_id = %s"
+        self.db.execute(query, (document_edit_id,))
+
+    def add_relations(self, document_edit_id: int, relations: list[dict]):
+        query = "INSERT INTO relations (document_edit_id, data) VALUES (%s, %s)"
+        for relation in relations:
+            self.db.execute(query, (document_edit_id, relation["data"]))

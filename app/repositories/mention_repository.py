@@ -104,3 +104,13 @@ class MentionRepository(BaseRepository):
             mention.entity_id = None
         super().store_object(mention)
         return mention
+
+
+    def delete_mentions(self, document_edit_id: int):
+        query = "DELETE FROM mentions WHERE document_edit_id = %s"
+        self.db.execute(query, (document_edit_id,))
+
+    def add_mentions(self, document_edit_id: int, mentions: list[dict]):
+        query = "INSERT INTO mentions (document_edit_id, data) VALUES (%s, %s)"
+        for mention in mentions:
+            self.db.execute(query, (document_edit_id, mention["data"]))

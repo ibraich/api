@@ -198,6 +198,20 @@ class RelationService:
             raise BadRequest("Mentions are equal")
 
 
+    def regenerate_relations(self, document_edit_id: int):
+        # Platzhalterlogik für das Generieren von Relations
+        relations = self.generate_relations(document_edit_id)
+        if not relations:
+            raise RuntimeError("No relations could be generated")
+
+        # Bestehende Relations löschen und neue hinzufügen
+        self.relation_repository.delete_relations(document_edit_id)
+        self.relation_repository.add_relations(document_edit_id, relations)
+        return relations
+
+    def generate_relations(self, document_edit_id: int):
+        # Beispiel-Logik für Relations
+        return [{"data": f"Relation for document {document_edit_id}"}]
 relation_service = RelationService(
     RelationRepository(), MentionRepository(), user_service
 )

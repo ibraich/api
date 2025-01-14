@@ -1,8 +1,8 @@
-from flask import request
+from flask import Blueprint,request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
-
+from http import HTTPStatus
 from app.db import transactional
 from app.services.mention_services import mention_service
 from app.dtos import (
@@ -73,3 +73,16 @@ class MentionDeletionResource(Resource):
         entity_id = data.get("entity_id")
         response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
         return response
+    
+mention_blueprint = Blueprint('mentions', __name__)
+
+def create_mention_routes(mention_service):
+    @mention_blueprint.route('/mentions/<int:document_edit_id>', methods=['POST'])
+    def regenerate_mentions(document_edit_id):
+        try:
+            mentions = mention_service.regenerate_mentions(document_edit_id)
+            return jsonify({"success": True, "mentions": mentions}), HTTPStatus.OK
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), HTTPStatus.SERVICE_UNAVAILABLE
+        except Exception as e:
+            return jsonify({"error": "Internal Server Error"}), HTTPStatus.INTERNAL_SERVER_ERROR

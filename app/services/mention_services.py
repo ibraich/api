@@ -7,6 +7,7 @@ from app.services.user_service import UserService, user_service
 from app.services.relation_services import RelationService, relation_service
 from app.services.entity_service import EntityService, entity_service
 
+
 from app.services.token_mention_service import (
     token_mention_service,
     TokenMentionService,
@@ -36,6 +37,8 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
+        
+
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -241,6 +244,20 @@ class MentionService:
             return duplicate_token_mention
         return []
 
+    def regenerate_mentions(self, document_edit_id: int):
+        # Platzhalterlogik für das Generieren von Mentions
+        mentions = self.generate_mentions(document_edit_id)
+        if not mentions:
+            raise RuntimeError("No mentions could be generated")
+
+        # Bestehende Mentions löschen und neue hinzufügen
+        self.mention_repository.delete_mentions(document_edit_id)
+        self.mention_repository.add_mentions(document_edit_id, mentions)
+        return mentions
+
+    def generate_mentions(self, document_edit_id: int):
+        # Beispiel-Logik für Mentions
+        return [{"data": f"Mention for document {document_edit_id}"}]
 
 mention_service = MentionService(
     MentionRepository(),

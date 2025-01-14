@@ -8,7 +8,8 @@ from app.dtos import (
     relation_input_dto,
     relation_update_input_dto,
 )
-from flask import request
+from flask import Blueprint,request
+from http import HTTPStatus
 
 ns = Namespace("relations", description="Relation related operations")
 
@@ -73,3 +74,17 @@ class RelationCreationResource(Resource):
     def post(self):
         response = self.service.create_relation(request.json)
         return response
+
+
+relation_blueprint = Blueprint('relations', __name__)
+
+def create_relation_routes(relation_service):
+    @relation_blueprint.route('/relations/<int:document_edit_id>', methods=['POST'])
+    def regenerate_relations(document_edit_id):
+        try:
+            relations = relation_service.regenerate_relations(document_edit_id)
+            return jsonify({"success": True, "relations": relations}), HTTPStatus.OK
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), HTTPStatus.SERVICE_UNAVAILABLE
+        except Exception as e:
+            return jsonify({"error": "Internal Server Error"}), HTTPStatus.INTERNAL_SERVER_ERROR
