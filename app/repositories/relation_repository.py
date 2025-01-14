@@ -94,9 +94,6 @@ class RelationRepository(BaseRepository):
         self.db_session.commit()
 
 
-
-
-
     def update_relation(
         self, relation_id, tag, mention_head_id, mention_tail_id, is_directed
     ):
@@ -111,4 +108,8 @@ class RelationRepository(BaseRepository):
             relation.isDirected = is_directed
 
         super().store_object(relation)
+
        
+
+        return relation
+

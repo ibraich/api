@@ -25,6 +25,7 @@ class SchemaRepository(BaseRepository):
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
+                Schema.name,
                 Team.name.label("team_name"),
                 ModellingLanguage.type.label("modelling_language"),
             )
@@ -32,7 +33,7 @@ class SchemaRepository(BaseRepository):
             .join(
                 ModellingLanguage, ModellingLanguage.id == Schema.modellingLanguage_id
             )
-            .filter(Schema.id == schema_id)
+            .filter((Schema.id == schema_id) & (Schema.active == True))
             .first()
         )
 
@@ -40,8 +41,8 @@ class SchemaRepository(BaseRepository):
         return (
             db.session.query(Schema.id)
             .select_from(UserTeam)
-            .filter(UserTeam.user_id == user_id)
             .join(Schema, Schema.team_id == UserTeam.team_id)
+            .filter((UserTeam.user_id == user_id) & (Schema.active == True))
             .all()
         )
 
@@ -65,6 +66,7 @@ class SchemaRepository(BaseRepository):
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
+                Schema.name,
                 Team.name.label("team_name"),
                 ModellingLanguage.type.label("modelling_language"),
             )
@@ -116,9 +118,16 @@ class SchemaRepository(BaseRepository):
             .all()
         )
 
-    def create_schema(self, modelling_language_id: int, team_id: int) -> Schema:
+    def create_schema(
+        self, modelling_language_id: int, team_id: int, name: str
+    ) -> Schema:
         return super().store_object_transactional(
-            Schema(modellingLanguage_id=modelling_language_id, team_id=team_id)
+            Schema(
+                modellingLanguage_id=modelling_language_id,
+                team_id=team_id,
+                active=True,
+                name=name,
+            )
         )
 
     def create_schema_mention(

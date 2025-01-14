@@ -61,11 +61,12 @@ class UserService:
         self.create_user(username, email, hashed_password)
 
     def check_user_document_accessible(self, user_id, document_id):
-        if (
-            self.__user_repository.check_user_document_accessible(user_id, document_id)
-            is None
-        ):
+        document = self.__user_repository.check_user_document_accessible(
+            user_id, document_id
+        )
+        if document is None:
             raise Forbidden("You cannot access this document")
+        return document
 
     def check_user_document_edit_accessible(self, user_id, document_edit_id):
         document_edit_user_id = self.get_user_by_document_edit_id(document_edit_id)
@@ -79,6 +80,13 @@ class UserService:
             is None
         ):
             raise Forbidden("You cannot access this schema")
+
+    def check_user_project_accessible(self, user_id, project_id):
+        if (
+            self.__user_repository.check_user_project_accessible(user_id, project_id)
+            is None
+        ):
+            raise Forbidden("You cannot access this project")
 
     def login(self, email, password):
         try:
