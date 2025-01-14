@@ -300,6 +300,14 @@ document_edit_mention_output_dto = api.model(
         ),
     },
 )
+document_edit_user_output_dto = api.model(
+    "User",
+    {
+        "id": fields.Integer,
+        "username": fields.String,
+        "email": fields.String,
+    },
+)
 document_edit_get_output_dto = api.model(
     "DocumentEditGetOutput",
     {
@@ -309,10 +317,42 @@ document_edit_get_output_dto = api.model(
                 {
                     "id": fields.Integer,
                     "tokens": fields.List(fields.Nested(token_output_dto)),
+                    "creator": fields.Nested(document_edit_user_output_dto),
+                    "state": fields.Nested(
+                        api.model(
+                            "State",
+                            {
+                                "id": fields.Integer,
+                                "type": fields.String(required=False),
+                            },
+                        )
+                    ),
+                    "project": fields.Nested(
+                        api.model(
+                            "Project",
+                            {
+                                "id": fields.Integer,
+                                "name": fields.String,
+                                "creator": fields.Nested(document_edit_user_output_dto),
+                            },
+                        )
+                    ),
                 },
             )
         ),
-        "mentions": fields.List(fields.Nested(document_edit_mention_output_dto)),
+        "user": fields.Nested(document_edit_user_output_dto),
+        "state": fields.Nested(
+            api.model(
+                "DocumentEditState",
+                {
+                    "id": fields.Integer,
+                    "type": fields.String(required=False),
+                },
+            )
+        ),
+        "mentions": fields.List(
+            fields.Nested(document_edit_mention_output_dto), required=False
+        ),
         "relations": fields.List(
             fields.Nested(
                 api.model(
@@ -322,7 +362,8 @@ document_edit_get_output_dto = api.model(
                         "mention_head": fields.Nested(document_edit_mention_output_dto),
                         "mention_tail": fields.Nested(document_edit_mention_output_dto),
                     },
-                )
+                ),
+                required=False,
             )
         ),
     },
