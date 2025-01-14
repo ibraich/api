@@ -86,8 +86,6 @@ class DocumentEditService:
         )
         mentions = self.mention_service.get_by_document_edit(document_edit_id)
         tokens = self.token_service.get_tokens_by_document(document_edit.document_id)
-        for mention in mentions:
-            print(mention, flush=True)
         relations = self.relation_service.get_by_document_edit(document_edit_id)
         document_edit.document.tokens = tokens
         document_edit.mentions = mentions

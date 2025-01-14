@@ -162,8 +162,6 @@ class DocumentEdit(db.Model):
         lazy="select",  # Optimize for lazy loading
     )
 
-    entities: typing.ClassVar[typing.List["Entity"]]
-
     def to_dict(self):
         """
         mapping from business model to DTO
