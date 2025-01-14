@@ -111,4 +111,4 @@ class RelationRepository(BaseRepository):
             relation.isDirected = is_directed
 
         super().store_object(relation)
-        return relation
+       
