@@ -1,7 +1,7 @@
 from app.models import Relation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
-
+from sqlalchemy.orm import Session
 
 class RelationRepository(BaseRepository):
     def __init__(self):
@@ -97,18 +97,12 @@ class RelationRepository(BaseRepository):
 
 
 
-    def update_relation(
-        self, relation_id, tag, mention_head_id, mention_tail_id, is_directed
-    ):
-        relation = self.get_relation_by_id(relation_id)
-        if tag:
-            relation.tag = tag
-        if mention_head_id:
-            relation.mention_head_id = mention_head_id
-        if mention_tail_id:
-            relation.mention_tail_id = mention_tail_id
-        if is_directed is not None:
-            relation.isDirected = is_directed
-
-        super().store_object(relation)
+    def update_is_shown_recommendation(self, relation_id, value):
+        """
+        Aktualisiert den isShownRecommendation-Wert eines Relation-Eintrags.
+        """
+        relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
+        if relation:
+            relation.isShownRecommendation = value
+            self.db_session.commit()
         return relation

@@ -249,31 +249,37 @@ class MentionService:
 
     def accept_mention(self, mention_id, document_edit_id):
         """
-        Accepts a mention by copying it to the document edit and setting its isShownRecommendation to False.
+        Akzeptiert einen Mention, indem er kopiert und isShownRecommendation auf False gesetzt wird.
         """
         mention = self.mention_repository.get_mention_by_id(mention_id)
         if not mention or mention.document_edit_id != document_edit_id:
             raise ValueError("Invalid mention or unauthorized access.")
-
         if not mention.isShownRecommendation:
             raise ValueError("Mention recommendation already processed.")
 
-        # Use the repository methode to copy the mention and update is_ShownRecommendation
-        return self.mention_repository.accept_mention(mention_id, document_edit_id)
+        # Neuen Mention erstellen
+        new_mention = self.mention_repository.create_mention(
+            tag=mention.tag,
+            document_edit_id=document_edit_id,
+            document_recommendation_id=None,
+            is_shown_recommendation=False,
+        )
+        # Original Mention aktualisieren
+        self.mention_repository.update_is_shown_recommendation(mention_id, False)
+        return new_mention
 
     def reject_mention(self, mention_id, document_edit_id):
         """
-        Rejects a mention by setting its is_ShownRecommendation to False.
+        Lehnt einen Mention ab, indem isShownRecommendation auf False gesetzt wird.
         """
         mention = self.mention_repository.get_mention_by_id(mention_id)
         if not mention or mention.document_edit_id != document_edit_id:
             raise ValueError("Invalid mention or unauthorized access.")
-
         if not mention.isShownRecommendation:
             raise ValueError("Mention recommendation already processed.")
 
-        # Use the repository method to update isShownRecommendation
-        return self.mention_repository.reject_mention(mention_id, document_edit_id)
+        # Original Mention aktualisieren
+        return self.mention_repository.update_is_shown_recommendation(mention_id, False)
 
 
 mention_service = MentionService(

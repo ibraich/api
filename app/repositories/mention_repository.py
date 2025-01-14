@@ -1,6 +1,7 @@
 from app.models import Mention, TokenMention
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
+from sqlalchemy.orm import Session
 
 
 class MentionRepository(BaseRepository):
@@ -106,20 +107,12 @@ class MentionRepository(BaseRepository):
         return mention
 
 
-    def get_mention_by_id(self, mention_id: str):
+    def update_is_shown_recommendation(self, mention_id, value):
         """
-        Fetch a mention by ID.
+        Aktualisiert den isShownRecommendation-Wert eines Mention-Eintrags.
         """
-        return {"id": mention_id, "isShownRecommendation": True}
-
-    def update_is_shown(self, mention_id: str, is_shown: bool):
-        """
-        Update the isShownRecommendation flag.
-        """
-        print(f"Updated isShownRecommendation for mention {mention_id} to {is_shown}.")
-
-    def create_in_document_edit(self, mention):
-        """
-        Copy the mention to the document_edit.
-        """
-        print(f"Created mention in document edit with mention data: {mention}.")
+        mention = self.db_session.query(Mention).filter_by(id=mention_id).first()
+        if mention:
+            mention.isShownRecommendation = value
+            self.db_session.commit()
+        return mention
