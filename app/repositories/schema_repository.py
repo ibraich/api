@@ -19,6 +19,8 @@ ModellingLanguagesByName = {
 
 
 class SchemaRepository(BaseRepository):
+    def __init__(self, db):
+        self.db = db
     def get_schema_by_id(self, schema_id):
         return (
             Session.query(
@@ -170,3 +172,18 @@ class SchemaRepository(BaseRepository):
                 isDirected=is_directed,
             )
         )
+
+    def create_schema(self, team_id):
+        return self.db.insert("schemas", {"team_id": team_id})
+
+    def add_mentions(self, schema_id, mentions):
+        for mention in mentions:
+            self.db.insert("schema_mentions", {**mention, "schema_id": schema_id})
+
+    def add_relations(self, schema_id, relations):
+        for relation in relations:
+            self.db.insert("schema_relations", {**relation, "schema_id": schema_id})
+
+    def add_constraints(self, schema_id, constraints):
+        for constraint in constraints:
+            self.db.insert("schema_constraints", {**constraint, "schema_id": schema_id})

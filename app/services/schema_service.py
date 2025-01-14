@@ -1,7 +1,7 @@
 import typing
 import random
 
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, Conflict
 
 from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
 from app.repositories.schema_repository import SchemaRepository
@@ -20,7 +20,7 @@ class SchemaService:
     def __init__(self, schema_repository: SchemaRepository, user_service: UserService):
         self.__schema_repository = schema_repository
         self.user_service = user_service
-
+        self.schema_repo = SchemaRepository()
     def check_schema_exists(self, schema_id):
         if self.__schema_repository.get_schema_by_id(schema_id) is None:
             return NotFound("Schema not found")
@@ -145,5 +145,22 @@ class SchemaService:
             is_directed,
         )
 
+    def create_schema(self, team_id, mentions, relations, constraints):
+        # Validate unique tags in mentions and relations
+        if len(set([m['tag'] for m in mentions])) != len(mentions):
+            raise Conflict("Duplicate tags in schema mentions.")
+        if len(set([r['tag'] for r in relations])) != len(relations):
+            raise Conflict("Duplicate tags in schema relations.")
+
+        # Validate unique constraints
+        unique_constraints = {(c['head'], c['tail'], c['relation']) for c in constraints}
+        if len(unique_constraints) != len(constraints):
+            raise Conflict("Duplicate schema constraints.")
+
+        # Store schema
+        schema_id = self.schema_repo.create_schema(team_id)
+        self.schema_repo.add_mentions(schema_id, mentions)
+        self.schema_repo.add_relations(schema_id, relations)
+        self.schema_repo.add_constraints(schema_id, constraints)   
 
 schema_service = SchemaService(SchemaRepository(), user_service)
