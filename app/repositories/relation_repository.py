@@ -1,5 +1,5 @@
-from app.models import Relation
-from app.db import db
+from app.models import Relation, Mention
+from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
 
@@ -40,6 +40,14 @@ class RelationRepository(BaseRepository):
                     | Relation.isShownRecommendation.is_(True)
                 )
             )
+            .all()
+        )
+
+    def get_by_document_edit(self, document_edit_id):
+        return (
+            Session.query(Relation)
+            .join(Mention, Mention.id == Relation.mention_head_id)
+            .filter(Mention.document_edit_id == document_edit_id)
             .all()
         )
 

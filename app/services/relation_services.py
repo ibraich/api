@@ -1,3 +1,5 @@
+import typing
+
 from werkzeug.exceptions import BadRequest, NotFound, Conflict
 
 from app.repositories.mention_repository import MentionRepository
@@ -29,6 +31,9 @@ class RelationService:
         ]
 
         return {"relations": relation_list}
+
+    def get_by_document_edit(self, document_edit_id) -> typing.List[Relation]:
+        return self.__relation_repository.get_by_document_edit(document_edit_id)
 
     def save_relation_in_edit(
         self,

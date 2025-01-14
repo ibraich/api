@@ -1,0 +1,16 @@
+### Log in
+
+POST http://localhost/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {% client.global.set("auth_token", response.body.token); %}
+
+### Get Document Edit By Id
+
+GET http://localhost/api/document_edits/1
+Authorization: Bearer {{auth_token}}

@@ -1,6 +1,9 @@
+import typing
+
 from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
 
+from app.models import Mention
 from app.repositories.mention_repository import MentionRepository
 from app.services.token_service import TokenService, token_service
 from app.services.user_service import UserService, user_service
@@ -36,6 +39,12 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
+
+    def get_by_document_edit(self, document_edit_id) -> typing.List[Mention]:
+        if not isinstance(document_edit_id, int) or document_edit_id <= 0:
+            raise BadRequest("Invalid document edit ID. It must be a positive integer.")
+
+        return self.__mention_repository.get_by_document_edit(document_edit_id)
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:

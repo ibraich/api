@@ -1,4 +1,6 @@
 import json
+import typing
+
 import requests
 from werkzeug.exceptions import BadRequest
 from flask import current_app
@@ -49,24 +51,8 @@ class TokenService:
             doc_id,
         )
 
-    def get_tokens_by_document(self, document_id):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_accessible(user_id, document_id)
-        tokens = self.__token_repository.get_tokens_by_document(document_id)
-        if tokens is None:
-            return {"tokens": []}
-        return {
-            "tokens": [
-                {
-                    "id": token.id,
-                    "text": token.text,
-                    "document_index": token.document_index,
-                    "sentence_index": token.sentence_index,
-                    "pos_tag": token.pos_tag,
-                }
-                for token in tokens
-            ]
-        }
+    def get_tokens_by_document(self, document_id) -> typing.List[Token]:
+        return self.__token_repository.get_tokens_by_document(document_id)
 
     def check_tokens_in_document_edit(self, token_ids, document_edit_id):
         document_tokens = self.__token_repository.get_tokens_by_document_edit(

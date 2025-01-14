@@ -2,6 +2,7 @@ from flask_restx import Namespace, Resource
 from app.services.entity_service import entity_service
 from werkzeug.exceptions import BadRequest
 from app.dtos import entity_output_list_dto, entity_input_dto, entity_output_dto
+from app.services.user_service import user_service
 from flask import request
 
 ns = Namespace("entities", description="Entity related operations")
@@ -45,10 +46,18 @@ class EntityDeletionResource(Resource):
 @ns.response(404, "Data not found")
 class EntityCreationResource(Resource):
     service = entity_service
+    user_service = user_service
 
     @ns.doc(description="Create a new entity")
     @ns.marshal_with(entity_output_dto)
     @ns.expect(entity_input_dto)
     def post(self):
-        response = self.service.create_entity(request.json)
+        data = request.get_json()
+
+        # permission check in service to avoid circular dependencies
+        user_service.check_user_document_edit_accessible(
+            user_service.get_logged_in_user_id(), data["document_edit_id"]
+        )
+
+        response = self.service.create_entity(data)
         return response

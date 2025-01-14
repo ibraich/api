@@ -273,6 +273,61 @@ document_edit_output_dto = api.model(
     },
 )
 
+
+token_output_dto = api.model(
+    "Token",
+    {
+        "id": fields.Integer(required=True),
+        "text": fields.String(required=True),
+        "document_index": fields.Integer,
+        "sentence_index": fields.Integer,
+        "pos_tag": fields.String,
+    },
+)
+
+document_edit_mention_output_dto = api.model(
+    "Mention",
+    {
+        "tag": fields.String(required=True),
+        "tokens": fields.List(fields.Nested(token_output_dto), required=True),
+        "entity": fields.Nested(
+            api.model(
+                "Entity",
+                {
+                    "id": fields.Integer(required=True),
+                },
+            )
+        ),
+    },
+)
+document_edit_get_output_dto = api.model(
+    "DocumentEditGetOutput",
+    {
+        "document": fields.Nested(
+            api.model(
+                "Document",
+                {
+                    "id": fields.Integer,
+                    "tokens": fields.List(fields.Nested(token_output_dto)),
+                },
+            )
+        ),
+        "mentions": fields.List(fields.Nested(document_edit_mention_output_dto)),
+        "relations": fields.List(
+            fields.Nested(
+                api.model(
+                    "Relation",
+                    {
+                        "tag": fields.String(required=True),
+                        "mention_head": fields.Nested(document_edit_mention_output_dto),
+                        "mention_tail": fields.Nested(document_edit_mention_output_dto),
+                    },
+                )
+            )
+        ),
+    },
+)
+
 project_user_output_dto = api.model(
     "ProjectUserOutput",
     {
