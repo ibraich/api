@@ -1,5 +1,5 @@
 from app.services.relation_services import relation_service
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, InternalServerError
 from flask_restx import Namespace, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.dtos import (
@@ -76,15 +76,25 @@ class RelationCreationResource(Resource):
         return response
 
 
-relation_blueprint = Blueprint('relations', __name__)
+@ns.relations.route("/<int:document_edit_id>")
+@ns.relations.doc(params={"document_edit_id": "ID of the document edit"})
+@ns.relations.response(400, "Invalid input")
+@ns.relations.response(500, "Internal server error")
+class RelationRegenerationResource(Resource):
+    service = relation_service
 
-def create_relation_routes(relation_service):
-    @relation_blueprint.route('/relations/<int:document_edit_id>', methods=['POST'])
-    def regenerate_relations(document_edit_id):
+    @jwt_required()
+    @ns.relations.doc(description="Regenerate relations for a document edit")
+    def post(self, document_edit_id):
         try:
-            relations = relation_service.regenerate_relations(document_edit_id)
-            return jsonify({"success": True, "relations": relations}), HTTPStatus.OK
-        except RuntimeError as e:
-            return jsonify({"error": str(e)}), HTTPStatus.SERVICE_UNAVAILABLE
+            if not document_edit_id:
+                raise BadRequest("Document edit ID is required.")
+
+            relations = self.service.regenerate_relations(document_edit_id)
+            return jsonify({"success": True, "relations": relations}), 200
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400
+        except InternalServerError as e:
+            return jsonify({"error": str(e)}), 500
         except Exception as e:
-            return jsonify({"error": "Internal Server Error"}), HTTPStatus.INTERNAL_SERVER_ERROR
+            return jsonify({"error": "Unexpected error occurred."}), 500
