@@ -107,55 +107,6 @@ class Project(db.Model):
         }
 
 
-class Document(db.Model):
-    __tablename__ = "Document"
-    __allow_unmapped__ = True
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(), unique=False, nullable=False)
-    content = db.Column(db.String(), nullable=False)
-    creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
-    state_id = db.Column(db.Integer, db.ForeignKey("DocumentState.id"), nullable=False)
-    project_id = db.Column(db.Integer, db.ForeignKey("Project.id"), nullable=False)
-    active = db.Column(
-        db.Boolean, nullable=False, default=True, server_default=text("true")
-    )
-
-    # Relationships
-    document_edits = db.relationship(
-        "DocumentEdit", back_populates="document", lazy="select"
-    )
-
-    # Creator, state & project can always be added when querying Document
-    creator = db.relationship("User", foreign_keys="Document.creator_id")
-    state = db.relationship("DocumentState", foreign_keys="Document.state_id")
-    project = db.relationship("Project", foreign_keys="Document.project_id")
-
-    # Add lists if required to improve performance
-    tokens: typing.List["Token"]
-
-    def __repr__(self):
-        return f"Document(id={self.id}, name={self.name}, content={self.content}, creator={self.creator.__repr__()}, tokens={[t.id for t in self.tokens] if self.tokens else None}, document_edits={[de.id for de in self.document_edits]})"
-
-    def to_dict(self):
-        """
-        mapping from business model to DTO
-        :return: DTO as dictionary
-        """
-        return {
-            "id": self.id,
-            "name": self.name,
-            "content": self.content,
-            "tokens": [token.to_dict() for token in self.tokens],
-            "creator": (
-                self.creator.to_dict() if self.creator else {"id": self.creator_id}
-            ),
-            "state": self.state.to_dict() if self.state else {"id": self.state_id},
-            "project": (
-                self.project.to_dict() if self.project else {"id": self.project_id}
-            ),
-        }
-
-
 class DocumentRecommendation(db.Model):
     __tablename__ = "DocumentRecommendation"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -378,6 +329,55 @@ class DocumentState(db.Model):
         return {
             "id": self.id,
             "type": self.type,
+        }
+
+
+class Document(db.Model):
+    __tablename__ = "Document"
+    __allow_unmapped__ = True
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(), unique=False, nullable=False)
+    content = db.Column(db.String(), nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey("User.id"), nullable=False)
+    state_id = db.Column(db.Integer, db.ForeignKey("DocumentState.id"), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey("Project.id"), nullable=False)
+    active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=text("true")
+    )
+
+    # Relationships
+    document_edits = db.relationship(
+        "DocumentEdit", back_populates="document", lazy="select"
+    )
+
+    # Creator, state & project can always be added when querying Document
+    creator = db.relationship("User", foreign_keys="Document.creator_id")
+    state = db.relationship("DocumentState", foreign_keys="Document.state_id")
+    project = db.relationship("Project", foreign_keys="Document.project_id")
+
+    # Add lists if required to improve performance
+    tokens: typing.List["Token"]
+
+    def __repr__(self):
+        return f"Document(id={self.id}, name={self.name}, content={self.content}, creator={self.creator.__repr__()}, tokens={[t.id for t in self.tokens] if self.tokens else None}, document_edits={[de.id for de in self.document_edits]})"
+
+    def to_dict(self):
+        """
+        mapping from business model to DTO
+        :return: DTO as dictionary
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "content": self.content,
+            "tokens": [token.to_dict() for token in self.tokens],
+            "creator": (
+                self.creator.to_dict() if self.creator else {"id": self.creator_id}
+            ),
+            "state": self.state.to_dict() if self.state else {"id": self.state_id},
+            "project": (
+                self.project.to_dict() if self.project else {"id": self.project_id}
+            ),
         }
 
 
