@@ -76,29 +76,34 @@ class RelationCreationResource(Resource):
 
 
 @ns.route("/<int:relation_id>/accept")
+@ns.doc(params={"relation_id": "A Relation ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Relation not found")
 class RelationAcceptResource(Resource):
+    @ns.doc(description="Accept a relation by copying it and marking it as processed")
     def post(self, relation_id):
         """
         Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
         """
-        # Extract document_edit_id from request arguments
         document_edit_id = request.args.get("document_edit_id")
         if not document_edit_id:
             raise BadRequest("Document Edit ID is required.")
         
-        # Call the RelationService to handle the accept logic
         return relation_service.accept_relation(relation_id, int(document_edit_id))
 
+
 @ns.route("/<int:relation_id>/reject")
+@ns.doc(params={"relation_id": "A Relation ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Relation not found")
 class RelationRejectResource(Resource):
+    @ns.doc(description="Reject a relation by marking it as processed")
     def post(self, relation_id):
         """
         Reject a relation by setting isShownRecommendation to False.
         """
-        # Extract document_edit_id from request arguments
         document_edit_id = request.args.get("document_edit_id")
         if not document_edit_id:
             raise BadRequest("Document Edit ID is required.")
         
-        # Call the RelationService to handle the reject logic
         return relation_service.reject_relation(relation_id, int(document_edit_id))

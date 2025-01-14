@@ -4,11 +4,11 @@ from app.services.relation_services import RelationService
 
 class TestRelationService(unittest.TestCase):
     def setUp(self):
+        # Mocking the repository
         self.relation_repository = MagicMock()
         self.relation_service = RelationService(self.relation_repository)
 
     def test_accept_relation_success(self):
-        # Mock-Daten
         relation_id = 1
         document_edit_id = 2
         relation_mock = MagicMock(
@@ -21,9 +21,10 @@ class TestRelationService(unittest.TestCase):
             mention_tail_id=20
         )
 
+        # Mocking repository methods
         self.relation_repository.get_relation_by_id.return_value = relation_mock
 
-        # Test
+        # Call the service method
         result = self.relation_service.accept_relation(relation_id, document_edit_id)
 
         # Assertions
@@ -43,15 +44,17 @@ class TestRelationService(unittest.TestCase):
     def test_accept_relation_invalid_document_edit_id(self):
         relation_id = 1
         document_edit_id = 2
-        relation_mock = MagicMock(id=relation_id, document_edit_id=99, isShownRecommendation=True)
-
+        relation_mock = MagicMock(
+            id=relation_id,
+            document_edit_id=99,
+            isShownRecommendation=True
+        )
         self.relation_repository.get_relation_by_id.return_value = relation_mock
 
         with self.assertRaises(ValueError):
             self.relation_service.accept_relation(relation_id, document_edit_id)
 
     def test_reject_relation_success(self):
-        # Mock-Daten
         relation_id = 1
         document_edit_id = 2
         relation_mock = MagicMock(
@@ -60,9 +63,10 @@ class TestRelationService(unittest.TestCase):
             isShownRecommendation=True
         )
 
+        # Mocking repository methods
         self.relation_repository.get_relation_by_id.return_value = relation_mock
 
-        # Test
+        # Call the service method
         result = self.relation_service.reject_relation(relation_id, document_edit_id)
 
         # Assertions
@@ -73,7 +77,11 @@ class TestRelationService(unittest.TestCase):
     def test_reject_relation_invalid_state(self):
         relation_id = 1
         document_edit_id = 2
-        relation_mock = MagicMock(id=relation_id, document_edit_id=document_edit_id, isShownRecommendation=False)
+        relation_mock = MagicMock(
+            id=relation_id,
+            document_edit_id=document_edit_id,
+            isShownRecommendation=False
+        )
 
         self.relation_repository.get_relation_by_id.return_value = relation_mock
 

@@ -78,30 +78,35 @@ class MentionDeletionResource(Resource):
 
 
 @ns.route("/<int:mention_id>/accept")
+@ns.doc(params={"mention_id": "A Mention ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Mention not found")
 class MentionAcceptResource(Resource):
+    @ns.doc(description="Accept a mention by copying it and marking it as processed")
     def post(self, mention_id):
         """
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
         """
-        # Extract document_edit_id from request arguments
         document_edit_id = request.args.get("document_edit_id")
         if not document_edit_id:
             raise BadRequest("Document Edit ID is required.")
         
-        # Call the MentionService to handle the accept logic
         return mention_service.accept_mention(mention_id, int(document_edit_id))
 
+
 @ns.route("/<int:mention_id>/reject")
+@ns.doc(params={"mention_id": "A Mention ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Mention not found")
 class MentionRejectResource(Resource):
+    @ns.doc(description="Reject a mention by marking it as processed")
     def post(self, mention_id):
         """
         Reject a mention by setting isShownRecommendation to False.
         """
-        # Extract document_edit_id from request arguments
         document_edit_id = request.args.get("document_edit_id")
         if not document_edit_id:
             raise BadRequest("Document Edit ID is required.")
         
-        # Call the MentionService to handle the reject logic
         return mention_service.reject_mention(mention_id, int(document_edit_id))
 
