@@ -77,7 +77,7 @@ class MentionDeletionResource(Resource):
     
 
 
-# mention_routes.py
+
 @ns.route("/<int:mention_id>/accept")
 @ns.doc(params={"mention_id": "A Mention ID"})
 @ns.response(400, "Invalid input")
