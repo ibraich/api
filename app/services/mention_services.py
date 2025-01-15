@@ -251,7 +251,6 @@ class MentionService:
         self.user_service.check_user_document_edit_accessible(
             user_id, mention.document_edit_id
         )
-
         if not mention or mention.document_recommendation_id is None:
             raise BadRequest("Invalid mention")
         if not mention.isShownRecommendation:
