@@ -1,83 +1,24 @@
 import unittest
 from unittest.mock import MagicMock
-from app.services.mention_services import MentionService
+from app.services.mention_services import mention_service, MentionService
 
-class TestMentionService(unittest.TestCase):
+class MentionServiceTests(unittest.TestCase):
     def setUp(self):
-        # Mocking the repository
         self.mention_repository = MagicMock()
         self.mention_service = MentionService(self.mention_repository)
 
-    def test_accept_mention_success(self):
-        mention_id = 1
-        document_edit_id = 2
-        mention_mock = MagicMock(
-            id=mention_id,
-            document_edit_id=document_edit_id,
-            isShownRecommendation=True,
-            tag="test-tag"
-        )
+    def test_accept_recommendation(self):
+        mention_data = {"id": 1, "content": "Test mention"}
+        self.mention_repository.create.return_value = mention_data
 
-        # Mocking repository methods
-        self.mention_repository.get_mention_by_id.return_value = mention_mock
+        mention = self.mention_service.accept_recommendation(mention_data)
+        self.mention_repository.create.assert_called_once_with(mention_data)
+        self.assertFalse(mention["is_shown_recommendation"])
 
-        # Call the service method
-        result = self.mention_service.accept_mention(mention_id, document_edit_id)
+    def test_reject_recommendation(self):
+        mention_data = {"id": 1, "content": "Test mention"}
+        self.mention_repository.create.return_value = mention_data
 
-        # Assertions
-        self.mention_repository.get_mention_by_id.assert_called_once_with(mention_id)
-        self.mention_repository.create_mention.assert_called_once_with(
-            tag="test-tag",
-            document_edit_id=document_edit_id,
-            document_recommendation_id=None,
-            is_shown_recommendation=False,
-        )
-        self.mention_repository.update_is_shown_recommendation.assert_called_once_with(mention_id, False)
-        self.assertIsNotNone(result)
-
-    def test_accept_mention_invalid_document_edit_id(self):
-        mention_id = 1
-        document_edit_id = 2
-        mention_mock = MagicMock(
-            id=mention_id,
-            document_edit_id=99,
-            isShownRecommendation=True
-        )
-        self.mention_repository.get_mention_by_id.return_value = mention_mock
-
-        with self.assertRaises(ValueError):
-            self.mention_service.accept_mention(mention_id, document_edit_id)
-
-    def test_reject_mention_success(self):
-        mention_id = 1
-        document_edit_id = 2
-        mention_mock = MagicMock(
-            id=mention_id,
-            document_edit_id=document_edit_id,
-            isShownRecommendation=True
-        )
-
-        # Mocking repository methods
-        self.mention_repository.get_mention_by_id.return_value = mention_mock
-
-        # Call the service method
-        result = self.mention_service.reject_mention(mention_id, document_edit_id)
-
-        # Assertions
-        self.mention_repository.get_mention_by_id.assert_called_once_with(mention_id)
-        self.mention_repository.update_is_shown_recommendation.assert_called_once_with(mention_id, False)
-        self.assertIsNotNone(result)
-
-    def test_reject_mention_invalid_state(self):
-        mention_id = 1
-        document_edit_id = 2
-        mention_mock = MagicMock(
-            id=mention_id,
-            document_edit_id=document_edit_id,
-            isShownRecommendation=False
-        )
-
-        self.mention_repository.get_mention_by_id.return_value = mention_mock
-
-        with self.assertRaises(ValueError):
-            self.mention_service.reject_mention(mention_id, document_edit_id)
+        mention = self.mention_service.reject_recommendation(mention_data)
+        self.mention_repository.create.assert_called_once_with(mention_data)
+        self.assertFalse(mention["is_shown_recommendation"])

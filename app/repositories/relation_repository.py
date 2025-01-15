@@ -94,20 +94,17 @@ class RelationRepository(BaseRepository):
         self.db_session.commit()
 
 
-    def update_relation(
-        self, relation_id, tag, mention_head_id, mention_tail_id, is_directed
-    ):
-        relation = self.get_relation_by_id(relation_id)
-        if tag:
-            relation.tag = tag
-        if mention_head_id:
-            relation.mention_head_id = mention_head_id
-        if mention_tail_id:
-            relation.mention_tail_id = mention_tail_id
-        if is_directed is not None:
-            relation.isDirected = is_directed
+    def create(self, relation_data):
+        """Create a new relation in the database."""
+        relation = Relation(**relation_data)
+        self.session.add(relation)
+        self.session.commit()
+        return relation
 
-        super().store_object(relation)
+    def update(self, relation):
+        """Update the relation object in the database."""
+        self.session.add(relation)
+        self.session.commit()
 
        
 

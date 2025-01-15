@@ -1,5 +1,5 @@
 from app.services.relation_services import relation_service, RelationService
-from werkzeug.exceptions import NotFound,BadRequest
+from werkzeug.exceptions import NotFound,BadRequest, InternalServerError
 from flask_restx import Namespace, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.dtos import (
@@ -79,31 +79,37 @@ class RelationCreationResource(Resource):
 @ns.doc(params={"relation_id": "A Relation ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Relation not found")
-class RelationAcceptResource(Resource):
-    @ns.doc(description="Accept a relation by copying it and marking it as processed")
-    def post(self, relation_id):
-        """
-        Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
-        """
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        return relation_service.accept_relation(relation_id, int(document_edit_id))
+class AcceptRelationResource(Resource):
+    service = relation_service
 
+    @jwt_required()
+    @ns.doc(description="Accept a relation recommendation.")
+    def post(self, relation_id):
+        try:
+            relation_data = request.json
+            relation = self.service.accept_recommendation(relation_data)
+            return relation.to_dict(), 200
+        except NotFound as e:
+            raise NotFound(str(e))
+        except Exception:
+            raise InternalServerError("An unexpected error occurred.")
 
 @ns.route("/<int:relation_id>/reject")
 @ns.doc(params={"relation_id": "A Relation ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Relation not found")
-class RelationRejectResource(Resource):
-    @ns.doc(description="Reject a relation by marking it as processed")
+class RejectRelationResource(Resource):
+    service = relation_service
+
+    @jwt_required()
+    @ns.doc(description="Reject a relation recommendation.")
     def post(self, relation_id):
-        """
-        Reject a relation by setting isShownRecommendation to False.
-        """
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        return relation_service.reject_relation(relation_id, int(document_edit_id))
+        try:
+            relation_data = request.json
+            relation = self.service.reject_recommendation(relation_data)
+            return relation.to_dict(), 200
+        except NotFound as e:
+            raise NotFound(str(e))
+        except Exception:
+            raise InternalServerError("An unexpected error occurred.")
+

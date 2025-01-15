@@ -36,7 +36,7 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
-        self.mention_repository = MentionRepository()
+        self.mention_repository = mention_repository
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -243,39 +243,21 @@ class MentionService:
         return []
     
 
-    def accept_mention(self, mention_id, document_edit_id):
-        """
-        Akzeptiert einen Mention, indem er kopiert und isShownRecommendation auf False gesetzt wird.
-        """
-        mention = self.mention_repository.get_mention_by_id(mention_id)
-        if not mention or mention.document_edit_id != document_edit_id:
-            raise ValueError("Invalid mention or unauthorized access.")
-        if not mention.isShownRecommendation:
-            raise ValueError("Mention recommendation already processed.")
+    def accept_recommendation(self, mention_data):
+        """Accept a mention recommendation and create a new mention."""
+        mention = self.mention_repository.create(mention_data)
+        mention.is_shown_recommendation = False
+        self.mention_repository.update(mention)
+        return mention
 
-        # Neuen Mention erstellen
-        new_mention = self.mention_repository.create_mention(
-            tag=mention.tag,
-            document_edit_id=document_edit_id,
-            document_recommendation_id=None,
-            is_shown_recommendation=False,
-        )
-        # Original Mention aktualisieren
-        self.mention_repository.update_is_shown_recommendation(mention_id, False)
-        return new_mention
+    def reject_recommendation(self, mention_data):
+        """Reject a mention recommendation."""
+        mention = self.mention_repository.create(mention_data)
+        mention.is_shown_recommendation = False
+        self.mention_repository.update(mention)
+        return mention
 
-    def reject_mention(self, mention_id, document_edit_id):
-        """
-        Lehnt einen Mention ab, indem isShownRecommendation auf False gesetzt wird.
-        """
-        mention = self.mention_repository.get_mention_by_id(mention_id)
-        if not mention or mention.document_edit_id != document_edit_id:
-            raise ValueError("Invalid mention or unauthorized access.")
-        if not mention.isShownRecommendation:
-            raise ValueError("Mention recommendation already processed.")
 
-        # Original Mention aktualisieren
-        return self.mention_repository.update_is_shown_recommendation(mention_id, False)
 
 
 mention_service = MentionService(

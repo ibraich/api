@@ -1,6 +1,6 @@
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.exceptions import NotFound,BadRequest
+from werkzeug.exceptions import NotFound,BadRequest,InternalServerError
 from flask_restx import Resource, Namespace
 
 
@@ -77,36 +77,41 @@ class MentionDeletionResource(Resource):
     
 
 
+# mention_routes.py
 @ns.route("/<int:mention_id>/accept")
 @ns.doc(params={"mention_id": "A Mention ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Mention not found")
-class MentionAcceptResource(Resource):
-    @ns.doc(description="Accept a mention by copying it and marking it as processed")
-    def post(self, mention_id):
-        """
-        Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
-        """
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        return mention_service.accept_mention(mention_id, int(document_edit_id))
+class AcceptMentionResource(Resource):
+    service = mention_service
 
+    @jwt_required()
+    @ns.doc(description="Accept a mention recommendation.")
+    def post(self, mention_id):
+        try:
+            mention_data = request.json
+            mention = self.service.accept_recommendation(mention_data)
+            return mention.to_dict(), 200
+        except NotFound as e:
+            raise NotFound(str(e))
+        except Exception:
+            raise InternalServerError("An unexpected error occurred.")
 
 @ns.route("/<int:mention_id>/reject")
 @ns.doc(params={"mention_id": "A Mention ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Mention not found")
-class MentionRejectResource(Resource):
-    @ns.doc(description="Reject a mention by marking it as processed")
-    def post(self, mention_id):
-        """
-        Reject a mention by setting isShownRecommendation to False.
-        """
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        return mention_service.reject_mention(mention_id, int(document_edit_id))
+class RejectMentionResource(Resource):
+    service = mention_service
 
+    @jwt_required()
+    @ns.doc(description="Reject a mention recommendation.")
+    def post(self, mention_id):
+        try:
+            mention_data = request.json
+            mention = self.service.reject_recommendation(mention_data)
+            return mention.to_dict(), 200
+        except NotFound as e:
+            raise NotFound(str(e))
+        except Exception:
+            raise InternalServerError("An unexpected error occurred.")
