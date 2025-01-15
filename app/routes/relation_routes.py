@@ -67,6 +67,7 @@ class RelationDeleteResource(Resource):
 class RelationCreationResource(Resource):
     service = relation_service
 
+    @jwt_required()
     @ns.doc(description="Create a new relation")
     @ns.marshal_with(relation_output_dto)
     @ns.expect(relation_input_dto)

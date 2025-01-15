@@ -10,6 +10,7 @@ from app.models import (
     SchemaConstraint,
     UserTeam,
     Project,
+    DocumentEdit,
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
@@ -65,7 +66,7 @@ class SchemaRepository(BaseRepository):
 
     def get_by_project(self, project_id):
         return (
-            db.session.query(
+            Session.query(
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
@@ -193,3 +194,4 @@ class SchemaRepository(BaseRepository):
     def fix_schema(self, schema_id):
         db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
         db.session.commit()
+
