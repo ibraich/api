@@ -3,14 +3,9 @@ import random
 
 from werkzeug.exceptions import NotFound, BadRequest, Conflict
 
-from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
-
-
-def generate_random_hex_color():
-    """Generate a random hexadecimal color code."""
-    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
 class SchemaService:
@@ -119,7 +114,7 @@ class SchemaService:
         color: typing.Optional[str] = None,
     ) -> SchemaMention:
         if color is None:
-            color = generate_random_hex_color()
+            color = self.generate_random_hex_color()
         return self.__schema_repository.create_schema_mention(
             schema_id, tag, description, entity_possible, color
         )
@@ -245,6 +240,8 @@ class SchemaService:
         return self.__schema_repository.get_schema_by_document_edit(document_edit_id)
 
     def fix_schema(self, schema_id):
-        self.__schema_repository.fix_schema(schema_id)   
+        self.__schema_repository.fix_schema(schema_id)
+
+
 
 schema_service = SchemaService(SchemaRepository(), user_service)
