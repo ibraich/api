@@ -214,7 +214,6 @@ class ImportService:
 
     def import_schema(self, schema, team_id: int) -> any:
         user_id = self._user_service.get_logged_in_user_id()
-        self._user_service.check_user_schema_accessible(user_id, schema.get("id"))
         self._user_service.check_user_in_team(user_id, team_id)
 
         modelling_language_id = ModellingLanguagesByName.get(

@@ -1,7 +1,7 @@
 from flask import Flask
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
-
+from flask_cors import CORS
 from flask_migrate import Migrate
 import logging
 
@@ -17,6 +17,8 @@ def create_app(config_class):
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Log format
         handlers=[logging.StreamHandler()],  # Output logs to the console
     )
+
+    CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
 
     # Register blueprints
     from .extension import main, api

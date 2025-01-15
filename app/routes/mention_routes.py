@@ -23,11 +23,11 @@ class MentionResource(Resource):
     service = mention_service
 
     @jwt_required()
+    @transactional
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
-    @jwt_required()
-    @transactional
     def post(self):
+
         return self.service.create_mentions(request.json)
 
 
