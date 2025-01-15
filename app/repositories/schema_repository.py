@@ -173,17 +173,27 @@ class SchemaRepository(BaseRepository):
             )
         )
 
-    def create_schema(self, team_id):
-        return self.db.insert("schemas", {"team_id": team_id})
+    def create_schema(self, team_id, name, modelling_language_id):
+        """Insert a new schema into the database."""
+        schema = Schema(team_id=team_id, name=name, modellingLanguage_id=modelling_language_id, active=True)
+        self.db.session.add(schema)
+        self.db.session.flush()  # Get schema ID before commit
+        return schema.id
 
-    def add_mentions(self, schema_id, mentions):
+    def create_schema_mentions(self, schema_id, mentions):
+        """Insert schema mentions into the database."""
         for mention in mentions:
-            self.db.insert("schema_mentions", {**mention, "schema_id": schema_id})
+            mention_entry = SchemaMention(schema_id=schema_id, **mention)
+            self.db.session.add(mention_entry)
 
-    def add_relations(self, schema_id, relations):
+    def create_schema_relations(self, schema_id, relations):
+        """Insert schema relations into the database."""
         for relation in relations:
-            self.db.insert("schema_relations", {**relation, "schema_id": schema_id})
-
-    def add_constraints(self, schema_id, constraints):
+            relation_entry = SchemaRelation(schema_id=schema_id, **relation)
+            self.db.session.add(relation_entry)
+    
+    def create_schema_constraints(self, schema_id, constraints):
+        """Insert schema constraints into the database."""
         for constraint in constraints:
-            self.db.insert("schema_constraints", {**constraint, "schema_id": schema_id})
+            constraint_entry = SchemaConstraint(schema_id=schema_id, **constraint)
+            self.db.session.add(constraint_entry)

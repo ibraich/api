@@ -40,25 +40,36 @@ class SchemaQueryResource(Resource):
         response = self.service.get_schema_by_id(schema_id)
         return response
 
-@app.route('/schemas', methods=['POST'])
-def create_schema():
- 
-    try:
-        data = request.get_json()
-        team_id = data.get("team_id")
-        mentions = data.get("schema_mentions")
-        relations = data.get("schema_relations")
-        constraints = data.get("schema_constraints")
+@ns.route("/")
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class SchemaResource(Resource):
+    service = schema_service
 
-        if not all([team_id, mentions, relations, constraints]):
-            raise BadRequest("Missing required fields.")
+    @jwt_required()
+    @ns.doc(description="Create a new schema")
+    def post(self):
+        """
+        Create a new schema.
+        """
+        user_id = self.service.user_service.get_logged_in_user_id()
+        data = request.json
 
-        schema_service.create_schema(team_id, mentions, relations, constraints)
-        return jsonify({"message": "Schema created successfully."}), 201
+        # Validate input data
+        required_fields = ["team_id", "name", "modelling_language_id", "mentions", "relations", "constraints"]
+        for field in required_fields:
+            if field not in data:
+                raise BadRequest(f"Missing required field: {field}")
 
-    except Conflict as e:
-        return jsonify({"error": str(e)}), 409
-    except BadRequest as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": "Internal server error."}), 500
+        schema_id = self.service.create_schema(
+            team_id=data["team_id"],
+            user_id=user_id,
+            name=data["name"],
+            modelling_language_id=data["modelling_language_id"],
+            mentions=data["mentions"],
+            relations=data["relations"],
+            constraints=data["constraints"],
+        )
+
+        return {"message": "Schema created successfully", "schema_id": schema_id}, 201

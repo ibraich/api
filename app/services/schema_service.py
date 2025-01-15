@@ -145,22 +145,28 @@ class SchemaService:
             is_directed,
         )
 
-    def create_schema(self, team_id, mentions, relations, constraints):
-        # Validate unique tags in mentions and relations
-        if len(set([m['tag'] for m in mentions])) != len(mentions):
-            raise Conflict("Duplicate tags in schema mentions.")
-        if len(set([r['tag'] for r in relations])) != len(relations):
-            raise Conflict("Duplicate tags in schema relations.")
+    def create_schema(self, team_id, user_id, name, modelling_language_id, mentions, relations, constraints):
+        """
+        Create a schema with mentions, relations, and constraints.
+        """
+        # Check if the user belongs to the team
+        if not self.user_service.check_user_in_team(user_id, team_id):
+            raise BadRequest("User does not belong to the specified team.")
 
-        # Validate unique constraints
-        unique_constraints = {(c['head'], c['tail'], c['relation']) for c in constraints}
-        if len(unique_constraints) != len(constraints):
-            raise Conflict("Duplicate schema constraints.")
+        # Ensure the schema has unique tags and constraints
+        if len(set(m['tag'] for m in mentions)) != len(mentions):
+            raise BadRequest("Duplicate tags found in mentions.")
+        if len(set(r['tag'] for r in relations)) != len(relations):
+            raise BadRequest("Duplicate tags found in relations.")
+        if len(set((c['head'], c['tail'], c['relation']) for c in constraints)) != len(constraints):
+            raise BadRequest("Duplicate constraints found.")
 
-        # Store schema
-        schema_id = self.schema_repo.create_schema(team_id)
-        self.schema_repo.add_mentions(schema_id, mentions)
-        self.schema_repo.add_relations(schema_id, relations)
-        self.schema_repo.add_constraints(schema_id, constraints)   
+        # Insert the schema and related data
+        schema_id = self.__schema_repository.create_schema(team_id, name, modelling_language_id)
+        self.__schema_repository.create_schema_mentions(schema_id, mentions)
+        self.__schema_repository.create_schema_relations(schema_id, relations)
+        self.__schema_repository.create_schema_constraints(schema_id, constraints)
+
+        return schema_id   
 
 schema_service = SchemaService(SchemaRepository(), user_service)
