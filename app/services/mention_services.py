@@ -7,7 +7,6 @@ from app.services.user_service import UserService, user_service
 from app.services.relation_services import RelationService, relation_service
 from app.services.entity_service import EntityService, entity_service
 from app.services.schema_service import schema_service
-
 from app.services.token_mention_service import (
     token_mention_service,
     TokenMentionService,
