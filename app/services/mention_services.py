@@ -38,7 +38,6 @@ class MentionService:
         self.token_service = token_service
         self.schema_service = schema_service 
 
-
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
