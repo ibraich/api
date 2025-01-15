@@ -36,7 +36,6 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
-        self.mention_repository = mention_repository
         self.schema_service = schema_service
 
     def get_mentions_by_document_edit(self, document_edit_id):

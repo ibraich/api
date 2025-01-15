@@ -11,7 +11,6 @@ class RelationService:
         self.__relation_repository = relation_repository
         self.__mention_repository = mention_repository
         self.user_service = user_service
-        self.relation_repository = relation_repository
         self.schema_service = schema_service
 
     def get_relations_by_document_edit(self, document_edit_id):
