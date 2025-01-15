@@ -107,14 +107,12 @@ class MentionRepository(BaseRepository):
         return mention
 
 
-    def create(self, mention_data):
-        """Create a new mention in the database."""
-        mention = Mention(**mention_data)
-        self.session.add(mention)
-        self.session.commit()
+    def update_is_shown_recommendation(self, mention_id, value):
+        """
+        Aktualisiert den isShownRecommendation-Wert eines Mention-Eintrags.
+        """
+        mention = self.db_session.query(Mention).filter_by(id=mention_id).first()
+        if mention:
+            mention.isShownRecommendation = value
+            self.db_session.commit()
         return mention
-
-    def update(self, mention):
-        """Update the mention object in the database."""
-        self.session.add(mention)
-        self.session.commit()
