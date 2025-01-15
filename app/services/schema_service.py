@@ -145,28 +145,106 @@ class SchemaService:
             is_directed,
         )
 
-    def create_schema(self, team_id, user_id, name, modelling_language_id, mentions, relations, constraints):
-        """
-        Create a schema with mentions, relations, and constraints.
-        """
-        # Check if the user belongs to the team
-        if not self.user_service.check_user_in_team(user_id, team_id):
-            raise BadRequest("User does not belong to the specified team.")
+    def verify_constraint(
+        self, schema, tag: str, head_mention_tag, tail_mention_tag, is_directed=False
+    ) -> any:
+        schema_head_mention = next(
+            (
+                mention
+                for mention in schema["schema_mentions"]
+                if mention["tag"] == head_mention_tag
+            ),
+            None,
+        )
 
-        # Ensure the schema has unique tags and constraints
-        if len(set(m['tag'] for m in mentions)) != len(mentions):
-            raise BadRequest("Duplicate tags found in mentions.")
-        if len(set(r['tag'] for r in relations)) != len(relations):
-            raise BadRequest("Duplicate tags found in relations.")
-        if len(set((c['head'], c['tail'], c['relation']) for c in constraints)) != len(constraints):
-            raise BadRequest("Duplicate constraints found.")
+        if schema_head_mention is None:
+            # This is a LogicError as the mentions has been saved before
+            raise BadRequest(
+                "Given Mention type "
+                + head_mention_tag
+                + " does not exist in the schema of the project"
+            )
 
-        # Insert the schema and related data
-        schema_id = self.__schema_repository.create_schema(team_id, name, modelling_language_id)
-        self.__schema_repository.create_schema_mentions(schema_id, mentions)
-        self.__schema_repository.create_schema_relations(schema_id, relations)
-        self.__schema_repository.create_schema_constraints(schema_id, constraints)
+        schema_tail_mention = next(
+            (
+                mention
+                for mention in schema["schema_mentions"]
+                if mention["tag"] == tail_mention_tag
+            ),
+            None,
+        )
 
-        return schema_id   
+        if schema_tail_mention is None:
+            # This is a LogicError as the mentions has been saved before
+            raise BadRequest(
+                "Given Mention type "
+                + tail_mention_tag
+                + " does not exist in the schema of the project"
+            )
+
+        print(schema["schema_constraints"], flush=True)
+        constraint = next(
+            (
+                constraint
+                for constraint in schema["schema_constraints"]
+                if constraint["schema_relation"]["tag"] == tag
+                and (
+                    (
+                        constraint["schema_mention_head"]["tag"]
+                        == schema_head_mention.get("tag")
+                        and constraint["schema_mention_tail"]["tag"]
+                        == schema_tail_mention.get("tag")
+                        and constraint["is_directed"] == is_directed
+                    )
+                    or (
+                        constraint["schema_mention_tail"]["tag"]
+                        == schema_head_mention.get("tag")
+                        and constraint["schema_mention_head"]["tag"]
+                        == schema_tail_mention.get("tag")
+                        and constraint["is_directed"] == False
+                        and is_directed == False
+                    )
+                )
+            ),
+            None,
+        )
+        if constraint is None:
+            raise BadRequest(
+                "The Relation "
+                + tag
+                + " with mention_head: "
+                + schema_head_mention.get("tag")
+                + " and mention_tail: "
+                + schema_tail_mention.get("tag")
+                + " is not allowed in the schema."
+            )
+
+        return constraint
+
+    def generate_random_hex_color(self):
+        """Generate a random hexadecimal color code."""
+        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+    def verify_schema_mention(self, schema_id, tag):
+        if (
+            self.__schema_repository.get_schema_mention_by_schema_tag(schema_id, tag)
+            is None
+        ):
+            raise BadRequest("Mention Tag not allowed")
+
+    def verify_entity_possible(self, schema_id, tag):
+        schema_mention = self.__schema_repository.get_schema_mention_by_schema_tag(
+            schema_id, tag
+        )
+        if schema_mention is None:
+            raise BadRequest("Mention Tag not allowed")
+        if schema_mention.entityPossible is False:
+            raise BadRequest("Entity not allowed for this mention")
+
+    def get_schema_by_document_edit(self, document_edit_id):
+        return self.__schema_repository.get_schema_by_document_edit(document_edit_id)
+
+    def fix_schema(self, schema_id):
+        self.__schema_repository.fix_schema(schema_id)   
 
 schema_service = SchemaService(SchemaRepository(), user_service)

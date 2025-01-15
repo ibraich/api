@@ -173,27 +173,22 @@ class SchemaRepository(BaseRepository):
             )
         )
 
-    def create_schema(self, team_id, name, modelling_language_id):
-        """Insert a new schema into the database."""
-        schema = Schema(team_id=team_id, name=name, modellingLanguage_id=modelling_language_id, active=True)
-        self.db.session.add(schema)
-        self.db.session.flush()  # Get schema ID before commit
-        return schema.id
+    def get_schema_mention_by_schema_tag(self, schema_id, tag):
+        return (
+            Session.query(SchemaMention)
+            .filter(SchemaMention.schema_id == schema_id, SchemaMention.tag == tag)
+            .first()
+        )
 
-    def create_schema_mentions(self, schema_id, mentions):
-        """Insert schema mentions into the database."""
-        for mention in mentions:
-            mention_entry = SchemaMention(schema_id=schema_id, **mention)
-            self.db.session.add(mention_entry)
+    def get_schema_by_document_edit(self, document_edit_id):
+        return (
+            Session.query(Schema)
+            .select_from(DocumentEdit)
+            .join(Schema, Schema.id == DocumentEdit.schema_id)
+            .filter(DocumentEdit.id == document_edit_id)
+            .first()
+        )
 
-    def create_schema_relations(self, schema_id, relations):
-        """Insert schema relations into the database."""
-        for relation in relations:
-            relation_entry = SchemaRelation(schema_id=schema_id, **relation)
-            self.db.session.add(relation_entry)
-    
-    def create_schema_constraints(self, schema_id, constraints):
-        """Insert schema constraints into the database."""
-        for constraint in constraints:
-            constraint_entry = SchemaConstraint(schema_id=schema_id, **constraint)
-            self.db.session.add(constraint_entry)
+    def fix_schema(self, schema_id):
+        db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
+        db.session.commit()
