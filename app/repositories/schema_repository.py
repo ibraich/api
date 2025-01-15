@@ -1,6 +1,7 @@
 from sqlalchemy.orm import aliased
 
 from app.models import (
+    DocumentEdit,
     Schema,
     Team,
     ModellingLanguage,
