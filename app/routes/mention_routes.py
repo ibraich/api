@@ -1,6 +1,6 @@
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.exceptions import NotFound,BadRequest
+from werkzeug.exceptions import NotFound, BadRequest
 from flask_restx import Resource, Namespace
 
 
@@ -24,10 +24,9 @@ class MentionResource(Resource):
     service = mention_service
 
     @jwt_required()
+    @transactional
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
-    @jwt_required()
-    @transactional
     def post(self):
         return self.service.create_mentions(request.json)
 
@@ -74,7 +73,6 @@ class MentionDeletionResource(Resource):
         entity_id = data.get("entity_id")
         response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
         return response
-    
 
 
 @ns.route("/<int:mention_id>/accept")
@@ -82,16 +80,17 @@ class MentionDeletionResource(Resource):
 @ns.response(400, "Invalid input")
 @ns.response(404, "Mention not found")
 class MentionAcceptResource(Resource):
+
+    @jwt_required()
+    @transactional
     @ns.doc(description="Accept a mention by copying it and marking it as processed")
+    @ns.marshal_with(mention_output_dto)
     def post(self, mention_id):
         """
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
         """
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        return mention_service.accept_mention(mention_id, int(document_edit_id))
+
+        return mention_service.accept_mention(mention_id)
 
 
 @ns.route("/<int:mention_id>/reject")
@@ -99,14 +98,13 @@ class MentionAcceptResource(Resource):
 @ns.response(400, "Invalid input")
 @ns.response(404, "Mention not found")
 class MentionRejectResource(Resource):
+
+    @jwt_required()
+    @transactional
     @ns.doc(description="Reject a mention by marking it as processed")
     def post(self, mention_id):
         """
         Reject a mention by setting isShownRecommendation to False.
         """
-        document_edit_id = request.args.get("document_edit_id")
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
-        
-        return mention_service.reject_mention(mention_id, int(document_edit_id))
 
+        return mention_service.reject_mention(mention_id)
