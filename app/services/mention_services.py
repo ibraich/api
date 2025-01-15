@@ -6,7 +6,7 @@ from app.services.token_service import TokenService, token_service
 from app.services.user_service import UserService, user_service
 from app.services.relation_services import RelationService, relation_service
 from app.services.entity_service import EntityService, entity_service
-
+from app.services.schema_service import schema_service
 
 from app.services.token_mention_service import (
     token_mention_service,
@@ -37,7 +37,7 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
-        self.mention_repository = mention_repository 
+        self.schema_service = schema_service 
 
 
     def get_mentions_by_document_edit(self, document_edit_id):

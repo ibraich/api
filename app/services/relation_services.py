@@ -4,14 +4,14 @@ from app.repositories.mention_repository import MentionRepository
 from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
 from app.services.user_service import user_service
-
+from app.services.schema_service import schema_service
 
 class RelationService:
     def __init__(self, relation_repository, mention_repository, user_service):
         self.__relation_repository = relation_repository
         self.__mention_repository = mention_repository
         self.user_service = user_service
-        self.relation_repository = relation_repository
+        self.schema_service = schema_service
 
     def get_relations_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
