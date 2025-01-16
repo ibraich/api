@@ -1,4 +1,5 @@
 from flask import request
+from flask_jwt_extended import get_jwt_identity
 from flask_restx import Namespace, Resource
 from app.services.user_service import user_service
 from app.dtos import signup_input_dto, signup_output_dto, login_output_dto, login_input_dto
@@ -65,10 +66,10 @@ class UpdateProfileRoute(Resource):
         - password (optional)
         """
         data = request.get_json()
-        user_id = request.headers.get("User-ID")  # Assuming User-ID is passed in headers
+        user_id = get_jwt_identity()  # Fetching the logged-in user's ID from JWT
 
         if not user_id:
-            raise BadRequest("User ID is required in headers.")
+            raise BadRequest("User ID is missing or invalid.")
 
         try:
             updated_user = user_service.update_user_data(
