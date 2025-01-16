@@ -159,46 +159,22 @@ class SchemaRepository(BaseRepository):
             SchemaRelation(schema_id=schema_id, tag=tag, description=description)
         )
     def create_schema(self, schema_data):
-        """
-        Persist a new schema into the database.
-
-        :param schema_data: Dictionary containing schema attributes (e.g., name, team_id).
-        :return: Schema instance.
-        """
         schema = Schema(**schema_data)
         self.db.session.add(schema)
         self.db.session.commit()
         return schema
 
     def add_mention_to_schema(self, schema_id, mention_data):
-        """
-        Add a mention to a schema.
-
-        :param schema_id: ID of the schema.
-        :param mention_data: Dictionary containing mention attributes.
-        """
         mention = SchemaMention(schema_id=schema_id, **mention_data)
         self.db.session.add(mention)
         self.db.session.commit()
 
     def add_relation_to_schema(self, schema_id, relation_data):
-        """
-        Add a relation to a schema.
-
-        :param schema_id: ID of the schema.
-        :param relation_data: Dictionary containing relation attributes.
-        """
         relation = SchemaRelation(schema_id=schema_id, **relation_data)
         self.db.session.add(relation)
         self.db.session.commit()
 
     def add_constraint_to_schema(self, schema_id, constraint_data):
-        """
-        Add a constraint to a schema.
-
-        :param schema_id: ID of the schema.
-        :param constraint_data: Dictionary containing constraint attributes.
-        """
         constraint = SchemaConstraint(schema_id=schema_id, **constraint_data)
         self.db.session.add(constraint)
         self.db.session.commit()
