@@ -56,3 +56,14 @@ class TeamRepository(BaseRepository):
         if project:
             return project.team_id
         return None
+    
+    def update_team_name(self, team_id: int, new_name: str) -> bool:
+        """Update a team's name in the database."""
+        team = Team.query.filter_by(id=team_id, active=True).first()
+        if not team:
+            return False
+
+        team.name = new_name
+        db.session.commit()
+        return True
+

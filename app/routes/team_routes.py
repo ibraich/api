@@ -1,6 +1,6 @@
 from sqlalchemy import exc
 from flask_jwt_extended import jwt_required
-from werkzeug.exceptions import BadRequest, Unauthorized
+from werkzeug.exceptions import BadRequest, Unauthorized, NotFound
 from flask_restx import Resource, Namespace
 from flask import request
 from app.dtos import (
@@ -81,3 +81,22 @@ class TeamRoutes(Resource):
 
         except exc.IntegrityError:
             raise BadRequest("Teamname already exists")
+
+@ns.route("/<int:team_id>")
+class TeamUpdateResource(Resource):
+    """API endpoint to update team properties."""
+
+    @ns.expect(team_input_dto, validate=True)
+    @jwt_required()
+    def put(self, team_id):
+        """Update the name of a team."""
+        try:
+            data = request.json
+            team_service.update_team_name(team_id, data["name"])
+            return {"message": "Team updated successfully."}, 200
+        except BadRequest as e:
+            return {"error": str(e)}, 400
+        except NotFound as e:
+            return {"error": str(e)}, 404
+        except Exception as e:
+            return {"error": "An unexpected error occurred."}, 500
