@@ -172,10 +172,13 @@ class SchemaRepository(BaseRepository):
             )
         )
 
-    def get_schema_mention_by_schema_tag(self, schema_id, tag):
+    def get_schema_mention_by_schema_tag(self, schema_id, schema_mention_id):
         return (
             Session.query(SchemaMention)
-            .filter(SchemaMention.schema_id == schema_id, SchemaMention.tag == tag)
+            .filter(
+                SchemaMention.schema_id == schema_id,
+                SchemaMention.id == schema_mention_id,
+            )
             .first()
         )
 
@@ -191,3 +194,9 @@ class SchemaRepository(BaseRepository):
     def fix_schema(self, schema_id):
         db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
         db.session.commit()
+
+    def get_schema_mention_by_id(self, schema_mention_id):
+        return Session.query(SchemaMention).filter_by(id=schema_mention_id).first()
+
+    def get_schema_relation_by_id(self, schema_relation_id):
+        return Session.query(SchemaRelation).filter_by(id=schema_relation_id).first()
