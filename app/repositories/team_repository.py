@@ -67,3 +67,12 @@ class TeamRepository(BaseRepository):
         db.session.commit()
         return True
 
+    def is_user_in_team(self, user_id: int, team_id: int) -> bool:
+        """Check if a user is a member of the given team."""
+        return (
+            db.session.query(UserTeam)
+            .filter_by(user_id=user_id, team_id=team_id)
+            .first()
+            is not None
+        )
+

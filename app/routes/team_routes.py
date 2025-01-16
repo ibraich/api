@@ -1,5 +1,5 @@
 from sqlalchemy import exc
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from werkzeug.exceptions import BadRequest, Unauthorized, NotFound
 from flask_restx import Resource, Namespace
 from flask import request
@@ -91,12 +91,21 @@ class TeamUpdateResource(Resource):
     def put(self, team_id):
         """Update the name of a team."""
         try:
+            current_user_id = get_jwt_identity()
             data = request.json
+
+            # Use the service method to validate user membership
+            if not team_service.validate_user_membership(current_user_id, team_id):
+                raise Unauthorized("User is not a member of the team.")
+
             team_service.update_team_name(team_id, data["name"])
             return {"message": "Team updated successfully."}, 200
         except BadRequest as e:
             return {"error": str(e)}, 400
+        except Unauthorized as e:
+            return {"error": str(e)}, 401
         except NotFound as e:
             return {"error": str(e)}, 404
         except Exception as e:
+            return {"error": "An unexpected error occurred."}, 500
             return {"error": "An unexpected error occurred."}, 500
