@@ -158,40 +158,49 @@ class SchemaRepository(BaseRepository):
         return super().store_object_transactional(
             SchemaRelation(schema_id=schema_id, tag=tag, description=description)
         )
+    def create_schema(self, schema_data):
+        """
+        Persist a new schema into the database.
 
-    def create_schema_constraint(
-        self,
-        schema_relation_id: int,
-        schema_mention_id_head: int,
-        schema_mention_id_tail: int,
-        is_directed: bool,
-    ) -> SchemaConstraint:
-        return super().store_object_transactional(
-            SchemaConstraint(
-                schema_relation_id=schema_relation_id,
-                schema_mention_id_head=schema_mention_id_head,
-                schema_mention_id_tail=schema_mention_id_tail,
-                isDirected=is_directed,
-            )
-        )
+        :param schema_data: Dictionary containing schema attributes (e.g., name, team_id).
+        :return: Schema instance.
+        """
+        schema = Schema(**schema_data)
+        self.db.session.add(schema)
+        self.db.session.commit()
+        return schema
 
-    def get_schema_mention_by_schema_tag(self, schema_id, tag):
-        return (
-            Session.query(SchemaMention)
-            .filter(SchemaMention.schema_id == schema_id, SchemaMention.tag == tag)
-            .first()
-        )
+    def add_mention_to_schema(self, schema_id, mention_data):
+        """
+        Add a mention to a schema.
 
-    def get_schema_by_document_edit(self, document_edit_id):
-        return (
-            Session.query(Schema)
-            .select_from(DocumentEdit)
-            .join(Schema, Schema.id == DocumentEdit.schema_id)
-            .filter(DocumentEdit.id == document_edit_id)
-            .first()
-        )
+        :param schema_id: ID of the schema.
+        :param mention_data: Dictionary containing mention attributes.
+        """
+        mention = SchemaMention(schema_id=schema_id, **mention_data)
+        self.db.session.add(mention)
+        self.db.session.commit()
 
-    def fix_schema(self, schema_id):
-        db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
-        db.session.commit()
+    def add_relation_to_schema(self, schema_id, relation_data):
+        """
+        Add a relation to a schema.
+
+        :param schema_id: ID of the schema.
+        :param relation_data: Dictionary containing relation attributes.
+        """
+        relation = SchemaRelation(schema_id=schema_id, **relation_data)
+        self.db.session.add(relation)
+        self.db.session.commit()
+
+    def add_constraint_to_schema(self, schema_id, constraint_data):
+        """
+        Add a constraint to a schema.
+
+        :param schema_id: ID of the schema.
+        :param constraint_data: Dictionary containing constraint attributes.
+        """
+        constraint = SchemaConstraint(schema_id=schema_id, **constraint_data)
+        self.db.session.add(constraint)
+        self.db.session.commit()
+
 
