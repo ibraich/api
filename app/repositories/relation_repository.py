@@ -1,6 +1,7 @@
 from app.models import Relation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
+from sqlalchemy.orm import Session
 
 
 class RelationRepository(BaseRepository):
@@ -107,4 +108,14 @@ class RelationRepository(BaseRepository):
             relation.isDirected = is_directed
 
         super().store_object(relation)
+        return relation
+
+    def update_is_shown_recommendation(self, relation_id, value):
+        """
+        Aktualisiert den isShownRecommendation-Wert eines Mention-Eintrags.
+        """
+        relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
+        if relation:
+            relation.isShownRecommendation = value
+            self.db_session.commit()
         return relation

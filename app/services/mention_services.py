@@ -107,6 +107,7 @@ class MentionService:
         for token_id in data["token_ids"]:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
+        mention.tokens = data["token_ids"]
         return mention
 
     def add_to_entity(self, entity_id: int, mention_id: int):
@@ -263,6 +264,62 @@ class MentionService:
             )
             return duplicate_token_mention
         return []
+
+    def accept_mention(self, mention_id):
+        """
+        Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
+        """
+        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, mention.document_edit_id
+        )
+        if not mention or mention.document_recommendation_id is None:
+            raise BadRequest("Invalid mention")
+        if not mention.isShownRecommendation:
+            raise BadRequest("Mention recommendation already processed.")
+
+        # Create new mention
+        new_mention = self.__mention_repository.create_mention(
+            tag=mention.tag,
+            document_edit_id=mention.document_edit_id,
+            document_recommendation_id=None,
+            is_shown_recommendation=False,
+        )
+
+        # Add tokens to mention
+        token_mentions = self.token_mention_service.get_token_mentions_by_mention_id(
+            mention_id
+        )
+        tokens = []
+        for token_mention in token_mentions:
+            self.token_mention_service.create_token_mention(
+                token_mention.token_id, new_mention.id
+            )
+            tokens.append(token_mention.token_id)
+
+        # Update mention recommendation
+        self.__mention_repository.update_is_shown_recommendation(mention_id, False)
+        new_mention.tokens = tokens
+        return new_mention
+
+    def reject_mention(self, mention_id):
+        """
+        Reject a mention by setting isShownRecommendation to False.
+        """
+        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, mention.document_edit_id
+        )
+        if not mention or mention.document_recommendation_id is None:
+            raise BadRequest("Invalid mention")
+        if not mention.isShownRecommendation:
+            raise BadRequest("Mention recommendation already processed.")
+
+        # Update mention recommendation
+        self.__mention_repository.update_is_shown_recommendation(mention_id, False)
+        return {"message": "Mention successfully rejected."}
 
 
 mention_service = MentionService(
