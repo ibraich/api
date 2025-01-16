@@ -196,6 +196,55 @@ class RelationService:
         }
         return response
 
+    def accept_relation(self, relation_id):
+        """
+        Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
+        """
+        relation = self.__relation_repository.get_relation_by_id(relation_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, relation.document_edit_id
+        )
+
+        if not relation or relation.document_recommendation_id is None:
+            raise BadRequest("Invalid relation.")
+        if not relation.isShownRecommendation:
+            raise BadRequest("Relation recommendation already processed.")
+
+        # Create new relation
+        new_relation = self.__relation_repository.create_relation(
+            tag=relation.tag,
+            document_edit_id=relation.document_edit_id,
+            isDirected=relation.isDirected,
+            mention_head_id=relation.mention_head_id,
+            mention_tail_id=relation.mention_tail_id,
+            document_recommendation_id=None,
+            is_shown_recommendation=False,
+        )
+
+        # Update relation recommendation
+        self.__relation_repository.update_is_shown_recommendation(relation_id, False)
+        return new_relation
+
+    def reject_relation(self, relation_id):
+        """
+        Reject a relation by setting isShownRecommendation to False.
+        """
+        relation = self.__relation_repository.get_relation_by_id(relation_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, relation.document_edit_id
+        )
+
+        if not relation or relation.document_recommendation_id is None:
+            raise BadRequest("Invalid relation.")
+        if not relation.isShownRecommendation:
+            raise BadRequest("Relation recommendation already processed.")
+
+        # Update relation recommendation
+        self.__relation_repository.update_is_shown_recommendation(relation_id, False)
+        return {"message": "Relation successfully rejected."}
+
     def check_duplicate_relations(self, mention_head_id, mention_tail_id):
         # get duplicate relation if any
         duplicate_relations = (

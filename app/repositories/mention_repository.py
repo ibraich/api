@@ -1,7 +1,9 @@
 from app.models import Mention, TokenMention
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
-from typing import List 
+from sqlalchemy.orm import Session
+
+
 
 class MentionRepository(BaseRepository):
     def __init__(self):
@@ -106,12 +108,13 @@ class MentionRepository(BaseRepository):
         super().store_object(mention)
         return mention
 
+    def update_is_shown_recommendation(self, mention_id, value):
+        """
+        Aktualisiert den isShownRecommendation-Wert eines Mention-Eintrags.
+        """
+        mention = self.db_session.query(Mention).filter_by(id=mention_id).first()
+        if mention:
+            mention.isShownRecommendation = value
+            self.db_session.commit()
+        return mention
 
-    def delete_mentions(self, document_edit_id: int):
-        query = "DELETE FROM mentions WHERE document_edit_id = %s"
-        self.db.execute(query, (document_edit_id,))
-
-    def add_mentions(self, document_edit_id: int, mentions: list[dict]):
-        query = "INSERT INTO mentions (document_edit_id, data) VALUES (%s, %s)"
-        for mention in mentions:
-            self.db.execute(query, (document_edit_id, mention["data"]))
