@@ -152,12 +152,6 @@ class SchemaRepository(BaseRepository):
             )
         )
 
-    def create_schema_relation(
-        self, schema_id: int, tag: str, description: str
-    ) -> SchemaRelation:
-        return super().store_object_transactional(
-            SchemaRelation(schema_id=schema_id, tag=tag, description=description)
-        )
     def create_schema(self, schema_data):
         schema = Schema(**schema_data)
         self.db.session.add(schema)
