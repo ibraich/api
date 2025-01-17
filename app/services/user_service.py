@@ -23,7 +23,7 @@ class UserService:
 
     def check_user_in_team(self, user_id, team_id):
         if self.__user_repository.check_user_in_team(user_id, team_id) is None:
-            raise BadRequest("You have to be in a team")
+            raise BadRequest("You are not part of this team")
 
     def get_logged_in_user_id(self):
         try:
