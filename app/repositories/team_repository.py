@@ -48,16 +48,12 @@ class TeamRepository(BaseRepository):
 
     def get_team_by_project_id(self, project_id):
 
-        project = (
-            db.session.query(Project)
-            .filter(Project.id == project_id)
-            .first()
-        )
+        project = db.session.query(Project).filter(Project.id == project_id).first()
         if project:
             return project.team_id
         return None
-    
-    def update_team_name(self, team_id: int, new_name: str) -> bool:
+
+    def update_team_name(self, team_id: int, new_name: str):
         """Update a team's name in the database."""
         team = Team.query.filter_by(id=team_id, active=True).first()
         if not team:
@@ -65,14 +61,4 @@ class TeamRepository(BaseRepository):
 
         team.name = new_name
         db.session.commit()
-        return True
-
-    def is_user_in_team(self, user_id: int, team_id: int) -> bool:
-        """Check if a user is a member of the given team."""
-        return (
-            db.session.query(UserTeam)
-            .filter_by(user_id=user_id, team_id=team_id)
-            .first()
-            is not None
-        )
-
+        return team

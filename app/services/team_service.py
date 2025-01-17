@@ -107,18 +107,18 @@ class TeamService:
             raise NotFound("No team found for this project or project doesn't exist.")
         return team_id
 
-    def validate_user_membership(self, user_id: int, team_id: int) -> bool:
-        """Check if the user is a member of the specified team."""
-        return self.team_repository.is_user_in_team(user_id, team_id)
-
     def update_team_name(self, team_id: int, new_name: str):
         """Update the name of a team."""
         if not new_name or not new_name.strip():
             raise BadRequest("Team name cannot be empty.")
 
-        updated = self.team_repository.update_team_name(team_id, new_name)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user_id, team_id)
+
+        updated = self.__team_repository.update_team_name(team_id, new_name)
         if not updated:
             raise NotFound(f"Team with ID {team_id} not found.")
+        return updated
 
 
 team_service = TeamService(TeamRepository(), user_service)

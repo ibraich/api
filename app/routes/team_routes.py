@@ -82,30 +82,17 @@ class TeamRoutes(Resource):
         except exc.IntegrityError:
             raise BadRequest("Teamname already exists")
 
+
 @ns.route("/<int:team_id>")
 class TeamUpdateResource(Resource):
     """API endpoint to update team properties."""
 
-    @ns.expect(team_input_dto, validate=True)
     @jwt_required()
+    @ns.expect(team_input_dto, validate=True)
+    @ns.marshal_with(team_output_dto)
     def put(self, team_id):
         """Update the name of a team."""
-        try:
-            current_user_id = get_jwt_identity()
-            data = request.json
+        data = request.json
 
-            # Use the service method to validate user membership
-            if not team_service.validate_user_membership(current_user_id, team_id):
-                raise Unauthorized("User is not a member of the team.")
-
-            team_service.update_team_name(team_id, data["name"])
-            return {"message": "Team updated successfully."}, 200
-        except BadRequest as e:
-            return {"error": str(e)}, 400
-        except Unauthorized as e:
-            return {"error": str(e)}, 401
-        except NotFound as e:
-            return {"error": str(e)}, 404
-        except Exception as e:
-            return {"error": "An unexpected error occurred."}, 500
-            return {"error": "An unexpected error occurred."}, 500
+        team = team_service.update_team_name(team_id, data["name"])
+        return team
