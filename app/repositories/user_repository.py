@@ -14,6 +14,7 @@ from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
 from werkzeug.security import generate_password_hash
 
+
 class UserRepository(BaseRepository):
     def check_user_in_team(self, user_id, team_id):
         return (
@@ -117,5 +118,4 @@ class UserRepository(BaseRepository):
         if password:
             user.password = generate_password_hash(password)
 
-        Session.commit()
         return user

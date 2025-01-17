@@ -104,12 +104,11 @@ class UserService:
             return {"token": token}
         except Exception as e:
             raise
-    
-    def update_user_data(self, user_id, username=None, email=None, password=None):
+
+    def update_user_data(self, username=None, email=None, password=None):
         """
         Update user information by calling the repository.
 
-        :param user_id: ID of the user to update.
         :param username: New username (optional).
         :param email: New email (optional).
         :param password: New password (optional).
@@ -119,6 +118,13 @@ class UserService:
         """
         if not any([username, email, password]):
             raise BadRequest("No fields to update provided.")
+
+        user_id = self.get_logged_in_user_id()
+
+        if username and self.get_user_by_username(username):
+            raise BadRequest("Username already exists")
+        if email and self.get_user_by_email(email):
+            raise BadRequest("Email already exists")
 
         try:
             updated_user = self.__user_repository.update_user_data(

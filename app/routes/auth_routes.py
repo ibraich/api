@@ -1,8 +1,15 @@
 from flask import request
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace, Resource
+
+from app.db import transactional
 from app.services.user_service import user_service
-from app.dtos import signup_input_dto, signup_output_dto, login_output_dto, login_input_dto
+from app.dtos import (
+    signup_input_dto,
+    signup_output_dto,
+    login_output_dto,
+    login_input_dto,
+)
 from werkzeug.exceptions import BadRequest, Unauthorized, NotFound
 
 ns = Namespace("auth", description="User Authentication related operations")
@@ -27,6 +34,7 @@ class SignupRoute(Resource):
         self.service.signup(username, email, password)
         return {"message": "User created successfully"}
 
+
 @ns.route("/login")
 @ns.response(400, "Invalid input")
 @ns.response(401, "Unauthorized")
@@ -50,12 +58,17 @@ class LoginRoute(Resource):
             return {"error": str(e)}, 401
         except Exception as e:
             return {"error": "An unexpected error occurred"}, 500
-        
+
+
 @ns.route("/update-profile")
 @ns.response(200, "Profile updated successfully")
 @ns.response(400, "Invalid input")
 @ns.response(404, "User not found")
 class UpdateProfileRoute(Resource):
+
+    @jwt_required()
+    @transactional
+    @ns.expect(signup_input_dto)
     def put(self):
         """
         Update user profile information.
@@ -66,20 +79,13 @@ class UpdateProfileRoute(Resource):
         - password (optional)
         """
         data = request.get_json()
-        user_id = get_jwt_identity()  # Fetching the logged-in user's ID from JWT
 
-        if not user_id:
-            raise BadRequest("User ID is missing or invalid.")
-
-        try:
-            updated_user = user_service.update_user_data(
-                user_id=user_id,
-                username=data.get("username"),
-                email=data.get("email"),
-                password=data.get("password"),
-            )
-            return {"message": "Profile updated successfully", "user": updated_user}, 200
-        except BadRequest as e:
-            return {"message": str(e)}, 400
-        except NotFound as e:
-            return {"message": str(e)}, 404
+        updated_user = user_service.update_user_data(
+            username=data.get("username"),
+            email=data.get("email"),
+            password=data.get("password"),
+        )
+        return {
+            "message": "Profile updated successfully",
+            "user": updated_user.username,
+        }, 200
