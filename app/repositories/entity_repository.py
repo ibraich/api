@@ -1,7 +1,9 @@
 from app.models import Entity
 from app.db import db
 from app.repositories.base_repository import BaseRepository
+import os
 
+RECOMMENDATION_SYSTEM_URL = os.getenv("RECOMMENDATION_SYSTEM_URL", "http://localhost:8080/pipeline/docs")
 
 class EntityRepository(BaseRepository):
     def __init__(self):
@@ -48,3 +50,12 @@ class EntityRepository(BaseRepository):
 
     def get_entity_by_id(self, entity_id):
         return self.db_session.query(Entity).filter_by(id=entity_id).first()
+    
+
+    def get_document_by_id(self, document_id):
+        # Simulate a database query
+        return {"id": document_id, "content": "Sample document content"} if document_id == 1 else None
+
+    def save_detected_entities(self, document_id, entities):
+        # Simulate saving detected entities to the database
+        return {"document_id": document_id, "entities_saved": len(entities)}
