@@ -141,61 +141,31 @@ class SchemaService:
         )
 
     def verify_constraint(
-        self, schema, tag: str, head_mention_tag, tail_mention_tag, is_directed=False
+        self,
+        schema,
+        schema_relation_id,
+        head_schema_mention_id,
+        tail_schema_mention_id,
+        is_directed=False,
     ) -> any:
-        schema_head_mention = next(
-            (
-                mention
-                for mention in schema["schema_mentions"]
-                if mention["tag"] == head_mention_tag
-            ),
-            None,
-        )
-
-        if schema_head_mention is None:
-            # This is a LogicError as the mentions has been saved before
-            raise BadRequest(
-                "Given Mention type "
-                + head_mention_tag
-                + " does not exist in the schema of the project"
-            )
-
-        schema_tail_mention = next(
-            (
-                mention
-                for mention in schema["schema_mentions"]
-                if mention["tag"] == tail_mention_tag
-            ),
-            None,
-        )
-
-        if schema_tail_mention is None:
-            # This is a LogicError as the mentions has been saved before
-            raise BadRequest(
-                "Given Mention type "
-                + tail_mention_tag
-                + " does not exist in the schema of the project"
-            )
-
-        print(schema["schema_constraints"], flush=True)
         constraint = next(
             (
                 constraint
                 for constraint in schema["schema_constraints"]
-                if constraint["schema_relation"]["tag"] == tag
+                if constraint["schema_relation"]["id"] == schema_relation_id
                 and (
                     (
-                        constraint["schema_mention_head"]["tag"]
-                        == schema_head_mention.get("tag")
-                        and constraint["schema_mention_tail"]["tag"]
-                        == schema_tail_mention.get("tag")
+                        constraint["schema_mention_head"]["id"]
+                        == head_schema_mention_id
+                        and constraint["schema_mention_tail"]["id"]
+                        == tail_schema_mention_id
                         and constraint["is_directed"] == is_directed
                     )
                     or (
-                        constraint["schema_mention_tail"]["tag"]
-                        == schema_head_mention.get("tag")
-                        and constraint["schema_mention_head"]["tag"]
-                        == schema_tail_mention.get("tag")
+                        constraint["schema_mention_tail"]["id"]
+                        == head_schema_mention_id
+                        and constraint["schema_mention_head"]["id"]
+                        == tail_schema_mention_id
                         and constraint["is_directed"] == False
                         and is_directed == False
                     )
@@ -206,11 +176,11 @@ class SchemaService:
         if constraint is None:
             raise BadRequest(
                 "The Relation "
-                + tag
+                + str(schema_relation_id)
                 + " with mention_head: "
-                + schema_head_mention.get("tag")
+                + str(head_schema_mention_id)
                 + " and mention_tail: "
-                + schema_tail_mention.get("tag")
+                + str(tail_schema_mention_id)
                 + " is not allowed in the schema."
             )
 
@@ -219,13 +189,6 @@ class SchemaService:
     def generate_random_hex_color(self):
         """Generate a random hexadecimal color code."""
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
-    def verify_schema_mention(self, schema_id, tag):
-        if (
-            self.__schema_repository.get_schema_mention_by_schema_tag(schema_id, tag)
-            is None
-        ):
-            raise BadRequest("Mention Tag not allowed")
 
     def verify_entity_possible(self, schema_id, tag):
         schema_mention = self.__schema_repository.get_schema_mention_by_schema_tag(
@@ -241,6 +204,22 @@ class SchemaService:
 
     def fix_schema(self, schema_id):
         self.__schema_repository.fix_schema(schema_id)
+
+    def get_schema_mention_by_id(self, schema_mention_id):
+        schema_mention = self.__schema_repository.get_schema_mention_by_id(
+            schema_mention_id
+        )
+        if schema_mention is None:
+            raise BadRequest("Mention Tag not allowed")
+        return schema_mention
+
+    def get_schema_relation_by_id(self, schema_relation_id):
+        schema_relation = self.__schema_repository.get_schema_relation_by_id(
+            schema_relation_id
+        )
+        if schema_relation is None:
+            raise BadRequest("Relation Tag not allowed")
+        return schema_relation
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)

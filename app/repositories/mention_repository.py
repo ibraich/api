@@ -1,7 +1,6 @@
-from app.models import Mention, TokenMention
+from app.models import Mention, TokenMention, SchemaMention
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy.orm import Session
 
 
 class MentionRepository(BaseRepository):
@@ -12,13 +11,18 @@ class MentionRepository(BaseRepository):
         results = (
             self.db_session.query(
                 Mention.id.label("mention_id"),
-                Mention.tag,
                 Mention.isShownRecommendation,
                 Mention.document_edit_id,
                 Mention.document_recommendation_id,
                 Mention.entity_id,
                 TokenMention.token_id,
+                SchemaMention.id.label("schema_mention_id"),
+                SchemaMention.tag,
+                SchemaMention.description,
+                SchemaMention.color,
+                SchemaMention.entityPossible,
             )
+            .join(SchemaMention, Mention.schema_mention_id == SchemaMention.id)
             .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
             .filter(
                 (Mention.document_edit_id == document_edit_id)
@@ -32,19 +36,16 @@ class MentionRepository(BaseRepository):
 
         return results
 
-    def get_mention_by_tag(self, tag):
-        return self.db_session.query(Mention).filter_by(tag=tag).all()
-
     def create_mention(
         self,
-        tag,
+        schema_mention_id,
         document_edit_id=None,
         document_recommendation_id=None,
         is_shown_recommendation=False,
     ):
         mention = Mention(
             document_edit_id=document_edit_id,
-            tag=tag,
+            schema_mention_id=schema_mention_id,
             document_recommendation_id=document_recommendation_id,
             isShownRecommendation=is_shown_recommendation,
         )
@@ -95,17 +96,16 @@ class MentionRepository(BaseRepository):
             self.db_session.query(Mention).filter(Mention.entity_id == entity_id).all()
         )
 
-    def update_mention(self, mention_id, tag, entity_id):
+    def update_mention(self, mention_id, schema_mention_id, entity_id):
         mention = self.get_mention_by_id(mention_id)
-        if tag:
-            mention.tag = tag
+        if schema_mention_id:
+            mention.schema_mention_id = schema_mention_id
         if entity_id:
             mention.entity_id = entity_id
         elif entity_id == 0:
             mention.entity_id = None
         super().store_object(mention)
         return mention
-
 
     def update_is_shown_recommendation(self, mention_id, value):
         """

@@ -136,7 +136,9 @@ class Token(db.Model):
 class Mention(db.Model):
     __tablename__ = "Mention"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    tag = db.Column(db.String(), nullable=False)
+    schema_mention_id = db.Column(
+        db.Integer, db.ForeignKey("SchemaMention.id"), nullable=False
+    )
     isShownRecommendation = db.Column(db.Boolean, nullable=False, default=False)
     document_edit_id = db.Column(
         db.Integer, db.ForeignKey("DocumentEdit.id"), nullable=True
@@ -170,7 +172,9 @@ class Relation(db.Model):
     __tablename__ = "Relation"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     isShownRecommendation = db.Column(db.Boolean, nullable=False, default=False)
-    tag = db.Column(db.String(), nullable=False)
+    schema_relation_id = db.Column(
+        db.Integer, db.ForeignKey("SchemaRelation.id"), nullable=False
+    )
     isDirected = db.Column(db.Boolean, nullable=False, default=True)
     mention_head_id = db.Column(db.Integer, db.ForeignKey("Mention.id"), nullable=False)
     mention_tail_id = db.Column(db.Integer, db.ForeignKey("Mention.id"), nullable=False)
