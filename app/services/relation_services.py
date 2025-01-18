@@ -5,14 +5,18 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict
 from app.repositories.mention_repository import MentionRepository
 from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
+from app.services.schema_service import schema_service
 from app.services.user_service import user_service
 
 
 class RelationService:
-    def __init__(self, relation_repository, mention_repository, user_service):
+    def __init__(
+        self, relation_repository, mention_repository, user_service, schema_service
+    ):
         self.__relation_repository = relation_repository
         self.__mention_repository = mention_repository
         self.user_service = user_service
+        self.schema_service = schema_service
 
     def get_relations_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -96,6 +100,19 @@ class RelationService:
 
         self.check_duplicate_relations(data["mention_head_id"], data["mention_tail_id"])
 
+        # Check constraints for relation creation
+        schema = self.schema_service.get_schema_by_document_edit(
+            data["document_edit_id"]
+        )
+        schema_extended = self.schema_service.get_schema_by_id(schema.id)
+        self.schema_service.verify_constraint(
+            schema_extended,
+            data["tag"],
+            self.__mention_repository.get_mention_by_id(data["mention_head_id"]).tag,
+            self.__mention_repository.get_mention_by_id(data["mention_tail_id"]).tag,
+            data["isDirected"],
+        )
+
         # save relation
         relation = self.__relation_repository.create_relation(
             data["tag"],
@@ -122,29 +139,25 @@ class RelationService:
             logged_in_user_id, relation.document_edit_id
         )
 
+        mention_head = self.__mention_repository.get_mention_by_id(mention_head_id)
         if mention_head_id:
-            self.verify_mention_in_document_edit(
+            mention_head = self.verify_mention_in_document_edit(
                 mention_head_id, relation.document_edit_id
             )
+
+        mention_tail = self.__mention_repository.get_mention_by_id(mention_tail_id)
         if mention_tail_id:
-            self.verify_mention_in_document_edit(
+            mention_tail = self.verify_mention_in_document_edit(
                 mention_tail_id, relation.document_edit_id
             )
 
-        updated_mention_head_id = (
-            mention_head_id if mention_head_id is not None else relation.mention_head_id
-        )
-        updated_mention_tail_id = (
-            mention_tail_id if mention_tail_id is not None else relation.mention_tail_id
-        )
-
-        self.check_mentions_not_equal(updated_mention_head_id, updated_mention_tail_id)
+        self.check_mentions_not_equal(mention_head.id, mention_tail.id)
 
         # check duplicate relation if mentions changed
         if mention_tail_id or mention_head_id:
             duplicate_relations = (
                 self.__relation_repository.get_relations_by_mention_head_and_tail(
-                    updated_mention_head_id, updated_mention_tail_id
+                    mention_head.id, mention_tail.id
                 )
             )
             if duplicate_relations is not None and len(duplicate_relations) > 0:
@@ -155,6 +168,20 @@ class RelationService:
                     or duplicate_relations[0].id != relation.id
                 ):
                     raise Conflict("Relation already exists.")
+
+        # Check constraints for relation creation
+        updated_tag = tag if tag is not None else relation.tag
+        schema = self.schema_service.get_schema_by_document_edit(
+            relation.document_edit_id
+        )
+        schema_extended = self.schema_service.get_schema_by_id(schema.id)
+        self.schema_service.verify_constraint(
+            schema_extended,
+            updated_tag,
+            mention_head.tag,
+            mention_tail.tag,
+            is_directed if is_directed is not None else relation.isDirected,
+        )
 
         # update relation
         relation = self.__relation_repository.update_relation(
@@ -173,6 +200,55 @@ class RelationService:
             "mention_tail_id": relation.mention_tail_id,
         }
         return response
+
+    def accept_relation(self, relation_id):
+        """
+        Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
+        """
+        relation = self.__relation_repository.get_relation_by_id(relation_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, relation.document_edit_id
+        )
+
+        if not relation or relation.document_recommendation_id is None:
+            raise BadRequest("Invalid relation.")
+        if not relation.isShownRecommendation:
+            raise BadRequest("Relation recommendation already processed.")
+
+        # Create new relation
+        new_relation = self.__relation_repository.create_relation(
+            tag=relation.tag,
+            document_edit_id=relation.document_edit_id,
+            isDirected=relation.isDirected,
+            mention_head_id=relation.mention_head_id,
+            mention_tail_id=relation.mention_tail_id,
+            document_recommendation_id=None,
+            is_shown_recommendation=False,
+        )
+
+        # Update relation recommendation
+        self.__relation_repository.update_is_shown_recommendation(relation_id, False)
+        return new_relation
+
+    def reject_relation(self, relation_id):
+        """
+        Reject a relation by setting isShownRecommendation to False.
+        """
+        relation = self.__relation_repository.get_relation_by_id(relation_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, relation.document_edit_id
+        )
+
+        if not relation or relation.document_recommendation_id is None:
+            raise BadRequest("Invalid relation.")
+        if not relation.isShownRecommendation:
+            raise BadRequest("Relation recommendation already processed.")
+
+        # Update relation recommendation
+        self.__relation_repository.update_is_shown_recommendation(relation_id, False)
+        return {"message": "Relation successfully rejected."}
 
     def check_duplicate_relations(self, mention_head_id, mention_tail_id):
         # get duplicate relation if any
@@ -197,6 +273,7 @@ class RelationService:
 
         if mention.document_recommendation_id:
             raise BadRequest("You cannot use a recommendation inside the relation")
+        return mention
 
     def check_mentions_not_equal(self, mention_head_id, mention_tail_id):
         if mention_head_id == mention_tail_id:
@@ -204,5 +281,5 @@ class RelationService:
 
 
 relation_service = RelationService(
-    RelationRepository(), MentionRepository(), user_service
+    RelationRepository(), MentionRepository(), user_service, schema_service
 )

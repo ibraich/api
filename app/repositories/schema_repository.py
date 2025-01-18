@@ -9,6 +9,7 @@ from app.models import (
     SchemaConstraint,
     UserTeam,
     Project,
+    DocumentEdit,
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
@@ -62,7 +63,7 @@ class SchemaRepository(BaseRepository):
 
     def get_by_project(self, project_id):
         return (
-            db.session.query(
+            Session.query(
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
@@ -170,3 +171,23 @@ class SchemaRepository(BaseRepository):
                 isDirected=is_directed,
             )
         )
+
+    def get_schema_mention_by_schema_tag(self, schema_id, tag):
+        return (
+            Session.query(SchemaMention)
+            .filter(SchemaMention.schema_id == schema_id, SchemaMention.tag == tag)
+            .first()
+        )
+
+    def get_schema_by_document_edit(self, document_edit_id):
+        return (
+            Session.query(Schema)
+            .select_from(DocumentEdit)
+            .join(Schema, Schema.id == DocumentEdit.schema_id)
+            .filter(DocumentEdit.id == document_edit_id)
+            .first()
+        )
+
+    def fix_schema(self, schema_id):
+        db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
+        db.session.commit()

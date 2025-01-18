@@ -3,13 +3,15 @@ import typing
 from app.models import Entity
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
+from app.services.schema_service import schema_service
 from app.repositories.mention_repository import MentionRepository
 
 
 class EntityService:
-    def __init__(self, entity_repository, mention_repository):
+    def __init__(self, entity_repository, mention_repository, schema_service):
         self.__entity_repository = entity_repository
         self.__mention_repository = mention_repository
+        self.schema_service = schema_service
 
     def get_entities_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -72,6 +74,10 @@ class EntityService:
         mention_ids = data["mention_ids"]
         mentions = []
 
+        schema = self.schema_service.get_schema_by_document_edit(
+            data["document_edit_id"]
+        )
+
         tag_count = dict()
         for mention_id in mention_ids:
             mention = self.__mention_repository.get_mention_by_id(mention_id)
@@ -80,6 +86,9 @@ class EntityService:
 
             if mention.document_edit_id != data["document_edit_id"]:
                 raise BadRequest("Invalid mention id")
+
+            # Check that entity is allowed for mentions
+            self.schema_service.verify_entity_possible(schema.id, mention.tag)
 
             # counting tags to check if all tags are same or not
             if mention.tag not in tag_count:
@@ -116,4 +125,4 @@ class EntityService:
         return response
 
 
-entity_service = EntityService(EntityRepository(), MentionRepository())
+entity_service = EntityService(EntityRepository(), MentionRepository(), schema_service)

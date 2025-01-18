@@ -32,10 +32,12 @@ class DocumentService:
         self.document_edit_service = document_edit_service
 
     def get_documents_by_project(self, project_id):
-        documents = self.get_documents_by_user()
-        return [
-            document for document in documents if document["project_id"] == project_id
+        response = self.get_documents_by_user()
+        documents = response["documents"]
+        filtered_documents = [
+            document for document in documents if document["project"]["project_id"] == project_id
         ]
+        return {"documents": filtered_documents}
 
     def get_documents_by_user(self):
         user_id = self.user_service.get_logged_in_user_id()
@@ -44,21 +46,29 @@ class DocumentService:
             raise NotFound("No documents found")
         document_list = [
             {
-                "content": doc.content,
                 "id": doc.id,
+                "content": doc.content,
                 "name": doc.name,
-                "project_id": doc.project_id,
-                "project_name": doc.project_name,
-                "schema_id": doc.schema_id,
-                "schema_name": doc.schema_name,
-                "team_name": doc.team_name,
-                "team_id": doc.team_id,
-                "document_edit_id": doc.document_edit_id,
-                "document_edit_state": doc.document_edit_state,
+                "project": {
+                    "project_id": doc.project_id,
+                    "project_name": doc.project_name,
+                },
+                "schema": {
+                    "schema_id": doc.schema_id,
+                    "schema_name": doc.schema_name,
+                },
+                "team": {
+                    "team_id": doc.team_id,
+                    "team_name": doc.team_name,
+                },
+                "document_edit": {
+                    "document_edit_id": doc.document_edit_id,
+                    "document_edit_state": doc.document_edit_state,
+                },
             }
             for doc in documents
         ]
-        return document_list
+        return {"documents": document_list}
 
     def upload_document(self, project_id, file_name, file_content):
 

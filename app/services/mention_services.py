@@ -5,6 +5,7 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
 
 from app.models import Mention
 from app.repositories.mention_repository import MentionRepository
+from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 from app.services.user_service import UserService, user_service
 from app.services.relation_services import RelationService, relation_service
@@ -23,6 +24,7 @@ class MentionService:
     relation_service: RelationService
     entity_service: EntityService
     token_service: TokenService
+    schema_service: SchemaService
 
     def __init__(
         self,
@@ -32,6 +34,7 @@ class MentionService:
         relation_service,
         entity_service,
         token_service,
+        schema_service,
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
@@ -39,6 +42,7 @@ class MentionService:
         self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
+        self.schema_service = schema_service
 
     def get_by_document_edit(self, document_edit_id) -> typing.List[Mention]:
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -96,6 +100,12 @@ class MentionService:
         if len(duplicate_token_mention) > 0:
             raise Conflict("Token mention already exists.")
 
+        # Check Tag is allowed
+        schema = self.schema_service.get_schema_by_document_edit(
+            data["document_edit_id"]
+        )
+        self.schema_service.verify_schema_mention(schema.id, data["tag"])
+
         # save mention
         mention = self.__mention_repository.create_mention(
             document_edit_id=data["document_edit_id"],
@@ -106,6 +116,7 @@ class MentionService:
         for token_id in data["token_ids"]:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
+        mention.tokens = data["token_ids"]
         return mention
 
     def add_to_entity(self, entity_id: int, mention_id: int):
@@ -182,11 +193,19 @@ class MentionService:
         if mention.document_recommendation_id:
             raise BadRequest("You cannot update a recommendation")
 
+        schema = self.schema_service.get_schema_by_document_edit(
+            mention.document_edit_id
+        )
+
         # Check that user owns this document edit
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
             user_id, mention.document_edit_id
         )
+
+        # Check for valid tag
+        if tag is not None:
+            self.schema_service.verify_schema_mention(schema.id, tag)
 
         if token_ids:
             # Check that tokens belong to this document
@@ -205,6 +224,11 @@ class MentionService:
             self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
             for token_id in token_ids:
                 self.token_mention_service.create_token_mention(token_id, mention_id)
+
+        if entity_id is not None or mention.entity_id is not None:
+            # Check that entity is allowed for tag
+            updated_tag = tag if tag is not None else mention.tag
+            self.schema_service.verify_entity_possible(schema.id, updated_tag)
 
         # Delete entity if it is empty after update, id = 0: clear entity_id of mention
         if entity_id is not None:
@@ -250,6 +274,62 @@ class MentionService:
             return duplicate_token_mention
         return []
 
+    def accept_mention(self, mention_id):
+        """
+        Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
+        """
+        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, mention.document_edit_id
+        )
+        if not mention or mention.document_recommendation_id is None:
+            raise BadRequest("Invalid mention")
+        if not mention.isShownRecommendation:
+            raise BadRequest("Mention recommendation already processed.")
+
+        # Create new mention
+        new_mention = self.__mention_repository.create_mention(
+            tag=mention.tag,
+            document_edit_id=mention.document_edit_id,
+            document_recommendation_id=None,
+            is_shown_recommendation=False,
+        )
+
+        # Add tokens to mention
+        token_mentions = self.token_mention_service.get_token_mentions_by_mention_id(
+            mention_id
+        )
+        tokens = []
+        for token_mention in token_mentions:
+            self.token_mention_service.create_token_mention(
+                token_mention.token_id, new_mention.id
+            )
+            tokens.append(token_mention.token_id)
+
+        # Update mention recommendation
+        self.__mention_repository.update_is_shown_recommendation(mention_id, False)
+        new_mention.tokens = tokens
+        return new_mention
+
+    def reject_mention(self, mention_id):
+        """
+        Reject a mention by setting isShownRecommendation to False.
+        """
+        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, mention.document_edit_id
+        )
+        if not mention or mention.document_recommendation_id is None:
+            raise BadRequest("Invalid mention")
+        if not mention.isShownRecommendation:
+            raise BadRequest("Mention recommendation already processed.")
+
+        # Update mention recommendation
+        self.__mention_repository.update_is_shown_recommendation(mention_id, False)
+        return {"message": "Mention successfully rejected."}
+
 
 mention_service = MentionService(
     MentionRepository(),
@@ -258,4 +338,5 @@ mention_service = MentionService(
     relation_service,
     entity_service,
     token_service,
+    schema_service,
 )
