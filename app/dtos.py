@@ -91,7 +91,7 @@ document_list_dto = api.model(
 document_output_dto = api.model(
     "DocumentOutput",
     {
-        "documents": fields.List(fields.Nested(document_list_dto)),  # List of documents
+        "documents": fields.List(fields.Nested(document_list_dto)),
     }
 )
 
