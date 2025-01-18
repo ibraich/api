@@ -43,22 +43,58 @@ project_output_dto = api.model(
     },
 )
 
-document_output_dto = api.model(
-    "DocumentOutput",
+team_dto = api.model(
+    "Team",
+    {
+        "team_id": fields.Integer,
+        "team_name": fields.String,
+    }
+)
+
+schema_dto = api.model(
+    "Schema",
+    {
+        "schema_id": fields.Integer,
+        "schema_name": fields.String,
+    }
+)
+
+project_dto = api.model(
+    "Project",
+    {
+        "project_id": fields.Integer,
+        "project_name": fields.String,
+    }
+)
+
+document_edit_dto = api.model(
+    "DocumentEdit",
+    {
+        "document_edit_id": fields.Integer,
+        "document_edit_state": fields.String,
+    }
+)
+
+document_list_dto = api.model(
+    "DocumentList",
     {
         "id": fields.Integer,
         "content": fields.String,
         "name": fields.String,
-        "team_id": fields.Integer,
-        "team_name": fields.String,
-        "schema_id": fields.Integer,
-        "schema_name": fields.String,
-        "project_id": fields.Integer,
-        "project_name": fields.String,
-        "document_edit_id": fields.Integer,
-        "document_edit_state": fields.String,
-    },
+        "project": fields.Nested(project_dto),
+        "schema": fields.Nested(schema_dto),
+        "team": fields.Nested(team_dto),
+        "document_edit": fields.Nested(document_edit_dto),
+    }
 )
+
+document_output_dto = api.model(
+    "DocumentOutput",
+    {
+        "documents": fields.List(fields.Nested(document_list_dto)),  # List of documents
+    }
+)
+
 
 entity_input_dto = api.model(
     "EntityInput",
@@ -273,24 +309,23 @@ document_edit_output_dto = api.model(
     },
 )
 
-project_user_output_dto = api.model(
-    "ProjectUserOutput",
+
+project_list_dto = api.model(
+    "project_list_dto",
     {
         "id": fields.Integer,
         "name": fields.String,
         "creator_id": fields.Integer,
-        "team_id": fields.Integer,
-        "team_name": fields.String,
-        "schema_id": fields.Integer,
-        "schema_name": fields.String,
-    },
+        "team": fields.Nested(team_dto),
+        "schema": fields.Nested(schema_dto),
+    }
 )
 
 project_user_output_list_dto = api.model(
-    "ProjectUserListOutput",
+    "project_user_output_list_dto",
     {
-        "projects": fields.List(fields.Nested(project_user_output_dto)),
-    },
+        "projects": fields.List(fields.Nested(project_list_dto)),
+    }
 )
 
 signup_input_dto = api.model(
@@ -389,3 +424,4 @@ relation_update_input_dto = api.model(
         "mention_tail_id": fields.Integer,
     },
 )
+
