@@ -1,4 +1,4 @@
-from app.models import Relation, Mention
+from app.models import Relation, SchemaRelation, Mention
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ class RelationRepository(BaseRepository):
 
     def create_relation(
         self,
-        tag,
+        schema_relation_id,
         document_edit_id,
         isDirected,
         mention_head_id,
@@ -20,7 +20,7 @@ class RelationRepository(BaseRepository):
     ):
 
         relation = Relation(
-            tag=tag,
+            schema_relation_id=schema_relation_id,
             document_edit_id=document_edit_id,
             isDirected=isDirected,
             mention_head_id=mention_head_id,
@@ -33,7 +33,20 @@ class RelationRepository(BaseRepository):
 
     def get_relations_by_document_edit(self, document_edit_id):
         return (
-            self.db_session.query(Relation)
+            self.db_session.query(
+                Relation.id,
+                Relation.isDirected,
+                Relation.isShownRecommendation,
+                Relation.mention_head_id,
+                Relation.mention_tail_id,
+                Relation.document_recommendation_id,
+                Relation.document_edit_id,
+                SchemaRelation.id.label("schema_relation_id"),
+                SchemaRelation.tag,
+                SchemaRelation.description,
+                SchemaRelation.schema_id,
+            )
+            .join(SchemaRelation, SchemaRelation.id == Relation.schema_relation_id)
             .filter(
                 (Relation.document_edit_id == document_edit_id)
                 & (
@@ -53,11 +66,16 @@ class RelationRepository(BaseRepository):
         )
 
     def save_relation_in_edit(
-        self, tag, is_directed, mention_head_id, mention_tail_id, document_edit_id
+        self,
+        schema_relation_id,
+        is_directed,
+        mention_head_id,
+        mention_tail_id,
+        document_edit_id,
     ) -> Relation:
         return super().store_object_transactional(
             Relation(
-                tag=tag,
+                schema_relation_id=schema_relation_id,
                 isDirected=is_directed,
                 mention_head_id=mention_head_id,
                 mention_tail_id=mention_tail_id,
@@ -91,7 +109,7 @@ class RelationRepository(BaseRepository):
             self.db_session.query(Relation)
             .filter(
                 (Relation.mention_head_id == mention_head_id)
-                | (Relation.mention_tail_id == mention_tail_id)
+                & (Relation.mention_tail_id == mention_tail_id)
             )
             .all()
         )
@@ -103,11 +121,16 @@ class RelationRepository(BaseRepository):
         self.db_session.commit()
 
     def update_relation(
-        self, relation_id, tag, mention_head_id, mention_tail_id, is_directed
+        self,
+        relation_id,
+        schema_relation_id,
+        mention_head_id,
+        mention_tail_id,
+        is_directed,
     ):
         relation = self.get_relation_by_id(relation_id)
-        if tag:
-            relation.tag = tag
+        if schema_relation_id:
+            relation.schema_relation_id = schema_relation_id
         if mention_head_id:
             relation.mention_head_id = mention_head_id
         if mention_tail_id:

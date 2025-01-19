@@ -51,12 +51,16 @@ class RelationDeleteResource(Resource):
     @ns.doc(description="Update a Relation by ID")
     def patch(self, relation_id):
         data = request.get_json()
-        tag = data.get("tag")
+        schema_relation_id = data.get("schema_relation_id")
         mention_head_id = data.get("mention_head_id")
         mention_tail_id = data.get("mention_tail_id")
         is_directed = data.get("isDirected")
         response = self.service.update_relation(
-            relation_id, tag, mention_head_id, mention_tail_id, is_directed
+            relation_id,
+            schema_relation_id,
+            mention_head_id,
+            mention_tail_id,
+            is_directed,
         )
         return response
 

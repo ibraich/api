@@ -4,9 +4,20 @@ from app.extension import api
 mention_input_dto = api.model(
     "CreateMentionInput",
     {
-        "tag": fields.String(required=True),
+        "schema_mention_id": fields.Integer(required=True),
         "document_edit_id": fields.Integer(required=True),
         "token_ids": fields.List(fields.Integer, required=True),
+    },
+)
+
+schema_mention_output_dto = api.model(
+    "SchemaMentionOutput",
+    {
+        "id": fields.Integer,
+        "tag": fields.String,
+        "description": fields.String,
+        "color": fields.String,
+        "entity_possible": fields.Boolean,
     },
 )
 
@@ -20,6 +31,7 @@ mention_output_dto = api.model(
         "document_recommendation_id": fields.Integer,
         "entity_id": fields.Integer,
         "tokens": fields.List(fields.Integer),
+        "schema_mention": fields.Nested(schema_mention_output_dto),
     },
 )
 
@@ -128,10 +140,20 @@ mention_output_list_dto = api.model(
     },
 )
 
+schema_relation_output_dto = api.model(
+    "SchemaRelationOutput",
+    {
+        "id": fields.Integer,
+        "tag": fields.String,
+        "description": fields.String,
+        "schema_id": fields.Integer,
+    },
+)
+
 relation_input_dto = api.model(
     "RelationInput",
     {
-        "tag": fields.String,
+        "schema_relation_id": fields.Integer,
         "document_edit_id": fields.Integer(required=True),
         "isDirected": fields.Boolean,
         "mention_head_id": fields.Integer(required=True),
@@ -148,6 +170,7 @@ relation_output_dto = api.model(
         "isDirected": fields.Boolean,
         "mention_head_id": fields.Integer,
         "mention_tail_id": fields.Integer,
+        "schema_relation": fields.Nested(schema_relation_output_dto),
     },
 )
 
@@ -190,25 +213,6 @@ user_output_dto = api.model(
     },
 )
 
-schema_mention_output_dto = api.model(
-    "SchemaMentionOutput",
-    {
-        "id": fields.Integer,
-        "tag": fields.String,
-        "description": fields.String,
-        "color": fields.String,
-        "entity_possible": fields.Boolean,
-    },
-)
-
-schema_relation_output_dto = api.model(
-    "SchemaRelationOutput",
-    {
-        "id": fields.Integer,
-        "tag": fields.String,
-        "description": fields.String,
-    },
-)
 
 schema_constraint_output_dto = api.model(
     "SchemaConstraintOutput",
@@ -483,7 +487,7 @@ login_output_dto = api.model(
 mention_update_input_dto = api.model(
     "UpdateMentionInput",
     {
-        "tag": fields.String,
+        "schema_mention_id": fields.Integer,
         "token_ids": fields.List(fields.Integer),
         "entity_id": fields.Integer,
     },
@@ -513,7 +517,7 @@ project_delete_output_model = api.model(
 relation_update_input_dto = api.model(
     "UpdateRelationInput",
     {
-        "tag": fields.String,
+        "schema_relation_id": fields.Integer,
         "isDirected": fields.Boolean,
         "mention_head_id": fields.Integer,
         "mention_tail_id": fields.Integer,
