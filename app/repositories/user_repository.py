@@ -12,6 +12,7 @@ from app.models import (
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
+from werkzeug.security import generate_password_hash
 
 
 class UserRepository(BaseRepository):
@@ -87,3 +88,34 @@ class UserRepository(BaseRepository):
             .filter((Project.id == project_id) & (UserTeam.user_id == user_id))
             .first()
         )
+
+    def check_user_in_team(self, user_id, team_id):
+        return (
+            Session.query(UserTeam)
+            .join(Team, Team.id == UserTeam.team_id)
+            .filter(and_(UserTeam.user_id == user_id, UserTeam.team_id == team_id))
+            .one_or_none()
+        )
+
+    def update_user_data(self, user_id, username=None, email=None, password=None):
+        """
+        Update user information in the database.
+
+        :param user_id: ID of the user to update.
+        :param username: New username (optional).
+        :param email: New email (optional).
+        :param password: New password, will be hashed before storing (optional).
+        :raises NotFound: If the user is not found.
+        """
+        user = Session.query(User).filter_by(id=user_id).one_or_none()
+        if not user:
+            raise NotFound(f"User with ID {user_id} not found.")
+
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = generate_password_hash(password)
+
+        return user

@@ -163,14 +163,24 @@ class SchemaRepository(BaseRepository):
         self.db.session.add(mention)
         self.db.session.commit()
 
-    def add_relation_to_schema(self, schema_id, relation_data):
-        relation = SchemaRelation(schema_id=schema_id, **relation_data)
-        self.db.session.add(relation)
-        self.db.session.commit()
 
-    def add_constraint_to_schema(self, schema_id, constraint_data):
-        constraint = SchemaConstraint(schema_id=schema_id, **constraint_data)
-        self.db.session.add(constraint)
-        self.db.session.commit()
+    def get_schema_mention_by_schema_tag(self, schema_id, schema_mention_id):
+        return (
+            Session.query(SchemaMention)
+            .filter(
+                SchemaMention.schema_id == schema_id,
+                SchemaMention.id == schema_mention_id,
+            )
+            .first()
+        )
 
+    def fix_schema(self, schema_id):
+        db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
+        db.session.commit()
+
+    def get_schema_mention_by_id(self, schema_mention_id):
+        return Session.query(SchemaMention).filter_by(id=schema_mention_id).first()
+
+    def get_schema_relation_by_id(self, schema_relation_id):
+        return Session.query(SchemaRelation).filter_by(id=schema_relation_id).first()
 

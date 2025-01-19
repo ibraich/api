@@ -1,5 +1,6 @@
-from app.services.relation_services import relation_service
-from werkzeug.exceptions import BadRequest
+from app.db import transactional
+from app.services.relation_services import relation_service, RelationService
+from werkzeug.exceptions import NotFound, BadRequest
 from flask_restx import Namespace, Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.dtos import (
@@ -50,12 +51,16 @@ class RelationDeleteResource(Resource):
     @ns.doc(description="Update a Relation by ID")
     def patch(self, relation_id):
         data = request.get_json()
-        tag = data.get("tag")
+        schema_relation_id = data.get("schema_relation_id")
         mention_head_id = data.get("mention_head_id")
         mention_tail_id = data.get("mention_tail_id")
         is_directed = data.get("isDirected")
         response = self.service.update_relation(
-            relation_id, tag, mention_head_id, mention_tail_id, is_directed
+            relation_id,
+            schema_relation_id,
+            mention_head_id,
+            mention_tail_id,
+            is_directed,
         )
         return response
 
@@ -74,3 +79,38 @@ class RelationCreationResource(Resource):
     def post(self):
         response = self.service.create_relation(request.json)
         return response
+
+
+@ns.route("/<int:relation_id>/accept")
+@ns.doc(params={"relation_id": "A Relation ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Relation not found")
+class RelationAcceptResource(Resource):
+
+    @jwt_required()
+    @transactional
+    @ns.marshal_with(relation_output_dto)
+    @ns.doc(description="Accept a relation by copying it and marking it as processed")
+    def post(self, relation_id):
+        """
+        Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
+        """
+
+        return relation_service.accept_relation(relation_id)
+
+
+@ns.route("/<int:relation_id>/reject")
+@ns.doc(params={"relation_id": "A Relation ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Relation not found")
+class RelationRejectResource(Resource):
+
+    @jwt_required()
+    @transactional
+    @ns.doc(description="Reject a relation by marking it as processed")
+    def post(self, relation_id):
+        """
+        Reject a relation by setting isShownRecommendation to False.
+        """
+
+        return relation_service.reject_relation(relation_id)

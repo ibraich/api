@@ -140,29 +140,65 @@ class SchemaService:
             is_directed,
         )
 
-    def create_schema(self, user_id, schema_data, mentions, relations, constraints):
-        self.__user_service.check_user_in_team(user_id, schema_data['team_id'])
 
-        # Ensure no duplicates in schema components
-        if self.__has_duplicates(mentions, key="tag"):
-            raise Conflict("Duplicate tags found in schema mentions.")
-        if self.__has_duplicates(relations, key="tag"):
-            raise Conflict("Duplicate tags found in schema relations.")
-        if self.__has_duplicates(constraints, key=lambda x: (x['head'], x['tail'], x['relation'])):
-            raise Conflict("Duplicate constraints found in schema.")
+    def verify_constraint(
+        self,
+        schema,
+        schema_relation_id,
+        head_schema_mention_id,
+        tail_schema_mention_id,
+        is_directed=False,
+    ) -> any:
+        constraint = next(
+            (
+                constraint
+                for constraint in schema["schema_constraints"]
+                if constraint["schema_relation"]["id"] == schema_relation_id
+                and (
+                    (
+                        constraint["schema_mention_head"]["id"]
+                        == head_schema_mention_id
+                        and constraint["schema_mention_tail"]["id"]
+                        == tail_schema_mention_id
+                        and constraint["is_directed"] == is_directed
+                    )
+                    or (
+                        constraint["schema_mention_tail"]["id"]
+                        == head_schema_mention_id
+                        and constraint["schema_mention_head"]["id"]
+                        == tail_schema_mention_id
+                        and constraint["is_directed"] == False
+                        and is_directed == False
+                    )
+                )
+            ),
+            None,
+        )
+        if constraint is None:
+            raise BadRequest(
+                "The Relation "
+                + str(schema_relation_id)
+                + " with mention_head: "
+                + str(head_schema_mention_id)
+                + " and mention_tail: "
+                + str(tail_schema_mention_id)
+                + " is not allowed in the schema."
+            )
 
-        schema = self.__schema_repository.create_schema(schema_data)
+        return constraint
 
-        for mention in mentions:
-            self.__schema_repository.add_mention_to_schema(schema.id, mention)
+    def generate_random_hex_color(self):
+        """Generate a random hexadecimal color code."""
+        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-        for relation in relations:
-            self.__schema_repository.add_relation_to_schema(schema.id, relation)
-
-        for constraint in constraints:
-            self.__schema_repository.add_constraint_to_schema(schema.id, constraint)
-
-        return schema
+    def verify_entity_possible(self, schema_id, tag):
+        schema_mention = self.__schema_repository.get_schema_mention_by_schema_tag(
+            schema_id, tag
+        )
+        if schema_mention is None:
+            raise BadRequest("Mention Tag not allowed")
+        if schema_mention.entityPossible is False:
+            raise BadRequest("Entity not allowed for this mention")
 
     def __has_duplicates(self, items, key):
         seen = set()
@@ -173,6 +209,22 @@ class SchemaService:
             seen.add(identifier)
         return False
 
+
+    def get_schema_mention_by_id(self, schema_mention_id):
+        schema_mention = self.__schema_repository.get_schema_mention_by_id(
+            schema_mention_id
+        )
+        if schema_mention is None:
+            raise BadRequest("Mention Tag not allowed")
+        return schema_mention
+
+    def get_schema_relation_by_id(self, schema_relation_id):
+        schema_relation = self.__schema_repository.get_schema_relation_by_id(
+            schema_relation_id
+        )
+        if schema_relation is None:
+            raise BadRequest("Relation Tag not allowed")
+        return schema_relation
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)

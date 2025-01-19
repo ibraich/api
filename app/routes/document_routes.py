@@ -63,7 +63,7 @@ class DocumentProjectRoutes(Resource):
 
     @jwt_required()
     @ns.doc(description="Get all documents of project")
-    @ns.marshal_with(document_output_dto, as_list=True)
+    @ns.marshal_with(document_output_dto)
     def get(self, project_id):
         if not project_id:
             raise BadRequest("Project ID is required")
