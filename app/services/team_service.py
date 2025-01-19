@@ -9,7 +9,7 @@ class TeamService:
     __team_repository: TeamRepository
     user_service: UserService
 
-    def __init__(self, team_repository, user_service):
+    def __init__(self, team_repository: TeamRepository, user_service):
         self.__team_repository = team_repository
         self.user_service = user_service
 
@@ -106,6 +106,19 @@ class TeamService:
         if not team_id:
             raise NotFound("No team found for this project or project doesn't exist.")
         return team_id
+
+    def update_team_name(self, team_id: int, new_name: str):
+        """Update the name of a team."""
+        if not new_name or not new_name.strip():
+            raise BadRequest("Team name cannot be empty.")
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user_id, team_id)
+
+        updated = self.__team_repository.update_team_name(team_id, new_name)
+        if not updated:
+            raise NotFound(f"Team with ID {team_id} not found.")
+        return updated
 
 
 team_service = TeamService(TeamRepository(), user_service)

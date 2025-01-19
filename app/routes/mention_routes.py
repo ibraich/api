@@ -67,10 +67,12 @@ class MentionDeletionResource(Resource):
     @ns.marshal_with(mention_output_dto)
     def patch(self, mention_id):
         data = request.get_json()
-        tag = data.get("tag")
+        schema_mention_id = data.get("schema_mention_id")
         token_ids = data.get("token_ids")
         entity_id = data.get("entity_id")
-        response = self.service.update_mention(mention_id, tag, token_ids, entity_id)
+        response = self.service.update_mention(
+            mention_id, schema_mention_id, token_ids, entity_id
+        )
         return response
 
 @ns.route("/<int:mention_id>/accept")
