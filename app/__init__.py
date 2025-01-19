@@ -5,6 +5,8 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import logging
 
+from app.error_handler import register_error_handlers
+
 
 def create_app(config_class):
     app = Flask(__name__)
@@ -18,7 +20,12 @@ def create_app(config_class):
         handlers=[logging.StreamHandler()],  # Output logs to the console
     )
 
-    CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
+    CORS(
+        app,
+        resources={
+            r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}
+        },
+    )
 
     # Register blueprints
     from .extension import main, api
@@ -47,6 +54,8 @@ def create_app(config_class):
     api.add_namespace(auth, path="/auth")
     api.add_namespace(tokens, path="/tokens")
     api.add_namespace(imports, path="/imports")
+
+    register_error_handlers(app)
 
     if not config_class.TESTING:
         from app.db import db

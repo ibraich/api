@@ -60,7 +60,7 @@ team_dto = api.model(
     {
         "team_id": fields.Integer,
         "team_name": fields.String,
-    }
+    },
 )
 
 schema_dto = api.model(
@@ -68,7 +68,7 @@ schema_dto = api.model(
     {
         "schema_id": fields.Integer,
         "schema_name": fields.String,
-    }
+    },
 )
 
 project_dto = api.model(
@@ -76,7 +76,7 @@ project_dto = api.model(
     {
         "project_id": fields.Integer,
         "project_name": fields.String,
-    }
+    },
 )
 
 document_edit_dto = api.model(
@@ -84,7 +84,7 @@ document_edit_dto = api.model(
     {
         "document_edit_id": fields.Integer,
         "document_edit_state": fields.String,
-    }
+    },
 )
 
 document_list_dto = api.model(
@@ -97,14 +97,14 @@ document_list_dto = api.model(
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
-    }
+    },
 )
 
 document_output_dto = api.model(
     "DocumentOutput",
     {
         "documents": fields.List(fields.Nested(document_list_dto)),
-    }
+    },
 )
 
 
@@ -328,6 +328,7 @@ token_output_dto = api.model(
 document_edit_mention_output_dto = api.model(
     "Mention",
     {
+        "id": fields.Integer(required=True),
         "tag": fields.String(required=True),
         "tokens": fields.List(fields.Nested(token_output_dto), required=True),
         "entity": fields.Nested(
@@ -338,6 +339,7 @@ document_edit_mention_output_dto = api.model(
                 },
             )
         ),
+        "schema_mention": fields.Nested(schema_mention_output_dto),
     },
 )
 document_edit_user_output_dto = api.model(
@@ -398,9 +400,11 @@ document_edit_get_output_dto = api.model(
                 api.model(
                     "Relation",
                     {
+                        "id": fields.Integer(required=True),
                         "tag": fields.String(required=True),
                         "mention_head": fields.Nested(document_edit_mention_output_dto),
                         "mention_tail": fields.Nested(document_edit_mention_output_dto),
+                        "schema_relation": fields.Nested(schema_relation_output_dto),
                     },
                 ),
                 required=False,
@@ -417,14 +421,14 @@ project_list_dto = api.model(
         "creator_id": fields.Integer,
         "team": fields.Nested(team_dto),
         "schema": fields.Nested(schema_dto),
-    }
+    },
 )
 
 project_user_output_list_dto = api.model(
     "project_user_output_list_dto",
     {
         "projects": fields.List(fields.Nested(project_list_dto)),
-    }
+    },
 )
 
 signup_input_dto = api.model(

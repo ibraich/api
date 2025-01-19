@@ -1,7 +1,6 @@
 from app.models import Relation, SchemaRelation, Mention
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy.orm import Session
 
 
 class RelationRepository(BaseRepository):

@@ -53,6 +53,23 @@ class Schema(db.Model):
         db.Boolean, nullable=False, default=True, server_default=text("true")
     )
 
+    # References
+    modelling_language = db.relationship(
+        "ModellingLanguage", foreign_keys=[modellingLanguage_id]
+    )
+    team = db.relationship(Team, foreign_keys=[team_id])
+
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "isFixed": self.isFixed,
+            "modelling_language": (
+                self.modelling_language.to_dict() if self.modelling_language else None
+            ),
+            "team": self.team.to_dict() if self.team else None,
+        }
+
 
 class SchemaMention(db.Model):
     __tablename__ = "SchemaMention"
@@ -63,6 +80,16 @@ class SchemaMention(db.Model):
     color = db.Column(db.String, nullable=True)
     description = db.Column(db.String, nullable=True)
 
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        return {
+            "id": self.id,
+            "schema_id": self.schema_id,
+            "tag": self.tag,
+            "entityPossible": self.entityPossible,
+            "color": self.color,
+            "description": self.description,
+        }
+
 
 class SchemaRelation(db.Model):
     __tablename__ = "SchemaRelation"
@@ -70,6 +97,14 @@ class SchemaRelation(db.Model):
     schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
     tag = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=True)
+
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        return {
+            "id": self.id,
+            "schema_id": self.schema_id,
+            "tag": self.tag,
+            "description": self.description,
+        }
 
 
 class SchemaConstraint(db.Model):
@@ -169,6 +204,7 @@ class Mention(db.Model):
         "TokenMention", back_populates="mention", lazy=True
     )
     entity = db.relationship("Entity", back_populates="mentions")
+    schema_mention = db.relationship("SchemaMention", foreign_keys=[schema_mention_id])
 
     def __repr__(self):
         return f"Mention(id={self.id}, tag={self.tag}, isShownRecommendation={self.isShownRecommendation}, entity={self.entity.__repr__()}, tokens={[tm.token.__repr__() for tm in self.token_mentions]}, document_edit_id={self.document_edit_id}, document_recommendation_id={self.document_recommendation_id})"
@@ -178,12 +214,19 @@ class Mention(db.Model):
         mapping from business model to DTO
         :return: DTO as dictionary
         """
-        return {
+        mention_dto = {
             "id": self.id,
-            "tag": self.tag,
             "tokens": [tm.token.to_dict() for tm in self.token_mentions],
             "entity": self.entity.to_dict(),
         }
+        if self.schema_mention:
+            mention_dto["schema_mention"] = self.schema_mention.to_dict()
+            mention_dto["tag"] = (
+                self.schema_mention.tag  # denormalized for pipeline input
+            )
+        else:
+            mention_dto["schema_mention"] = {"id": self.schema_mention_id}
+        return mention_dto
 
 
 class TokenMention(db.Model):
@@ -251,22 +294,32 @@ class Relation(db.Model):
     mention_tail = db.relationship(
         "Mention", foreign_keys=[mention_tail_id], backref="relations_as_tail"
     )
+    schema_relation = db.relationship(
+        "SchemaRelation", foreign_keys=[schema_relation_id]  # , backref="relations"
+    )
 
     def to_dict(self):
         """
         mapping from business model to DTO
         :return: DTO as dictionary
         """
-        return {
+        relation_dto = {
             "id": self.id,
             "isShownRecommendation": self.isShownRecommendation,
-            "tag": self.tag,
             "isDirected": self.isDirected,
             "mention_head": self.mention_head.to_dict() if self.mention_head else None,
             "mention_tail": self.mention_tail.to_dict() if self.mention_tail else None,
             "document_edit_id": self.document_edit_id,
             "document_recommendation_id": self.document_recommendation_id,
         }
+        if self.schema_relation:
+            relation_dto["schema_relation"] = self.schema_relation.to_dict()
+            relation_dto["tag"] = (
+                self.schema_relation.tag  # denormalized for pipeline input
+            )
+        else:
+            relation_dto["schema_relation"] = {"id": self.schema_relation_id}
+        return relation_dto
 
 
 class DocumentEdit(db.Model):
