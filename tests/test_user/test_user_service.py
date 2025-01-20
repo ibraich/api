@@ -46,7 +46,9 @@ class TestUserService(unittest.TestCase):
     def test_update_user_data_user_not_found(self):
         # Arrange
         user_id = 1
-        self.mock_user_repository.update_user_data.side_effect = NotFound("User not found")
+        self.mock_user_repository.update_user_data.side_effect = NotFound(
+            "User not found"
+        )
 
         # Act & Assert
         with self.assertRaises(NotFound):

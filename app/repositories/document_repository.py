@@ -17,6 +17,7 @@ from app.db import db, Session
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
+
     def __init__(self):
         self.db_session = db.session
 
@@ -76,7 +77,7 @@ class DocumentRepository(BaseRepository):
         )
         self.store_object(document)
         return document
-      
+
     def get_document_by_id(self, document_id):
         return (
             Session.query(
@@ -129,19 +130,20 @@ class DocumentRepository(BaseRepository):
 
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
         # Step 1: Get all doc IDs first
-        doc_ids = self.db_session.query(Document.id).filter(
-            Document.project_id == project_id,
-            Document.active == True
-        ).all()  # returns list of tuples like [(1,), (2,)...]
+        doc_ids = (
+            self.db_session.query(Document.id)
+            .filter(Document.project_id == project_id, Document.active == True)
+            .all()
+        )  # returns list of tuples like [(1,), (2,)...]
         doc_ids = [row[0] for row in doc_ids]
 
         if not doc_ids:
             return []
 
         # Step 2: Bulk update
-        self.db_session.query(Document).filter(
-            Document.id.in_(doc_ids)
-        ).update({Document.active: False}, synchronize_session=False)
+        self.db_session.query(Document).filter(Document.id.in_(doc_ids)).update(
+            {Document.active: False}, synchronize_session=False
+        )
         self.db_session.commit()
 
         return doc_ids

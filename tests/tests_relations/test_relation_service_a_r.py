@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from app.services.relation_services import RelationService
 
+
 class TestRelationService(unittest.TestCase):
     def setUp(self):
         # Mocking the repository
@@ -18,7 +19,7 @@ class TestRelationService(unittest.TestCase):
             tag="relation-tag",
             isDirected=True,
             mention_head_id=10,
-            mention_tail_id=20
+            mention_tail_id=20,
         )
 
         # Mocking repository methods
@@ -38,16 +39,16 @@ class TestRelationService(unittest.TestCase):
             document_recommendation_id=None,
             is_shown_recommendation=False,
         )
-        self.relation_repository.update_is_shown_recommendation.assert_called_once_with(relation_id, False)
+        self.relation_repository.update_is_shown_recommendation.assert_called_once_with(
+            relation_id, False
+        )
         self.assertIsNotNone(result)
 
     def test_accept_relation_invalid_document_edit_id(self):
         relation_id = 1
         document_edit_id = 2
         relation_mock = MagicMock(
-            id=relation_id,
-            document_edit_id=99,
-            isShownRecommendation=True
+            id=relation_id, document_edit_id=99, isShownRecommendation=True
         )
         self.relation_repository.get_relation_by_id.return_value = relation_mock
 
@@ -60,7 +61,7 @@ class TestRelationService(unittest.TestCase):
         relation_mock = MagicMock(
             id=relation_id,
             document_edit_id=document_edit_id,
-            isShownRecommendation=True
+            isShownRecommendation=True,
         )
 
         # Mocking repository methods
@@ -71,7 +72,9 @@ class TestRelationService(unittest.TestCase):
 
         # Assertions
         self.relation_repository.get_relation_by_id.assert_called_once_with(relation_id)
-        self.relation_repository.update_is_shown_recommendation.assert_called_once_with(relation_id, False)
+        self.relation_repository.update_is_shown_recommendation.assert_called_once_with(
+            relation_id, False
+        )
         self.assertIsNotNone(result)
 
     def test_reject_relation_invalid_state(self):
@@ -80,7 +83,7 @@ class TestRelationService(unittest.TestCase):
         relation_mock = MagicMock(
             id=relation_id,
             document_edit_id=document_edit_id,
-            isShownRecommendation=False
+            isShownRecommendation=False,
         )
 
         self.relation_repository.get_relation_by_id.return_value = relation_mock
