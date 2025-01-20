@@ -60,7 +60,7 @@ team_dto = api.model(
     {
         "team_id": fields.Integer,
         "team_name": fields.String,
-    }
+    },
 )
 
 schema_dto = api.model(
@@ -68,7 +68,7 @@ schema_dto = api.model(
     {
         "schema_id": fields.Integer,
         "schema_name": fields.String,
-    }
+    },
 )
 
 project_dto = api.model(
@@ -76,7 +76,7 @@ project_dto = api.model(
     {
         "project_id": fields.Integer,
         "project_name": fields.String,
-    }
+    },
 )
 
 document_edit_dto = api.model(
@@ -84,7 +84,7 @@ document_edit_dto = api.model(
     {
         "document_edit_id": fields.Integer,
         "document_edit_state": fields.String,
-    }
+    },
 )
 
 document_list_dto = api.model(
@@ -97,14 +97,14 @@ document_list_dto = api.model(
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
-    }
+    },
 )
 
 document_output_dto = api.model(
     "DocumentOutput",
     {
         "documents": fields.List(fields.Nested(document_list_dto)),
-    }
+    },
 )
 
 
@@ -146,7 +146,6 @@ schema_relation_output_dto = api.model(
         "id": fields.Integer,
         "tag": fields.String,
         "description": fields.String,
-        "schema_id": fields.Integer,
     },
 )
 
@@ -239,6 +238,50 @@ schema_output_dto = api.model(
         "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
     },
 )
+schema_mention_input_dto = api.model(
+    "SchemaMentionInput",
+    {
+        "tag": fields.String(required=True),
+        "description": fields.String(required=True),
+        "color": fields.String(required=False, example="#12AB3C"),
+        "entity_possible": fields.Boolean(default=True),
+    },
+)
+
+schema_relation_input_dto = api.model(
+    "SchemaRelationInput",
+    {
+        "tag": fields.String(required=True),
+        "description": fields.String(required=True),
+    },
+)
+
+schema_constraint_input_dto = api.model(
+    "SchemaConstraintInput",
+    {
+        "is_directed": fields.Boolean(required=True),
+        "relation_tag": fields.String(required=True),
+        "mention_head_tag": fields.String(required=True),
+        "mention_tail_tag": fields.String(required=True),
+    },
+)
+
+schema_input_dto = api.model(
+    "SchemaInput",
+    {
+        "name": fields.String(required=True),
+        "modelling_language": fields.String(required=True),
+        "schema_mentions": fields.List(
+            fields.Nested(schema_mention_input_dto), required=True
+        ),
+        "schema_relations": fields.List(
+            fields.Nested(schema_relation_input_dto), required=True
+        ),
+        "schema_constraints": fields.List(
+            fields.Nested(schema_constraint_input_dto), required=True
+        ),
+    },
+)
 
 schema_output_list_dto = api.model(
     "SchemaOutputList",
@@ -322,14 +365,14 @@ project_list_dto = api.model(
         "creator_id": fields.Integer,
         "team": fields.Nested(team_dto),
         "schema": fields.Nested(schema_dto),
-    }
+    },
 )
 
 project_user_output_list_dto = api.model(
     "project_user_output_list_dto",
     {
         "projects": fields.List(fields.Nested(project_list_dto)),
-    }
+    },
 )
 
 signup_input_dto = api.model(
@@ -428,4 +471,3 @@ relation_update_input_dto = api.model(
         "mention_tail_id": fields.Integer,
     },
 )
-

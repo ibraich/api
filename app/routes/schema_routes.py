@@ -1,6 +1,9 @@
+from flask import request
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
-from app.dtos import schema_output_dto, schema_output_list_dto
+
+from app.db import transactional
+from app.dtos import schema_output_dto, schema_output_list_dto, schema_input_dto
 from app.services.schema_service import schema_service
 from flask_jwt_extended import jwt_required
 
@@ -19,6 +22,27 @@ class SchemaResource(Resource):
     @ns.marshal_with(schema_output_list_dto)
     def get(self):
         return self.service.get_schemas_by_user()
+
+    @jwt_required()
+    @transactional
+    @ns.doc(description="Create schema.")
+    @ns.doc(
+        params={
+            "team_id": {
+                "type": "integer",
+                "required": True,
+                "description": "Target team of the schema.",
+            }
+        }
+    )
+    @ns.marshal_with(schema_output_dto)
+    @ns.expect(schema_input_dto, validate=True)
+    def post(self):
+        import_schema = request.get_json()
+
+        team_id = int(request.args.get("team_id"))
+
+        return self.service.create_extended_schema(import_schema, team_id)
 
 
 @ns.route("/<int:schema_id>")

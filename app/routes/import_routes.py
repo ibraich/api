@@ -46,25 +46,3 @@ class Imports(Resource):
             return import_service.import_pet_documents(import_list, project_id, user_id)
         else:
             raise BadRequest(f"Invalid source {source}")
-
-
-@ns.route("/schema")
-@ns.response(400, "Invalid input")
-@ns.response(403, "Authorization required")
-class Imports(Resource):
-    import_service = import_service
-
-    @ns.doc(description="Import schema.")
-    @ns.doc(
-        params={
-            "team_id": "Target team of the schema.",
-        }
-    )
-    @jwt_required()
-    @transactional
-    def post(self):
-        import_schema = request.get_json()
-
-        team_id = int(request.args.get("team_id"))
-
-        return import_service.import_schema(import_schema, team_id)
