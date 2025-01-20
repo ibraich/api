@@ -1,4 +1,4 @@
-from app.models import DocumentEdit
+from app.models import DocumentEdit, Document
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
@@ -16,6 +16,14 @@ class DocumentEditRepository(BaseRepository):
             active=True,
         )
         return super().store_object_transactional(document_edit)
+
+    def get_by_id(self, document_edit_id) -> DocumentEdit:
+        return (
+            Session.query(DocumentEdit)
+            .join(Document, DocumentEdit.document_id == Document.id)
+            .filter(DocumentEdit.id == document_edit_id)
+            .first()
+        )
 
     def get_document_edit_by_document(self, document_id, user_id):
         return (
@@ -54,7 +62,6 @@ class DocumentEditRepository(BaseRepository):
             return
 
         self.db_session.query(DocumentEdit).filter(
-            DocumentEdit.document_id.in_(document_ids),
-            DocumentEdit.active == True
+            DocumentEdit.document_id.in_(document_ids), DocumentEdit.active == True
         ).update({DocumentEdit.active: False}, synchronize_session=False)
         self.db_session.commit()

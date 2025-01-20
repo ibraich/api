@@ -1,8 +1,9 @@
+import typing
+
 from app.models import Entity
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
 from app.services.schema_service import schema_service
-from app.services.user_service import UserService, user_service
 from app.repositories.mention_repository import MentionRepository
 
 
@@ -32,6 +33,11 @@ class EntityService:
             for entity in entities
         ]
         return {"entities": entity_list}
+
+    def get_by_document_edit(self, document_edit_id) -> typing.List[Entity]:
+        if not isinstance(document_edit_id, int) or document_edit_id <= 0:
+            raise BadRequest("Invalid document edit ID. It must be a positive integer.")
+        return self.__entity_repository.get_entities_by_document_edit(document_edit_id)
 
     def create_in_edit(self, document_edit_id: int) -> Entity:
         return self.__entity_repository.create_in_edit(document_edit_id)
@@ -65,16 +71,6 @@ class EntityService:
             raise Forbidden("Entity does not belong to this document")
 
     def create_entity(self, data):
-
-        # check if user is allowed to access this document edit
-        logged_in_user_id = user_service.get_logged_in_user_id()
-        document_edit_user_id = user_service.get_user_by_document_edit_id(
-            data["document_edit_id"]
-        )
-
-        if logged_in_user_id != document_edit_user_id:
-            raise NotFound("The logged in user does not belong to this document.")
-
         mention_ids = data["mention_ids"]
         mentions = []
 

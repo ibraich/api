@@ -15,7 +15,7 @@ class TokenRepository(BaseRepository):
         return super().store_object_transactional(token)
 
     def get_tokens_by_document(self, document_id):
-        return db.session.query(Token).filter(Token.document_id == document_id).all()
+        return Session.query(Token).filter(Token.document_id == document_id).all()
 
     def get_tokens_by_document_edit(self, document_edit_id):
         return (

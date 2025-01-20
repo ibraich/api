@@ -7,6 +7,13 @@ class MentionRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
 
+    def get_by_document_edit(self, document_edit_id):
+        return (
+            Session.query(Mention)
+            .filter(Mention.document_edit_id == document_edit_id)
+            .all()
+        )
+
     def get_mentions_with_tokens_by_document_edit(self, document_edit_id):
         results = (
             self.db_session.query(
