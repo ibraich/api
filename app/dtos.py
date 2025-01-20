@@ -297,6 +297,13 @@ document_edit_input_dto = api.model(
     },
 )
 
+document_overtake_dto = api.model(
+    "DocumentOvertake",
+    {
+        "document_edit_id": fields.Integer(required=True, min=1),
+    },
+)
+
 team_user_output_list_dto = api.model(
     "TeamUserListOutput",
     {
