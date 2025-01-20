@@ -1,7 +1,8 @@
 from flask_restx import Namespace, Resource
 from werkzeug.exceptions import BadRequest
 from app.services.document_service import document_service
-from flask import request
+from app.services.recommendation_service import RecommendationService
+from flask import request, jsonify
 from app.dtos import (
     document_create_output_dto,
     document_create_dto,
@@ -85,3 +86,38 @@ class DocumentDeletionResource(Resource):
     def delete(self, document_id):
         response = self.service.soft_delete_document(document_id)
         return response, 200
+
+
+@ns.route("/recommendations")
+@ns.response(400, "Invalid input")
+@ns.response(404, "Entity not found")
+class RecommendationRoutes(Resource):
+    recommendation_service = RecommendationService()
+
+    @ns.doc(description="Retrieve recommendations for a document by document ID")
+    def get(self):
+        document_id = request.args.get('document_id')
+        if not document_id:
+            raise BadRequest("Missing document ID in request")
+        try:
+            recommendations = self.recommendation_service.get_recommendations_for_document(int(document_id))
+            return jsonify(recommendations), 200
+        except NotFound as e:
+            return jsonify({"error": str(e)}), 404
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400
+
+@ns.route("/recommendations/<int:recommendation_id>")
+@ns.doc(params={"recommendation_id": "A Recommendation ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Recommendation not found")
+class RecommendationManagementRoutes(Resource):
+    recommendation_service = RecommendationService()
+
+    @ns.doc(description="Delete a specific recommendation by ID")
+    def delete(self, recommendation_id):
+        try:
+            self.recommendation_service.delete_recommendation_by_id(recommendation_id)
+            return jsonify({"message": "Recommendation deleted successfully", "recommendation_id": recommendation_id}), 200
+        except NotFound as e:
+            return jsonify({"error": str(e)}), 404
