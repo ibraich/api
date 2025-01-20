@@ -13,6 +13,7 @@ from app.services.mention_services import MentionService, mention_service
 from app.services.relation_services import RelationService, relation_service
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
+from app.services.user_service import UserService, user_service
 
 
 def _verify_constraint(
@@ -88,6 +89,7 @@ class ImportService:
     _entity_service: EntityService
     _relation_service: RelationService
     _schema_service: SchemaService
+    _user_service: UserService
 
     def __init__(
         self,
@@ -98,6 +100,7 @@ class ImportService:
         entity_service: EntityService,
         relation_service: RelationService,
         schema_service: SchemaService,
+        user_service: UserService,
     ):
         self._document_service = document_service
         self._document_edit_service = document_edit_service
@@ -106,6 +109,7 @@ class ImportService:
         self._entity_service = entity_service
         self._relation_service = relation_service
         self._schema_service = schema_service
+        self._user_service = user_service
 
     def import_pet_documents(
         self,
@@ -148,17 +152,19 @@ class ImportService:
         mentions = pet_document.get("mentions")
         mentions_by_index = {}
         for index, mention in enumerate(mentions):
-            if not any(
-                schema_mention.get("tag") == mention.get("type")
-                for schema_mention in schema["schema_mentions"]
-            ):
+            schema_mention_id = None
+            for schema_mention in schema["schema_mentions"]:
+                if schema_mention.get("tag") == mention.get("type"):
+                    schema_mention_id = schema_mention.get("id")
+                    break
+            if schema_mention_id is None:
                 raise ImportError(
                     f'Given Mention type "{mention.get("type")}" does not exist in the schema of the project'
                 )
             created_mention = self._mention_service.create_mentions(
                 {
                     "document_edit_id": document_edit["id"],
-                    "tag": mention.get("type"),
+                    "schema_mention_id": schema_mention_id,
                     "token_ids": [
                         token_ids_by_index.get(t)
                         for t in mention.get("tokenDocumentIndices")
@@ -180,15 +186,13 @@ class ImportService:
         # Import Relations of documentEdit
         relations = pet_document.get("relations")
         for relation in relations:
-            schema_relation = next(
-                (
-                    schema_relation
-                    for schema_relation in schema["schema_relations"]
-                    if schema_relation.get("tag") == relation.get("type")
-                ),
-                None,
-            )
-            if schema_relation is None:
+            schema_relation_id = None
+            for schema_relation in schema["schema_relations"]:
+                if schema_relation.get("tag") == relation.get("type"):
+                    schema_relation_id = schema_relation.get("id")
+                    break
+
+            if schema_relation_id is None:
                 raise ImportError(
                     f'Given Relation type "{relation.get("type")}" does not exist in the schema of the project'
                 )
@@ -201,7 +205,7 @@ class ImportService:
             )
 
             self._relation_service.save_relation_in_edit(
-                relation.get("type"),
+                schema_relation_id,
                 schema_constraint["is_directed"],
                 mentions_by_index.get(relation["headMentionIndex"]).id,
                 mentions_by_index.get(relation["tailMentionIndex"]).id,
@@ -209,6 +213,9 @@ class ImportService:
             )
 
     def import_schema(self, schema, team_id: int) -> any:
+        user_id = self._user_service.get_logged_in_user_id()
+        self._user_service.check_user_in_team(user_id, team_id)
+
         modelling_language_id = ModellingLanguagesByName.get(
             schema.get("modelling_language")
         )
@@ -218,8 +225,12 @@ class ImportService:
                 f"Modelling language {schema.get("modelling_language")} is not supported."
             )
 
+        name = schema.get("name")
+        if name is None:
+            raise ValueError("Schema name is required.")
+
         created_schema = self._schema_service.create_schema(
-            modelling_language_id, team_id
+            modelling_language_id, team_id, name
         )
 
         schema_mentions_by_tag = {}
@@ -260,4 +271,5 @@ import_service = ImportService(
     entity_service=entity_service,
     relation_service=relation_service,
     schema_service=schema_service,
+    user_service=user_service,
 )

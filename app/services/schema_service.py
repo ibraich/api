@@ -3,14 +3,9 @@ import random
 
 from werkzeug.exceptions import NotFound, BadRequest
 
-from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
-
-
-def generate_random_hex_color():
-    """Generate a random hexadecimal color code."""
-    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
 class SchemaService:
@@ -47,6 +42,7 @@ class SchemaService:
         relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
         return {
             "id": schema.id,
+            "name": schema.name,
             "is_fixed": schema.isFixed,
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
@@ -104,8 +100,10 @@ class SchemaService:
             return {"schemas": []}
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
 
-    def create_schema(self, modelling_language_id, team_id) -> Schema:
-        return self.__schema_repository.create_schema(modelling_language_id, team_id)
+    def create_schema(self, modelling_language_id, team_id, name) -> Schema:
+        return self.__schema_repository.create_schema(
+            modelling_language_id, team_id, name
+        )
 
     def create_schema_mention(
         self,
@@ -116,7 +114,7 @@ class SchemaService:
         color: typing.Optional[str] = None,
     ) -> SchemaMention:
         if color is None:
-            color = generate_random_hex_color()
+            color = self.generate_random_hex_color()
         return self.__schema_repository.create_schema_mention(
             schema_id, tag, description, entity_possible, color
         )
@@ -141,6 +139,87 @@ class SchemaService:
             schema_mention_id_tail,
             is_directed,
         )
+
+    def verify_constraint(
+        self,
+        schema,
+        schema_relation_id,
+        head_schema_mention_id,
+        tail_schema_mention_id,
+        is_directed=False,
+    ) -> any:
+        constraint = next(
+            (
+                constraint
+                for constraint in schema["schema_constraints"]
+                if constraint["schema_relation"]["id"] == schema_relation_id
+                and (
+                    (
+                        constraint["schema_mention_head"]["id"]
+                        == head_schema_mention_id
+                        and constraint["schema_mention_tail"]["id"]
+                        == tail_schema_mention_id
+                        and constraint["is_directed"] == is_directed
+                    )
+                    or (
+                        constraint["schema_mention_tail"]["id"]
+                        == head_schema_mention_id
+                        and constraint["schema_mention_head"]["id"]
+                        == tail_schema_mention_id
+                        and constraint["is_directed"] == False
+                        and is_directed == False
+                    )
+                )
+            ),
+            None,
+        )
+        if constraint is None:
+            raise BadRequest(
+                "The Relation "
+                + str(schema_relation_id)
+                + " with mention_head: "
+                + str(head_schema_mention_id)
+                + " and mention_tail: "
+                + str(tail_schema_mention_id)
+                + " is not allowed in the schema."
+            )
+
+        return constraint
+
+    def generate_random_hex_color(self):
+        """Generate a random hexadecimal color code."""
+        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+    def verify_entity_possible(self, schema_id, tag):
+        schema_mention = self.__schema_repository.get_schema_mention_by_schema_tag(
+            schema_id, tag
+        )
+        if schema_mention is None:
+            raise BadRequest("Mention Tag not allowed")
+        if schema_mention.entityPossible is False:
+            raise BadRequest("Entity not allowed for this mention")
+
+    def get_schema_by_document_edit(self, document_edit_id):
+        return self.__schema_repository.get_schema_by_document_edit(document_edit_id)
+
+    def fix_schema(self, schema_id):
+        self.__schema_repository.fix_schema(schema_id)
+
+    def get_schema_mention_by_id(self, schema_mention_id):
+        schema_mention = self.__schema_repository.get_schema_mention_by_id(
+            schema_mention_id
+        )
+        if schema_mention is None:
+            raise BadRequest("Mention Tag not allowed")
+        return schema_mention
+
+    def get_schema_relation_by_id(self, schema_relation_id):
+        schema_relation = self.__schema_repository.get_schema_relation_by_id(
+            schema_relation_id
+        )
+        if schema_relation is None:
+            raise BadRequest("Relation Tag not allowed")
+        return schema_relation
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)

@@ -9,6 +9,7 @@ from app.models import (
     SchemaConstraint,
     UserTeam,
     Project,
+    DocumentEdit,
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
@@ -25,6 +26,7 @@ class SchemaRepository(BaseRepository):
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
+                Schema.name,
                 Team.name.label("team_name"),
                 ModellingLanguage.type.label("modelling_language"),
             )
@@ -32,7 +34,7 @@ class SchemaRepository(BaseRepository):
             .join(
                 ModellingLanguage, ModellingLanguage.id == Schema.modellingLanguage_id
             )
-            .filter(Schema.id == schema_id)
+            .filter((Schema.id == schema_id) & (Schema.active == True))
             .first()
         )
 
@@ -40,8 +42,8 @@ class SchemaRepository(BaseRepository):
         return (
             db.session.query(Schema.id)
             .select_from(UserTeam)
-            .filter(UserTeam.user_id == user_id)
             .join(Schema, Schema.team_id == UserTeam.team_id)
+            .filter((UserTeam.user_id == user_id) & (Schema.active == True))
             .all()
         )
 
@@ -61,10 +63,11 @@ class SchemaRepository(BaseRepository):
 
     def get_by_project(self, project_id):
         return (
-            db.session.query(
+            Session.query(
                 Schema.id,
                 Schema.isFixed,
                 Schema.team_id,
+                Schema.name,
                 Team.name.label("team_name"),
                 ModellingLanguage.type.label("modelling_language"),
             )
@@ -116,9 +119,16 @@ class SchemaRepository(BaseRepository):
             .all()
         )
 
-    def create_schema(self, modelling_language_id: int, team_id: int) -> Schema:
+    def create_schema(
+        self, modelling_language_id: int, team_id: int, name: str
+    ) -> Schema:
         return super().store_object_transactional(
-            Schema(modellingLanguage_id=modelling_language_id, team_id=team_id)
+            Schema(
+                modellingLanguage_id=modelling_language_id,
+                team_id=team_id,
+                active=True,
+                name=name,
+            )
         )
 
     def create_schema_mention(
@@ -161,3 +171,32 @@ class SchemaRepository(BaseRepository):
                 isDirected=is_directed,
             )
         )
+
+    def get_schema_mention_by_schema_tag(self, schema_id, schema_mention_id):
+        return (
+            Session.query(SchemaMention)
+            .filter(
+                SchemaMention.schema_id == schema_id,
+                SchemaMention.id == schema_mention_id,
+            )
+            .first()
+        )
+
+    def get_schema_by_document_edit(self, document_edit_id):
+        return (
+            Session.query(Schema)
+            .select_from(DocumentEdit)
+            .join(Schema, Schema.id == DocumentEdit.schema_id)
+            .filter(DocumentEdit.id == document_edit_id)
+            .first()
+        )
+
+    def fix_schema(self, schema_id):
+        db.session.query(Schema).filter_by(id=schema_id).update({"isFixed": True})
+        db.session.commit()
+
+    def get_schema_mention_by_id(self, schema_mention_id):
+        return Session.query(SchemaMention).filter_by(id=schema_mention_id).first()
+
+    def get_schema_relation_by_id(self, schema_relation_id):
+        return Session.query(SchemaRelation).filter_by(id=schema_relation_id).first()

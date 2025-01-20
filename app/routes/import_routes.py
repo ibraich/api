@@ -18,8 +18,15 @@ class Imports(Resource):
     @ns.doc(description="Import documents from other source.")
     @ns.doc(
         params={
-            "project_id": "Target project of the documents. (Defines the target schema)",
-            "source": "Data source type. Only option: 'pet'",
+            "project_id": {
+                "description": "Target project of the documents. (Defines the target schema)",
+                "required": True,
+            },
+            "source": {
+                "description": "Data source type. Only option: 'pet'",
+                "required": True,
+                "enum": ["pet"],
+            },
         }
     )
     @jwt_required()
@@ -51,17 +58,13 @@ class Imports(Resource):
     @ns.doc(
         params={
             "team_id": "Target team of the schema.",
-            "project_id": "Target project of the schema.",
         }
     )
     @jwt_required()
     @transactional
     def post(self):
-        user_id = int(get_jwt_identity())
         import_schema = request.get_json()
 
         team_id = int(request.args.get("team_id"))
-
-        # TODO Backend Team: Check if user is part of the team
 
         return import_service.import_schema(import_schema, team_id)
