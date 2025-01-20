@@ -6,6 +6,7 @@ from flask import request
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
+    document_overtake_dto,
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
 )
@@ -32,6 +33,24 @@ class DocumentRoutes(Resource):
         response = self.service.create_document_edit(request_data["document_id"])
         return response
 
+
+
+@ns.route("/overtake")
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentRoutes(Resource):
+    service = document_edit_service
+
+    @jwt_required()
+    @ns.doc(description="overtake another user annotation")
+    @ns.marshal_with(document_edit_output_dto)
+    @ns.expect(document_overtake_dto, validate=True)
+    @transactional
+    def post(self):
+        request_data = request.get_json()
+
+        response = self.service.overtake_document_edit(request_data["document_edit_id"])
 
 @ns.route("/<int:document_edit_id>")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})

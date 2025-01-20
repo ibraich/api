@@ -77,6 +77,44 @@ class DocumentEditService:
             document_id, user_id
         )
 
+
+    def overtake_document_edit(self, document_edit_id):
+
+        document_edit = self.__document_edit_repository.get_document_edit_by_id(
+            document_edit_id
+        )
+
+        if document_edit is None:
+            raise BadRequest("Document edit does not exist")
+
+        logged_in_user_id = self.user_service.get_logged_in_user_id()
+        current_owner_id = document_edit.user_id
+
+        if logged_in_user_id == current_owner_id:
+            raise BadRequest("User already has access to this document edit")
+        # check for team
+        user_service.check_user_document_accessible(
+            logged_in_user_id, document_edit.document_id
+        )
+
+        # check if another document edit exist for current user
+        existing_document_edit = self.get_document_edit_by_document(
+            document_edit.document_id, logged_in_user_id
+        )
+        if existing_document_edit is not None:
+            raise BadRequest("Document edit already exists")
+
+        document_edit.user_id = logged_in_user_id
+
+        # save
+        self.__document_edit_repository.store_object(document_edit)
+
+        return {
+            "id": document_edit.id,
+            "schema_id": document_edit.schema_id,
+            "document_id": document_edit.document_id,
+        }
+
     def soft_delete_document_edit(self, document_edit_id):
 
         user_id = self.user_service.get_logged_in_user_id()
@@ -153,6 +191,7 @@ class DocumentEditService:
             "mentions": transformed_mentions,
             "relations": transformed_relations,
         }
+
 
 
 document_edit_service = DocumentEditService(
