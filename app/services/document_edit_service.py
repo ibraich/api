@@ -83,11 +83,9 @@ class DocumentEditService:
         if logged_in_user_id == current_owner_id:
             raise BadRequest("User already has access to this document edit")
         # check for team
-        current_owner = user_service.get_user_by_document_edit_id(document_edit.id)
-        logged_in_user_team_id = user_service.get_logged_in_user_team_id()
-
-        if logged_in_user_team_id != current_owner.team_id:
-            raise BadRequest("User does not have access to this document edit")
+        user_service.check_user_document_accessible(
+            logged_in_user_id, document_edit.document_id
+        )
 
         # check if another document edit exist for current user
         existing_document_edit = self.get_document_edit_by_document(
