@@ -228,9 +228,11 @@ class SchemaService:
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_in_team(user_id, team_id)
 
-        modelling_language_id = self.__schema_repository.get_modelling_laguage_by_name(
+        modelling_language = self.__schema_repository.get_modelling_laguage_by_name(
             schema["modelling_language"]
-        ).id
+        )
+        if modelling_language is None:
+            raise BadRequest("Modelling Language not allowed")
 
         if self.__has_duplicates(schema["schema_mentions"], key="tag"):
             raise Conflict("Duplicate tags found in schema mentions.")
@@ -247,16 +249,16 @@ class SchemaService:
             raise Conflict("Duplicate constraints found in schema.")
 
         created_schema = self.create_schema(
-            modelling_language_id, team_id, schema["name"]
+            modelling_language.id, team_id, schema["name"]
         )
 
         schema_mentions_by_tag = {}
         for schema_mention in schema["schema_mentions"]:
             created_mention = self.create_schema_mention(
                 created_schema.id,
-                schema_mention["tag"],
-                schema_mention["description"],
-                schema_mention["entity_possible"],
+                schema_mention.get("tag"),
+                schema_mention.get("description"),
+                schema_mention.get("entity_possible"),
                 schema_mention.get("color"),
             )
             schema_mentions_by_tag[schema_mention["tag"]] = created_mention
