@@ -5,34 +5,72 @@ from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
 from app.services.schema_service import schema_service
 from app.services.user_service import user_service
+from app.services.mention_services import mention_service
 
 
 class RelationService:
     def __init__(
-        self, relation_repository, mention_repository, user_service, schema_service
+        self,
+        relation_repository,
+        mention_repository,
+        user_service,
+        schema_service,
+        mention_service,
     ):
         self.__relation_repository = relation_repository
         self.__mention_repository = mention_repository
         self.user_service = user_service
         self.schema_service = schema_service
+        self.mention_service = mention_service
 
     def get_relations_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
+        mentions_data = self.mention_service.get_mentions_by_document_edit(
+            document_edit_id
+        )
+        mentions_dict = {
+            mention["id"]: {
+                "tag": mention["tag"],
+                "tokens": mention["tokens"],
+                "entity": mention["entity_id"],
+            }
+            for mention in mentions_data["mentions"]
+        }
+
         relations = self.__relation_repository.get_relations_by_document_edit(
             document_edit_id
         )
 
-        if not relations:
-            raise NotFound("No relations found for the given document edit.")
+        transformed_relations = []
+        for relation in relations:
+            head_mention = mentions_dict.get(relation.mention_head_id)
+            tail_mention = mentions_dict.get(relation.mention_tail_id)
 
-        # Serialize mentions to JSON-compatible format
-        relation_list = [
-            self.map_to_relation_output_dto(relation) for relation in relations
-        ]
+            if not head_mention or not tail_mention:
+                continue
 
-        return {"relations": relation_list}
+            transformed_relations.append(
+                {
+                    "id": relation.id,
+                    "isDirected": relation.isDirected,
+                    "isShownRecommendation": relation.isShownRecommendation,
+                    "document_edit_id": relation.document_edit_id,
+                    "document_recommendation_id": relation.document_recommendation_id,
+                    "schema_relation": {
+                        "id": relation.schema_relation_id,
+                        "tag": relation.tag,
+                        "description": relation.description,
+                        "schema_id": relation.schema_id,
+                    },
+                    "tag": relation.tag,
+                    "head_mention": head_mention,
+                    "tail_mention": tail_mention,
+                }
+            )
+
+        return {"relations": transformed_relations}
 
     def save_relation_in_edit(
         self,
@@ -312,5 +350,9 @@ class RelationService:
 
 
 relation_service = RelationService(
-    RelationRepository(), MentionRepository(), user_service, schema_service
+    RelationRepository(),
+    MentionRepository(),
+    user_service,
+    schema_service,
+    mention_service,
 )

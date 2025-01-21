@@ -22,6 +22,7 @@ ns = Namespace("relations", description="Relation related operations")
 class RelationQueryResource(Resource):
     service = relation_service
 
+    @jwt_required()
     @ns.doc(description="Get Relations of document annotation")
     @ns.marshal_with(relation_output_list_dto)
     def get(self, document_edit_id):

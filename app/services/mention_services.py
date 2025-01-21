@@ -5,7 +5,8 @@ from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 from app.services.user_service import UserService, user_service
-from app.services.relation_services import RelationService, relation_service
+
+# from app.services.relation_services import RelationService, relation_service
 from app.services.entity_service import EntityService, entity_service
 
 from app.services.token_mention_service import (
@@ -18,7 +19,7 @@ class MentionService:
     __mention_repository: MentionRepository
     token_mention_service: TokenMentionService
     user_service: UserService
-    relation_service: RelationService
+    # relation_service: RelationService
     entity_service: EntityService
     token_service: TokenService
     schema_service: SchemaService
@@ -28,7 +29,7 @@ class MentionService:
         mention_repository,
         token_mention_service,
         user_service,
-        relation_service,
+        # relation_service,
         entity_service,
         token_service,
         schema_service,
@@ -36,7 +37,7 @@ class MentionService:
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
         self.user_service = user_service
-        self.relation_service = relation_service
+        # self.relation_service = relation_service
         self.entity_service = entity_service
         self.token_service = token_service
         self.schema_service = schema_service
@@ -74,9 +75,17 @@ class MentionService:
                         "entityPossible": row.entityPossible,
                     },
                 }
-            if row.token_id is not None:
-                mentions_dict[row.mention_id]["tokens"].append(row.token_id)
 
+                if row.token_id is not None:
+                    mentions_dict[row.mention_id]["tokens"].append(
+                        {
+                            "id": row.token_id,
+                            "text": row.text,
+                            "document_index": row.document_index,
+                            "sentence_index": row.sentence_index,
+                            "pos_tag": row.pos_tag,
+                        }
+                    )
         return {"mentions": list(mentions_dict.values())}
 
     def create_mentions(self, data):
@@ -163,9 +172,9 @@ class MentionService:
         # logged_in_user_id = user_service.get_logged_in_user_id()
         # self.user_service.check_user_document_edit_accessible(user_id, mention.document_edit_id)
 
-        related_relations = self.relation_service.get_relations_by_mention(mention_id)
-        for relation in related_relations:
-            self.relation_service.delete_relation_by_id(relation.id)
+        # related_relations = self.relation_service.get_relations_by_mention(mention_id)
+        # for relation in related_relations:
+        # self.relation_service.delete_relation_by_id(relation.id)
 
         self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
         self.delete_entity_if_only_consists_mention(mention_id, mention.entity_id)
@@ -358,7 +367,7 @@ mention_service = MentionService(
     MentionRepository(),
     token_mention_service,
     user_service,
-    relation_service,
+    # relation_service,
     entity_service,
     token_service,
     schema_service,

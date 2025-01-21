@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from app.services.mention_services import MentionService
 
+
 class TestMentionService(unittest.TestCase):
     def setUp(self):
         # Mocking the repository
@@ -15,7 +16,7 @@ class TestMentionService(unittest.TestCase):
             id=mention_id,
             document_edit_id=document_edit_id,
             isShownRecommendation=True,
-            tag="test-tag"
+            tag="test-tag",
         )
 
         # Mocking repository methods
@@ -32,16 +33,16 @@ class TestMentionService(unittest.TestCase):
             document_recommendation_id=None,
             is_shown_recommendation=False,
         )
-        self.mention_repository.update_is_shown_recommendation.assert_called_once_with(mention_id, False)
+        self.mention_repository.update_is_shown_recommendation.assert_called_once_with(
+            mention_id, False
+        )
         self.assertIsNotNone(result)
 
     def test_accept_mention_invalid_document_edit_id(self):
         mention_id = 1
         document_edit_id = 2
         mention_mock = MagicMock(
-            id=mention_id,
-            document_edit_id=99,
-            isShownRecommendation=True
+            id=mention_id, document_edit_id=99, isShownRecommendation=True
         )
         self.mention_repository.get_mention_by_id.return_value = mention_mock
 
@@ -52,9 +53,7 @@ class TestMentionService(unittest.TestCase):
         mention_id = 1
         document_edit_id = 2
         mention_mock = MagicMock(
-            id=mention_id,
-            document_edit_id=document_edit_id,
-            isShownRecommendation=True
+            id=mention_id, document_edit_id=document_edit_id, isShownRecommendation=True
         )
 
         # Mocking repository methods
@@ -65,7 +64,9 @@ class TestMentionService(unittest.TestCase):
 
         # Assertions
         self.mention_repository.get_mention_by_id.assert_called_once_with(mention_id)
-        self.mention_repository.update_is_shown_recommendation.assert_called_once_with(mention_id, False)
+        self.mention_repository.update_is_shown_recommendation.assert_called_once_with(
+            mention_id, False
+        )
         self.assertIsNotNone(result)
 
     def test_reject_mention_invalid_state(self):
@@ -74,7 +75,7 @@ class TestMentionService(unittest.TestCase):
         mention_mock = MagicMock(
             id=mention_id,
             document_edit_id=document_edit_id,
-            isShownRecommendation=False
+            isShownRecommendation=False,
         )
 
         self.mention_repository.get_mention_by_id.return_value = mention_mock
