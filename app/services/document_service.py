@@ -97,7 +97,7 @@ class DocumentService:
             "project_id": document.project_id,
             "content": document.content,
             "state_id": document.state_id,
-            "creator_id": document.creator_id,
+            "creator": self.user_service.get_user_by_id(document.creator_id),
         }
 
     def get_document_by_id(self, document_id):
