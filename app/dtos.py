@@ -272,6 +272,7 @@ document_edit_output_dto = api.model(
         "id": fields.Integer,
         "schema_id": fields.Integer,
         "document_id": fields.Integer,
+        "state": fields.String,
     },
 )
 
@@ -544,5 +545,12 @@ relation_output_list_dto = api.model(
         "relations": fields.List(
             fields.Nested(relation_output_model), description="List of relations"
         ),
+    },
+)
+
+document_edit_state_input_dto = api.model(
+    "DocumentEditStateOutput",
+    {
+        "state": fields.String(required=True, description="State of the document edit"),
     },
 )

@@ -1,7 +1,6 @@
 from app.models import Relation, SchemaRelation
-from app.db import db
+from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy.orm import Session
 
 
 class RelationRepository(BaseRepository):
@@ -142,3 +141,11 @@ class RelationRepository(BaseRepository):
             relation.isShownRecommendation = value
             self.db_session.commit()
         return relation
+
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return (
+            Session.query(Relation)
+            .filter(Relation.document_edit_id == document_edit_id)
+            .filter(Relation.isShownRecommendation == True)
+            .all()
+        )

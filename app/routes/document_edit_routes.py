@@ -9,6 +9,7 @@ from app.dtos import (
     document_overtake_dto,
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
+    document_edit_state_input_dto,
 )
 from flask_jwt_extended import jwt_required
 
@@ -34,7 +35,6 @@ class DocumentRoutes(Resource):
         return response
 
 
-
 @ns.route("/overtake")
 @ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
@@ -51,6 +51,8 @@ class DocumentRoutes(Resource):
         request_data = request.get_json()
 
         response = self.service.overtake_document_edit(request_data["document_edit_id"])
+        return response
+
 
 @ns.route("/<int:document_edit_id>")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
@@ -83,4 +85,24 @@ class DocumentEditResource(Resource):
     @ns.doc(description="Fetch details of a DocumentEdit by its ID")
     def get(self, document_edit_id):
         response = self.service.get_document_edit_by_id(document_edit_id)
+        return response
+
+
+@ns.route("/<int:document_edit_id>/step")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditStateResource(Resource):
+    service = document_edit_service
+
+    @jwt_required()
+    @transactional
+    @ns.marshal_with(document_edit_output_dto)
+    @ns.expect(document_edit_state_input_dto, validate=True)
+    @ns.doc(description="Fetch details of a DocumentEdit by its ID")
+    def post(self, document_edit_id):
+        request_data = request.get_json()
+
+        response = self.service.set_edit_state(document_edit_id, request_data["state"])
         return response

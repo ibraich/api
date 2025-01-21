@@ -362,6 +362,11 @@ class MentionService:
         self.__mention_repository.update_is_shown_recommendation(mention_id, False)
         return {"message": "Mention successfully rejected."}
 
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return self.__mention_repository.get_recommendations_by_document_edit(
+            document_edit_id
+        )
+
 
 mention_service = MentionService(
     MentionRepository(),

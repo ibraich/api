@@ -1,4 +1,4 @@
-from app.models import DocumentEdit
+from app.models import DocumentEdit, DocumentEditState
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
@@ -26,11 +26,19 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
-
     def get_document_edit_by_id(self, document_edit_id):
         return (
-            self.db_session.query(DocumentEdit).filter_by(id=document_edit_id).first()
-        )
+            db.session.query(
+                DocumentEdit.id,
+                DocumentEdit.document_id,
+                DocumentEdit.schema_id,
+                DocumentEdit.user_id,
+                DocumentEditState.type.label("state"),
+            )
+            .filter(DocumentEdit.id == document_edit_id)
+            .filter(DocumentEdit.active == True)
+            .join(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
+        ).first()
 
     def soft_delete_document_edit(self, document_edit_id):
         document_edit = (
@@ -64,11 +72,26 @@ class DocumentEditRepository(BaseRepository):
         ).update({DocumentEdit.active: False}, synchronize_session=False)
         self.db_session.commit()
 
-    def get_document_edit_by_id(self, document_edit_id):
+    def get_state_id_by_name(self, state):
         return (
-            Session.query(DocumentEdit)
-            .filter(DocumentEdit.id == document_edit_id)
-            .filter(DocumentEdit.active == True)
+            Session.query(DocumentEditState)
+            .filter(DocumentEditState.type == state)
             .first()
         )
 
+    def get_state_name_by_id(self, state_id):
+        return (
+            Session.query(DocumentEditState)
+            .filter(DocumentEditState.id == state_id)
+            .first()
+        )
+
+    def update_state(self, document_edit_id, state_id):
+        document_edit = (
+            Session.query(DocumentEdit)
+            .filter(DocumentEdit.id == document_edit_id)
+            .first()
+        )
+        document_edit.state_id = state_id
+        self.store_object_transactional(document_edit)
+        return document_edit

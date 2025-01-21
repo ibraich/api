@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, NotFound
+from werkzeug.exceptions import BadRequest, NotFound, Forbidden, InternalServerError
 
 from app.repositories.document_edit_repository import DocumentEditRepository
 from app.services.document_recommendation_service import (
@@ -70,13 +70,13 @@ class DocumentEditService:
             "id": document_edit.id,
             "schema_id": document_edit.schema_id,
             "document_id": document_edit.document_id,
+            "state": "MENTION_SUGGESTION",
         }
 
     def get_document_edit_by_document(self, document_id, user_id):
         return self.__document_edit_repository.get_document_edit_by_document(
             document_id, user_id
         )
-
 
     def overtake_document_edit(self, document_edit_id):
 
@@ -113,6 +113,7 @@ class DocumentEditService:
             "id": document_edit.id,
             "schema_id": document_edit.schema_id,
             "document_id": document_edit.document_id,
+            "state": document_edit.state,
         }
 
     def soft_delete_document_edit(self, document_edit_id):
@@ -192,6 +193,75 @@ class DocumentEditService:
             "relations": transformed_relations,
         }
 
+    def set_edit_state(self, document_edit_id, state_name):
+        state = self.__document_edit_repository.get_state_id_by_name(state_name)
+        if state is None:
+            raise BadRequest("Invalid state")
+
+        document_edit = self.__document_edit_repository.get_document_edit_by_id(
+            document_edit_id
+        )
+        if document_edit is None:
+            raise BadRequest("Document edit does not exist")
+
+        user_id = self.user_service.get_logged_in_user_id()
+        if document_edit.user_id != user_id:
+            raise Forbidden("You are not allowed to edit this document")
+
+        if document_edit.state == "MENTION_SUGGESTION":
+            if state_name != "MENTIONS":
+                raise BadRequest("Not allowed to proceed to this step")
+
+            recs = self.mention_service.get_recommendations_by_document_edit(
+                document_edit_id
+            )
+            if len(recs) != 0:
+                raise BadRequest("Unreviewed recommendations left")
+
+        elif document_edit.state == "MENTIONS":
+            if state_name != "ENTITIES":
+                raise BadRequest("Not allowed to proceed to this step")
+
+            # TODO: Trigger Entity Recommendation Generation
+
+        elif document_edit.state == "ENTITIES":
+            if state_name != "RELATION_SUGGESTION":
+                raise BadRequest("Not allowed to proceed to this step")
+
+            # TODO: Trigger Relation Recommendation Generation
+
+        elif document_edit.state == "RELATION_SUGGESTION":
+            if state_name != "RELATIONS":
+                raise BadRequest("Not allowed to proceed to this step")
+
+            recs = self.relation_service.get_recommendations_by_document_edit(
+                document_edit_id
+            )
+            if len(recs) != 0:
+                raise BadRequest("Unreviewed recommendations left")
+
+        elif document_edit.state == "RELATIONS":
+            if state_name != "FINISHED":
+                raise BadRequest("Not allowed to proceed to this step")
+
+        elif document_edit.state == "FINISHED":
+            raise BadRequest("Annotation already finished")
+
+        else:
+            raise BadRequest("Invalid state")
+
+        document_edit = self.__document_edit_repository.update_state(
+            document_edit_id, state.id
+        )
+
+        return {
+            "id": document_edit.id,
+            "schema_id": document_edit.schema_id,
+            "document_id": document_edit.document_id,
+            "state": self.__document_edit_repository.get_state_name_by_id(
+                document_edit.state_id
+            ).type,
+        }
 
 
 document_edit_service = DocumentEditService(
