@@ -119,3 +119,6 @@ class UserRepository(BaseRepository):
             user.password = generate_password_hash(password)
 
         return user
+
+    def get_user_by_id(self, user_id):
+        return Session.query(User).filter_by(id=user_id).first()

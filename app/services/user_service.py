@@ -137,5 +137,11 @@ class UserService:
         except NotFound as e:
             raise NotFound(str(e))
 
+    def get_user_by_id(self, user_id):
+        user = self.__user_repository.get_user_by_id(user_id)
+        if user is None:
+            return BadRequest("User not found")
+        return {"id": user.id, "username": user.username, "email": user.email}
+
 
 user_service = UserService(UserRepository(), UserTeamRepository())

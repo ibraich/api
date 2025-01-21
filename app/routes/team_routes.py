@@ -1,14 +1,13 @@
 from sqlalchemy import exc
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from werkzeug.exceptions import BadRequest, Unauthorized, NotFound
+from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from flask import request
 from app.dtos import (
     team_input_dto,
-    team_output_dto,
     team_member_input_dto,
-    team_member_output_dto,
     team_user_output_list_dto,
+    team_user_output_dto,
 )
 from app.services.team_service import team_service
 
@@ -25,7 +24,7 @@ class TeamMemberRoutes(Resource):
     @jwt_required()
     @ns.doc(description="Add a user to a team")
     @ns.expect(team_member_input_dto, validate=True)
-    @ns.marshal_with(team_member_output_dto)
+    @ns.marshal_with(team_user_output_dto)
     def post(self):
         request_data = request.get_json()
 
@@ -39,7 +38,7 @@ class TeamMemberRoutes(Resource):
     @jwt_required()
     @ns.doc(description="Remove a user from a team")
     @ns.expect(team_member_input_dto, validate=True)
-    @ns.marshal_with(team_member_output_dto)
+    @ns.marshal_with(team_user_output_dto)
     def delete(self):
         request_data = request.get_json()
 
@@ -68,7 +67,7 @@ class TeamRoutes(Resource):
     @jwt_required()
     @ns.doc(description="Create a new team")
     @ns.expect(team_input_dto, validate=True)
-    @ns.marshal_with(team_output_dto)
+    @ns.marshal_with(team_user_output_dto)
     def post(self):
         try:
             request_data = request.get_json()
@@ -89,7 +88,7 @@ class TeamUpdateResource(Resource):
 
     @jwt_required()
     @ns.expect(team_input_dto, validate=True)
-    @ns.marshal_with(team_output_dto)
+    @ns.marshal_with(team_user_output_dto)
     def put(self, team_id):
         """Update the name of a team."""
         data = request.json

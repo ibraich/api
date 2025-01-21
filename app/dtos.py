@@ -1,6 +1,15 @@
 from flask_restx import fields
 from app.extension import api
 
+user_output_dto = api.model(
+    "UserOutput",
+    {
+        "id": fields.Integer,
+        "username": fields.String,
+        "email": fields.String,
+    },
+)
+
 mention_input_dto = api.model(
     "CreateMentionInput",
     {
@@ -36,7 +45,7 @@ project_output_dto = api.model(
     {
         "id": fields.Integer,
         "name": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "team_id": fields.Integer,
         "schema_id": fields.Integer,
     },
@@ -173,21 +182,11 @@ document_create_output_dto = api.model(
         "id": fields.Integer,
         "name": fields.String,
         "content": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "project_id": fields.Integer,
         "state_id": fields.Integer,
     },
 )
-
-user_output_dto = api.model(
-    "UserOutput",
-    {
-        "id": fields.Integer,
-        "username": fields.String,
-        "email": fields.String,
-    },
-)
-
 
 schema_constraint_output_dto = api.model(
     "SchemaConstraintOutput",
@@ -246,21 +245,12 @@ team_input_dto = api.model(
     },
 )
 
-team_output_dto = api.model(
-    "TeamOutput",
-    {
-        "id": fields.Integer,
-        "name": fields.String,
-        "creator_id": fields.Integer,
-    },
-)
-
 team_user_output_dto = api.model(
     "TeamUserOutput",
     {
         "id": fields.Integer,
         "name": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "members": fields.List(fields.Nested(user_output_dto)),
     },
 )
@@ -301,7 +291,7 @@ project_list_dto = api.model(
     {
         "id": fields.Integer,
         "name": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "team": fields.Nested(team_dto),
         "schema": fields.Nested(schema_dto),
     },
