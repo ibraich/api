@@ -35,7 +35,9 @@ class DocumentService:
         response = self.get_documents_by_user()
         documents = response["documents"]
         filtered_documents = [
-            document for document in documents if document["project"]["project_id"] == project_id
+            document
+            for document in documents
+            if document["project"]["project_id"] == project_id
         ]
         return {"documents": filtered_documents}
 

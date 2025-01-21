@@ -26,6 +26,12 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
+
+    def get_document_edit_by_id(self, document_edit_id):
+        return (
+            self.db_session.query(DocumentEdit).filter_by(id=document_edit_id).first()
+        )
+
     def soft_delete_document_edit(self, document_edit_id):
         document_edit = (
             self.db_session.query(DocumentEdit)
@@ -54,7 +60,15 @@ class DocumentEditRepository(BaseRepository):
             return
 
         self.db_session.query(DocumentEdit).filter(
-            DocumentEdit.document_id.in_(document_ids),
-            DocumentEdit.active == True
+            DocumentEdit.document_id.in_(document_ids), DocumentEdit.active == True
         ).update({DocumentEdit.active: False}, synchronize_session=False)
         self.db_session.commit()
+
+    def get_document_edit_by_id(self, document_edit_id):
+        return (
+            Session.query(DocumentEdit)
+            .filter(DocumentEdit.id == document_edit_id)
+            .filter(DocumentEdit.active == True)
+            .first()
+        )
+

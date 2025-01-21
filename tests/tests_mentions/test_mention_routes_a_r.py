@@ -19,7 +19,9 @@ class TestMentionRoutes(unittest.TestCase):
     def test_accept_mention_success(self, mock_mention_service):
         mention_id = 1
         document_edit_id = 2
-        mock_mention_service.accept_mention.return_value = {"message": "Mention accepted"}
+        mock_mention_service.accept_mention.return_value = {
+            "message": "Mention accepted"
+        }
 
         response = self.client.post(
             f"/mentions/{mention_id}/accept",
@@ -28,7 +30,9 @@ class TestMentionRoutes(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, {"message": "Mention accepted"})
-        mock_mention_service.accept_mention.assert_called_once_with(mention_id, document_edit_id)
+        mock_mention_service.accept_mention.assert_called_once_with(
+            mention_id, document_edit_id
+        )
 
     @patch("app.routes.mention_routes.mention_service")
     def test_accept_mention_missing_document_edit_id(self, mock_mention_service):
@@ -43,7 +47,9 @@ class TestMentionRoutes(unittest.TestCase):
     def test_reject_mention_success(self, mock_mention_service):
         mention_id = 1
         document_edit_id = 2
-        mock_mention_service.reject_mention.return_value = {"message": "Mention rejected"}
+        mock_mention_service.reject_mention.return_value = {
+            "message": "Mention rejected"
+        }
 
         response = self.client.post(
             f"/mentions/{mention_id}/reject",
@@ -52,7 +58,9 @@ class TestMentionRoutes(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, {"message": "Mention rejected"})
-        mock_mention_service.reject_mention.assert_called_once_with(mention_id, document_edit_id)
+        mock_mention_service.reject_mention.assert_called_once_with(
+            mention_id, document_edit_id
+        )
 
     @patch("app.routes.mention_routes.mention_service")
     def test_reject_mention_missing_document_edit_id(self, mock_mention_service):

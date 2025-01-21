@@ -7,6 +7,7 @@ from app.db import db
 class ProjectRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session
+
     def create_project(self, name, creator_id, team_id, schema_id):
         project = Project(
             name=name,

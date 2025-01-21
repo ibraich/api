@@ -18,7 +18,12 @@ def create_app(config_class):
         handlers=[logging.StreamHandler()],  # Output logs to the console
     )
 
-    CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
+    CORS(
+        app,
+        resources={
+            r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}
+        },
+    )
 
     # Register blueprints
     from .extension import main, api

@@ -1,4 +1,4 @@
-from app.models import Mention, TokenMention, SchemaMention
+from app.models import Mention, TokenMention, SchemaMention, Token
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
@@ -17,7 +17,11 @@ class MentionRepository(BaseRepository):
                 Mention.document_edit_id,
                 Mention.document_recommendation_id,
                 Mention.entity_id,
-                TokenMention.token_id,
+                Token.id.label("token_id"),
+                Token.text,
+                Token.document_index,
+                Token.sentence_index,
+                Token.pos_tag,
                 SchemaMention.id.label("schema_mention_id"),
                 SchemaMention.tag,
                 SchemaMention.description,
@@ -26,6 +30,7 @@ class MentionRepository(BaseRepository):
             )
             .join(SchemaMention, Mention.schema_mention_id == SchemaMention.id)
             .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
+            .outerjoin(Token, TokenMention.token_id == Token.id)  # Join tokens
             .filter(
                 (Mention.document_edit_id == document_edit_id)
                 & (
@@ -35,7 +40,6 @@ class MentionRepository(BaseRepository):
             )
             .all()
         )
-
         return results
 
     def create_mention(

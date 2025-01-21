@@ -17,23 +17,10 @@ schema_mention_output_dto = api.model(
         "tag": fields.String,
         "description": fields.String,
         "color": fields.String,
-        "entity_possible": fields.Boolean,
+        "entityPossible": fields.Boolean,
     },
 )
 
-mention_output_dto = api.model(
-    "MentionOutput",
-    {
-        "id": fields.Integer,
-        "tag": fields.String,
-        "is_shown_recommendation": fields.Boolean,
-        "document_edit_id": fields.Integer,
-        "document_recommendation_id": fields.Integer,
-        "entity_id": fields.Integer,
-        "tokens": fields.List(fields.Integer),
-        "schema_mention": fields.Nested(schema_mention_output_dto),
-    },
-)
 
 project_input_dto = api.model(
     "ProjectInput",
@@ -60,7 +47,7 @@ team_dto = api.model(
     {
         "team_id": fields.Integer,
         "team_name": fields.String,
-    }
+    },
 )
 
 schema_dto = api.model(
@@ -68,7 +55,7 @@ schema_dto = api.model(
     {
         "schema_id": fields.Integer,
         "schema_name": fields.String,
-    }
+    },
 )
 
 project_dto = api.model(
@@ -76,7 +63,7 @@ project_dto = api.model(
     {
         "project_id": fields.Integer,
         "project_name": fields.String,
-    }
+    },
 )
 
 document_edit_dto = api.model(
@@ -84,7 +71,7 @@ document_edit_dto = api.model(
     {
         "document_edit_id": fields.Integer,
         "document_edit_state": fields.String,
-    }
+    },
 )
 
 document_list_dto = api.model(
@@ -97,14 +84,14 @@ document_list_dto = api.model(
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
-    }
+    },
 )
 
 document_output_dto = api.model(
     "DocumentOutput",
     {
         "documents": fields.List(fields.Nested(document_list_dto)),
-    }
+    },
 )
 
 
@@ -133,12 +120,6 @@ entity_output_list_dto = api.model(
     },
 )
 
-mention_output_list_dto = api.model(
-    "MentionOutputList",
-    {
-        "mentions": fields.List(fields.Nested(mention_output_dto)),
-    },
-)
 
 schema_relation_output_dto = api.model(
     "SchemaRelationOutput",
@@ -174,12 +155,6 @@ relation_output_dto = api.model(
     },
 )
 
-relation_output_list_dto = api.model(
-    "RelationOutputList",
-    {
-        "relations": fields.List(fields.Nested(relation_output_dto)),
-    },
-)
 
 document_create_dto = api.model(
     "DocumentUpload",
@@ -297,6 +272,13 @@ document_edit_input_dto = api.model(
     },
 )
 
+document_overtake_dto = api.model(
+    "DocumentOvertake",
+    {
+        "document_edit_id": fields.Integer(required=True, min=1),
+    },
+)
+
 team_user_output_list_dto = api.model(
     "TeamUserListOutput",
     {
@@ -322,14 +304,14 @@ project_list_dto = api.model(
         "creator_id": fields.Integer,
         "team": fields.Nested(team_dto),
         "schema": fields.Nested(schema_dto),
-    }
+    },
 )
 
 project_user_output_list_dto = api.model(
     "project_user_output_list_dto",
     {
         "projects": fields.List(fields.Nested(project_list_dto)),
-    }
+    },
 )
 
 signup_input_dto = api.model(
@@ -429,3 +411,169 @@ relation_update_input_dto = api.model(
     },
 )
 
+token_model = api.model(
+    "Token",
+    {
+        "id": fields.Integer(description="Token ID"),
+        "text": fields.String(description="Token text"),
+        "document_index": fields.Integer(
+            description="Index of the token in the document"
+        ),
+        "sentence_index": fields.Integer(
+            description="Index of the token in the sentence"
+        ),
+        "pos_tag": fields.String(description="Part-of-speech tag"),
+    },
+)
+
+entity_model = api.model(
+    "Entity",
+    {
+        "id": fields.Integer(description="Entity ID"),
+    },
+)
+
+mention_model = api.model(
+    "Mention",
+    {
+        "tag": fields.String(description="Mention tag"),
+        "tokens": fields.List(
+            fields.Nested(token_model),
+            description="List of tokens associated with the mention",
+        ),
+        "entity": fields.Nested(
+            entity_model, description="Entity associated with the mention"
+        ),
+    },
+)
+
+
+head_mention_model = mention_model
+tail_mention_model = mention_model
+
+relation_model = api.model(
+    "Relation",
+    {
+        "tag": fields.String(description="Relation tag"),
+        "head_mention": fields.Nested(
+            head_mention_model, description="Head mention in the relation"
+        ),
+        "tail_mention": fields.Nested(
+            tail_mention_model, description="Tail mention in the relation"
+        ),
+    },
+)
+
+document_model = api.model(
+    "Document",
+    {
+        "id": fields.Integer(description="Document ID"),
+        "tokens": fields.List(
+            fields.Nested(token_model), description="List of tokens in the document"
+        ),
+    },
+)
+
+finished_document_edit_output_dto = api.model(
+    "DocumentEditOutput",
+    {
+        "document": fields.Nested(document_model, description="Document details"),
+        "mentions": fields.List(
+            fields.Nested(mention_model),
+            description="List of mentions in the document edit",
+        ),
+        "relations": fields.List(
+            fields.Nested(relation_model),
+            description="List of relations in the document edit",
+        ),
+    },
+)
+
+mention_output_dto = api.model(
+    "Mention",
+    {
+        "id": fields.Integer(description="Mention ID"),
+        "tag": fields.String(description="Mention tag"),
+        "isShownRecommendation": fields.Boolean(
+            description="Whether the mention is shown as a recommendation"
+        ),
+        "document_edit_id": fields.Integer(description="Document Edit ID"),
+        "document_recommendation_id": fields.Integer(
+            description="Document Recommendation ID", nullable=True
+        ),
+        "entity_id": fields.Integer(
+            description="Entity ID associated with the mention"
+        ),
+        "tokens": fields.List(
+            fields.Nested(token_model),
+            description="List of tokens associated with the mention",
+        ),
+        "schema_mention": fields.Nested(
+            schema_mention_output_dto, description="Details of the schema mention"
+        ),
+    },
+)
+
+mention_output_list_dto = api.model(
+    "MentionOutputList",
+    {
+        "mentions": fields.List(
+            fields.Nested(mention_output_dto), description="List of mentions"
+        ),
+    },
+)
+
+schema_relation_model = api.model(
+    "SchemaRelation",
+    {
+        "id": fields.Integer(description="Schema Relation ID"),
+        "tag": fields.String(description="Schema Relation Tag"),
+        "description": fields.String(description="Description of the schema relation"),
+        "schema_id": fields.Integer(description="Schema ID"),
+    },
+)
+
+mention_relation_model = api.model(
+    "MentionRelation",
+    {
+        "tag": fields.String(description="Mention tag"),
+        "tokens": fields.List(
+            fields.Nested(token_model), description="List of tokens in the mention"
+        ),
+        "entity": fields.Integer(description="Entity ID associated with the mention"),
+    },
+)
+
+relation_output_model = api.model(
+    "RelationOutput",
+    {
+        "id": fields.Integer(description="Relation ID"),
+        "isDirected": fields.Boolean(description="Whether the relation is directed"),
+        "isShownRecommendation": fields.Boolean(
+            description="Whether the relation is shown as a recommendation"
+        ),
+        "document_edit_id": fields.Integer(description="Document Edit ID"),
+        "document_recommendation_id": fields.Integer(
+            description="Document Recommendation ID", nullable=True
+        ),
+        "schema_relation": fields.Nested(
+            schema_relation_model, description="Schema relation details"
+        ),
+        "tag": fields.String(description="Relation tag"),
+        "head_mention": fields.Nested(
+            mention_relation_model, description="Head mention of the relation"
+        ),
+        "tail_mention": fields.Nested(
+            mention_relation_model, description="Tail mention of the relation"
+        ),
+    },
+)
+
+relation_output_list_dto = api.model(
+    "RelationsOutput",
+    {
+        "relations": fields.List(
+            fields.Nested(relation_output_model), description="List of relations"
+        ),
+    },
+)
