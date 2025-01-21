@@ -16,7 +16,9 @@ class TokenMentionService:
         return self.__token_mention_repository.get_token_mention(token_ids, mention_ids)
 
     def get_token_mentions_by_mention_id(self, mention_id):
-        return self.__token_mention_repository.get_token_mentions_by_mention_id(mention_id)
+        return self.__token_mention_repository.get_token_mentions_by_mention_id(
+            mention_id
+        )
 
     def delete_token_mentions_by_mention_id(self, mention_id):
         token_mentions = self.get_token_mentions_by_mention_id(mention_id)

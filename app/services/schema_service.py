@@ -56,7 +56,7 @@ class SchemaService:
                     "tag": mention.tag,
                     "description": mention.description,
                     "color": mention.color,
-                    "entity_possible": mention.entityPossible,
+                    "entityPossible": mention.entityPossible,
                 }
                 for mention in mentions
             ],
@@ -82,14 +82,14 @@ class SchemaService:
                         "tag": constraint.mention_head_tag,
                         "description": constraint.mention_head_description,
                         "color": constraint.mention_head_color,
-                        "entity_possible": constraint.mention_head_entityPossible,
+                        "entityPossible": constraint.mention_head_entityPossible,
                     },
                     "schema_mention_tail": {
                         "id": constraint.mention_tail_id,
                         "tag": constraint.mention_tail_tag,
                         "description": constraint.mention_tail_description,
                         "color": constraint.mention_tail_color,
-                        "entity_possible": constraint.mention_tail_entityPossible,
+                        "entityPossible": constraint.mention_tail_entityPossible,
                     },
                 }
                 for constraint in constraints
