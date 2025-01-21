@@ -43,9 +43,6 @@ class RelationService:
             document_edit_id
         )
 
-        if not relations:
-            raise NotFound("No relations found for the given document edit.")
-
         transformed_relations = []
         for relation in relations:
             head_mention = mentions_dict.get(relation.mention_head_id)
