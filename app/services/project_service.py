@@ -73,12 +73,12 @@ class ProjectService:
                     "name": project.name,
                     "creator": self.user_service.get_user_by_id(project.creator_id),
                     "team": {
-                        "team_id": project.team_id,
-                        "team_name": project.team_name,
+                        "id": project.team_id,
+                        "name": project.team_name,
                     },
                     "schema": {
-                        "schema_id": project.schema_id,
-                        "schema_name": project.schema_name,
+                        "id": project.schema_id,
+                        "name": project.schema_name,
                     },
                 }
                 for project in projects

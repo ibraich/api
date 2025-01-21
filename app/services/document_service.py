@@ -37,7 +37,7 @@ class DocumentService:
         filtered_documents = [
             document
             for document in documents
-            if document["project"]["project_id"] == project_id
+            if document["project"]["id"] == project_id
         ]
         return {"documents": filtered_documents}
 
@@ -52,20 +52,20 @@ class DocumentService:
                 "content": doc.content,
                 "name": doc.name,
                 "project": {
-                    "project_id": doc.project_id,
-                    "project_name": doc.project_name,
+                    "id": doc.project_id,
+                    "name": doc.project_name,
                 },
                 "schema": {
-                    "schema_id": doc.schema_id,
-                    "schema_name": doc.schema_name,
+                    "id": doc.schema_id,
+                    "name": doc.schema_name,
                 },
                 "team": {
-                    "team_id": doc.team_id,
-                    "team_name": doc.team_name,
+                    "id": doc.team_id,
+                    "name": doc.team_name,
                 },
                 "document_edit": {
-                    "document_edit_id": doc.document_edit_id,
-                    "document_edit_state": doc.document_edit_state,
+                    "id": doc.document_edit_id,
+                    "state": doc.document_edit_state,
                 },
             }
             for doc in documents

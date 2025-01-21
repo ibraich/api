@@ -54,32 +54,32 @@ project_output_dto = api.model(
 team_dto = api.model(
     "Team",
     {
-        "team_id": fields.Integer,
-        "team_name": fields.String,
+        "id": fields.Integer,
+        "name": fields.String,
     },
 )
 
 schema_dto = api.model(
     "Schema",
     {
-        "schema_id": fields.Integer,
-        "schema_name": fields.String,
+        "id": fields.Integer,
+        "name": fields.String,
     },
 )
 
 project_dto = api.model(
     "Project",
     {
-        "project_id": fields.Integer,
-        "project_name": fields.String,
+        "id": fields.Integer,
+        "name": fields.String,
     },
 )
 
 document_edit_dto = api.model(
     "DocumentEdit",
     {
-        "document_edit_id": fields.Integer,
-        "document_edit_state": fields.String,
+        "id": fields.Integer,
+        "state": fields.String,
     },
 )
 
@@ -229,15 +229,6 @@ team_member_input_dto = api.model(
     },
 )
 
-team_member_output_dto = api.model(
-    "TeamMemberOutput",
-    {
-        "id": fields.Integer,
-        "username": fields.String,
-        "email": fields.String,
-    },
-)
-
 team_input_dto = api.model(
     "TeamInput",
     {
@@ -324,24 +315,6 @@ signup_output_dto = api.model(
     },
 )
 
-token_output_dto = api.model(
-    "TokenOutput",
-    {
-        "id": fields.Integer,
-        "text": fields.String,
-        "document_index": fields.Integer,
-        "sentence_index": fields.Integer,
-        "pos_tag": fields.String,
-    },
-)
-
-token_output_list_dto = api.model(
-    "TokenListOutput",
-    {
-        "tokens": fields.List(fields.Nested(token_output_dto)),
-    },
-)
-
 login_input_dto = api.model(
     "LoginInput",
     {
@@ -413,6 +386,13 @@ token_model = api.model(
             description="Index of the token in the sentence"
         ),
         "pos_tag": fields.String(description="Part-of-speech tag"),
+    },
+)
+
+token_output_list_dto = api.model(
+    "TokenListOutput",
+    {
+        "tokens": fields.List(fields.Nested(token_model)),
     },
 )
 
