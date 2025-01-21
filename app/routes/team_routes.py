@@ -14,7 +14,7 @@ from app.services.team_service import team_service
 ns = Namespace("teams", description="Team related operations")
 
 
-@ns.route("/members")
+@ns.route("/<int:team_id>/members")
 @ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
@@ -25,12 +25,12 @@ class TeamMemberRoutes(Resource):
     @ns.doc(description="Add a user to a team")
     @ns.expect(team_member_input_dto, validate=True)
     @ns.marshal_with(team_user_output_dto)
-    def post(self):
+    def post(self, team_id):
         request_data = request.get_json()
 
         response = self.service.add_user_to_team(
             request_data["user_mail"],
-            request_data["team_id"],
+            team_id,
         )
 
         return response
@@ -39,12 +39,12 @@ class TeamMemberRoutes(Resource):
     @ns.doc(description="Remove a user from a team")
     @ns.expect(team_member_input_dto, validate=True)
     @ns.marshal_with(team_user_output_dto)
-    def delete(self):
+    def delete(self, team_id):
         request_data = request.get_json()
 
         response = self.service.remove_user_from_team(
             request_data["user_mail"],
-            request_data["team_id"],
+            team_id,
         )
 
         return response

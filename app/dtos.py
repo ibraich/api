@@ -225,7 +225,6 @@ team_member_input_dto = api.model(
     "TeamMemberInput",
     {
         "user_mail": fields.String(required=True),
-        "team_id": fields.Integer(required=True),
     },
 )
 
