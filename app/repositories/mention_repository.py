@@ -3,9 +3,11 @@ from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
 
+
 class MentionRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
+        self.db = db
 
     def get_mentions_with_tokens_by_document_edit(self, document_edit_id):
         results = (

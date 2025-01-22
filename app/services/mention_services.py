@@ -1,5 +1,5 @@
 from flask_jwt_extended import get_jwt_identity
-from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
+from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized,InternalServerError
 
 from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
@@ -8,7 +8,7 @@ from app.services.user_service import UserService, user_service
 
 # from app.services.relation_services import RelationService, relation_service
 from app.services.entity_service import EntityService, entity_service
-
+from app.services.schema_service import schema_service
 from app.services.token_mention_service import (
     token_mention_service,
     TokenMentionService,
@@ -41,6 +41,7 @@ class MentionService:
         self.entity_service = entity_service
         self.token_service = token_service
         self.schema_service = schema_service
+
 
     def get_mentions_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
@@ -301,6 +302,7 @@ class MentionService:
             return duplicate_token_mention
         return []
 
+
     def accept_mention(self, mention_id):
         """
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
@@ -361,7 +363,6 @@ class MentionService:
         # Update mention recommendation
         self.__mention_repository.update_is_shown_recommendation(mention_id, False)
         return {"message": "Mention successfully rejected."}
-
 
 mention_service = MentionService(
     MentionRepository(),

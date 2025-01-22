@@ -1,9 +1,7 @@
-from flask import request
+from flask import Blueprint,request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.exceptions import NotFound, BadRequest
 from flask_restx import Resource, Namespace
-
-
 from app.db import transactional
 from app.services.mention_services import mention_service, MentionService
 from app.dtos import (
@@ -77,7 +75,6 @@ class MentionDeletionResource(Resource):
         )
         return response
 
-
 @ns.route("/<int:mention_id>/accept")
 @ns.doc(params={"mention_id": "A Mention ID"})
 @ns.response(400, "Invalid input")
@@ -111,3 +108,4 @@ class MentionRejectResource(Resource):
         """
 
         return mention_service.reject_mention(mention_id)
+

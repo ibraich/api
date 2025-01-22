@@ -2,11 +2,10 @@ from app.models import Relation, SchemaRelation
 from app.db import db
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy.orm import Session
-
-
 class RelationRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
+        self.db = db
 
     def create_relation(
         self,
@@ -133,6 +132,7 @@ class RelationRepository(BaseRepository):
         super().store_object(relation)
         return relation
 
+
     def update_is_shown_recommendation(self, relation_id, value):
         """
         Aktualisiert den isShownRecommendation-Wert eines Mention-Eintrags.
@@ -142,3 +142,4 @@ class RelationRepository(BaseRepository):
             relation.isShownRecommendation = value
             self.db_session.commit()
         return relation
+

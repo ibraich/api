@@ -9,7 +9,8 @@ from app.dtos import (
     relation_input_dto,
     relation_update_input_dto,
 )
-from flask import request
+from flask import Blueprint,request
+from http import HTTPStatus
 
 ns = Namespace("relations", description="Relation related operations")
 

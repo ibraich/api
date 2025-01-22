@@ -4,7 +4,10 @@ from werkzeug.exceptions import BadRequest, NotFound, Forbidden
 from app.services.schema_service import schema_service
 from app.services.user_service import UserService, user_service
 from app.repositories.mention_repository import MentionRepository
+import requests
+import os
 
+RECOMMENDATION_SYSTEM_URL = os.getenv("RECOMMENDATION_SYSTEM_URL", "http://localhost:8080/pipeline/docs")
 
 class EntityService:
     def __init__(self, entity_repository, mention_repository, schema_service):
@@ -127,6 +130,41 @@ class EntityService:
         }
 
         return response
+    def detect_entities(self, payload, model_type, model, temperature):
+        """
+        Handles logic for entity detection and forwards data to the external API.
+        """
+        if not payload.get("document_id"):
+            raise BadRequest("document_id is required in the payload.")
+
+        response = requests.post(
+            RECOMMENDATION_SYSTEM_URL,
+            json={
+                "payload": payload,
+                "model_type": model_type,
+                "model": model,
+                "temperature": temperature,
+            }
+        )
+        if response.status_code != 200:
+            raise BadRequest(f"Recommendation system error: {response.text}")
+
+        return response.json()
+
+    def get_entity_by_id(self, entity_id):
+        response = requests.get(f"{RECOMMENDATION_SYSTEM_URL}/{entity_id}")
+        if response.status_code == 404:
+            raise NotFound(f"Entity with ID {entity_id} not found.")
+        return response.json()
+
+    def delete_entity(self, entity_id):
+        response = requests.delete(f"{RECOMMENDATION_SYSTEM_URL}/{entity_id}")
+        if response.status_code == 404:
+            raise NotFound(f"Entity with ID {entity_id} not found.")
+        return True
+
+# Singleton instance
+entity_service = EntityService()
 
 
 entity_service = EntityService(EntityRepository(), MentionRepository(), schema_service)

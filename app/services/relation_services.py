@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict
+from werkzeug.exceptions import BadRequest, NotFound, Conflict,InternalServerError
 
 from app.repositories.mention_repository import MentionRepository
 from app.models import Relation
@@ -6,7 +6,6 @@ from app.repositories.relation_repository import RelationRepository
 from app.services.schema_service import schema_service
 from app.services.user_service import user_service
 from app.services.mention_services import mention_service
-
 
 class RelationService:
     def __init__(
@@ -349,6 +348,18 @@ class RelationService:
             raise BadRequest("Mentions are equal")
 
 
+    def regenerate_relations(self, document_edit_id: int):
+        # Logic to generate relations
+        relations = self.generate_relations(document_edit_id)
+        if not relations:
+            raise InternalServerError("Could not generate relations.")
+
+        self.relation_repository.delete_relations(document_edit_id)
+        self.relation_repository.add_relations(document_edit_id, relations)
+        return relations
+
+    def generate_relations(self, document_edit_id: int):
+        return [{"data": f"Generated relation for document {document_edit_id}"}]
 relation_service = RelationService(
     RelationRepository(),
     MentionRepository(),
