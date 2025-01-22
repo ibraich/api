@@ -1,6 +1,15 @@
 from flask_restx import fields
 from app.extension import api
 
+user_output_dto = api.model(
+    "UserOutput",
+    {
+        "id": fields.Integer,
+        "username": fields.String,
+        "email": fields.String,
+    },
+)
+
 mention_input_dto = api.model(
     "CreateMentionInput",
     {
@@ -36,7 +45,7 @@ project_output_dto = api.model(
     {
         "id": fields.Integer,
         "name": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "team_id": fields.Integer,
         "schema_id": fields.Integer,
     },
@@ -45,32 +54,32 @@ project_output_dto = api.model(
 team_dto = api.model(
     "Team",
     {
-        "team_id": fields.Integer,
-        "team_name": fields.String,
+        "id": fields.Integer,
+        "name": fields.String,
     },
 )
 
 schema_dto = api.model(
     "Schema",
     {
-        "schema_id": fields.Integer,
-        "schema_name": fields.String,
+        "id": fields.Integer,
+        "name": fields.String,
     },
 )
 
 project_dto = api.model(
     "Project",
     {
-        "project_id": fields.Integer,
-        "project_name": fields.String,
+        "id": fields.Integer,
+        "name": fields.String,
     },
 )
 
 document_edit_dto = api.model(
     "DocumentEdit",
     {
-        "document_edit_id": fields.Integer,
-        "document_edit_state": fields.String,
+        "id": fields.Integer,
+        "state": fields.String,
     },
 )
 
@@ -173,21 +182,11 @@ document_create_output_dto = api.model(
         "id": fields.Integer,
         "name": fields.String,
         "content": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "project_id": fields.Integer,
         "state_id": fields.Integer,
     },
 )
-
-user_output_dto = api.model(
-    "UserOutput",
-    {
-        "id": fields.Integer,
-        "username": fields.String,
-        "email": fields.String,
-    },
-)
-
 
 schema_constraint_output_dto = api.model(
     "SchemaConstraintOutput",
@@ -226,16 +225,6 @@ team_member_input_dto = api.model(
     "TeamMemberInput",
     {
         "user_mail": fields.String(required=True),
-        "team_id": fields.Integer(required=True),
-    },
-)
-
-team_member_output_dto = api.model(
-    "TeamMemberOutput",
-    {
-        "id": fields.Integer,
-        "username": fields.String,
-        "email": fields.String,
     },
 )
 
@@ -246,21 +235,12 @@ team_input_dto = api.model(
     },
 )
 
-team_output_dto = api.model(
-    "TeamOutput",
-    {
-        "id": fields.Integer,
-        "name": fields.String,
-        "creator_id": fields.Integer,
-    },
-)
-
 team_user_output_dto = api.model(
     "TeamUserOutput",
     {
         "id": fields.Integer,
         "name": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "members": fields.List(fields.Nested(user_output_dto)),
     },
 )
@@ -301,7 +281,7 @@ project_list_dto = api.model(
     {
         "id": fields.Integer,
         "name": fields.String,
-        "creator_id": fields.Integer,
+        "creator": fields.Nested(user_output_dto),
         "team": fields.Nested(team_dto),
         "schema": fields.Nested(schema_dto),
     },
@@ -331,24 +311,6 @@ signup_output_dto = api.model(
     "SignupOutput",
     {
         "message": fields.String,
-    },
-)
-
-token_output_dto = api.model(
-    "TokenOutput",
-    {
-        "id": fields.Integer,
-        "text": fields.String,
-        "document_index": fields.Integer,
-        "sentence_index": fields.Integer,
-        "pos_tag": fields.String,
-    },
-)
-
-token_output_list_dto = api.model(
-    "TokenListOutput",
-    {
-        "tokens": fields.List(fields.Nested(token_output_dto)),
     },
 )
 
@@ -423,6 +385,13 @@ token_model = api.model(
             description="Index of the token in the sentence"
         ),
         "pos_tag": fields.String(description="Part-of-speech tag"),
+    },
+)
+
+token_output_list_dto = api.model(
+    "TokenListOutput",
+    {
+        "tokens": fields.List(fields.Nested(token_model)),
     },
 )
 

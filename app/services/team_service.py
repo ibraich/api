@@ -23,12 +23,19 @@ class TeamService:
                 {
                     "id": team.id,
                     "name": team.name,
-                    "creator_id": team.creator_id,
+                    "creator": self.user_service.get_user_by_id(team.creator_id),
                     "members": self.__get_team_members_by_team_id(team.id),
                 }
                 for team in teams
             ]
         }
+
+    def get_team_by_id(self, team_id):
+        teams = self.get_teams_by_user()
+        for team in teams["teams"]:
+            if team["id"] == team_id:
+                return team
+        raise BadRequest("Team not found or no access to this team")
 
     def __get_team_members_by_team_id(self, team_id):
         members = self.__team_repository.get_members_of_team(team_id)
@@ -53,26 +60,18 @@ class TeamService:
             self.user_service.check_user_in_team(new_member.id, team_id)
             raise Conflict("User is already part of the team")
         except BadRequest:
-            self.add_user(team_id, new_member.id)
-            return {
-                "id": new_member.id,
-                "username": new_member.username,
-                "email": new_member.email,
-            }
+            self.__add_user(team_id, new_member.id)
+            return self.get_team_by_id(team_id)
 
-    def add_user(self, team_id, user_id):
+    def __add_user(self, team_id, user_id):
         return self.__team_repository.add_user(team_id, user_id)
 
     def create_team(self, team_name):
         user_id = self.user_service.get_logged_in_user_id()
 
         team = self.__team_repository.create_team(team_name, user_id)
-        self.add_user(team.id, user_id)
-        return {
-            "id": team.id,
-            "name": team.name,
-            "creator_id": team.creator_id,
-        }
+        self.__add_user(team.id, user_id)
+        return self.get_team_by_id(team.id)
 
     def remove_user_from_team(self, user_mail, team_id):
         member = self.user_service.get_user_by_email(user_mail)
@@ -92,11 +91,7 @@ class TeamService:
             raise BadRequest("User is not part of the team")
 
         self.__team_repository.remove_user(team_id, member.id)
-        return {
-            "id": member.id,
-            "username": member.username,
-            "email": member.email,
-        }
+        return self.get_team_by_id(team_id)
 
     def get_team_by_project_id(self, project_id):
         if not isinstance(project_id, int) or project_id <= 0:
@@ -118,7 +113,7 @@ class TeamService:
         updated = self.__team_repository.update_team_name(team_id, new_name)
         if not updated:
             raise NotFound(f"Team with ID {team_id} not found.")
-        return updated
+        return self.get_team_by_id(team_id)
 
 
 team_service = TeamService(TeamRepository(), user_service)

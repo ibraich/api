@@ -1,5 +1,7 @@
 from flask_restx import Namespace, Resource
 from werkzeug.exceptions import BadRequest
+
+from app.db import transactional
 from app.services.document_service import document_service
 from flask import request
 from app.dtos import (
@@ -28,6 +30,7 @@ class DocumentRoutes(Resource):
         return response
 
     @jwt_required()
+    @transactional
     @ns.doc(description="Upload a document to a specific project.")
     @ns.expect(document_create_dto, validate=True)
     @ns.response(201, "Document uploaded successfully.")

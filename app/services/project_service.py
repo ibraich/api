@@ -47,7 +47,7 @@ class ProjectService:
             "name": project.name,
             "team_id": project.team_id,
             "schema_id": project.schema_id,
-            "creator_id": project.creator_id,
+            "creator": self.user_service.get_user_by_id(project.creator_id),
         }
 
     def team_is_in_project(self, team_id, document_edit_id):
@@ -71,14 +71,14 @@ class ProjectService:
                 {
                     "id": project.id,
                     "name": project.name,
-                    "creator_id": project.creator_id,
+                    "creator": self.user_service.get_user_by_id(project.creator_id),
                     "team": {
-                        "team_id": project.team_id,
-                        "team_name": project.team_name,
+                        "id": project.team_id,
+                        "name": project.team_name,
                     },
                     "schema": {
-                        "schema_id": project.schema_id,
-                        "schema_name": project.schema_name,
+                        "id": project.schema_id,
+                        "name": project.schema_name,
                     },
                 }
                 for project in projects
