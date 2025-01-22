@@ -1,6 +1,7 @@
 from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
 
+from app.models import DocumentEdit, Document
 from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
@@ -366,6 +367,26 @@ class MentionService:
         return self.__mention_repository.get_recommendations_by_document_edit(
             document_edit_id
         )
+
+    def __fetch_mention_recommendations(self, content, schema_id, document_id):
+        # user_id = self.user_service.get_logged_in_user_id()
+
+        # self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
+        # doc_edit = self.__mention_repository.get_object_by_id(
+        #    DocumentEdit, document_edit_id
+        # )
+        # doc = self.__mention_repository.get_object_by_id(Document, doc_edit.document_id)
+
+        schema = self.schema_service.get_schema_by_id(schema_id)
+
+        tokens = self.token_service.get_tokens_by_document(document_id)
+
+        request_body = {
+            "content": content,
+            "tokens": tokens["tokens"],
+            "schema": schema,
+        }
 
 
 mention_service = MentionService(
