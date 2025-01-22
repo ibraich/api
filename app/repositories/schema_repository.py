@@ -1,6 +1,7 @@
 from sqlalchemy.orm import aliased
 
 from app.models import (
+    DocumentEdit,
     Schema,
     Team,
     ModellingLanguage,
@@ -20,6 +21,8 @@ ModellingLanguagesByName = {
 
 
 class SchemaRepository(BaseRepository):
+    def __init__(self, db):
+        self.db = db
     def get_schema_by_id(self, schema_id):
         return (
             Session.query(
@@ -149,28 +152,17 @@ class SchemaRepository(BaseRepository):
             )
         )
 
-    def create_schema_relation(
-        self, schema_id: int, tag: str, description: str
-    ) -> SchemaRelation:
-        return super().store_object_transactional(
-            SchemaRelation(schema_id=schema_id, tag=tag, description=description)
-        )
+    def create_schema(self, schema_data):
+        schema = Schema(**schema_data)
+        self.db.session.add(schema)
+        self.db.session.commit()
+        return schema
 
-    def create_schema_constraint(
-        self,
-        schema_relation_id: int,
-        schema_mention_id_head: int,
-        schema_mention_id_tail: int,
-        is_directed: bool,
-    ) -> SchemaConstraint:
-        return super().store_object_transactional(
-            SchemaConstraint(
-                schema_relation_id=schema_relation_id,
-                schema_mention_id_head=schema_mention_id_head,
-                schema_mention_id_tail=schema_mention_id_tail,
-                isDirected=is_directed,
-            )
-        )
+    def add_mention_to_schema(self, schema_id, mention_data):
+        mention = SchemaMention(schema_id=schema_id, **mention_data)
+        self.db.session.add(mention)
+        self.db.session.commit()
+
 
     def get_schema_mention_by_schema_tag(self, schema_id, schema_mention_id):
         return (
@@ -179,15 +171,6 @@ class SchemaRepository(BaseRepository):
                 SchemaMention.schema_id == schema_id,
                 SchemaMention.id == schema_mention_id,
             )
-            .first()
-        )
-
-    def get_schema_by_document_edit(self, document_edit_id):
-        return (
-            Session.query(Schema)
-            .select_from(DocumentEdit)
-            .join(Schema, Schema.id == DocumentEdit.schema_id)
-            .filter(DocumentEdit.id == document_edit_id)
             .first()
         )
 
@@ -200,3 +183,4 @@ class SchemaRepository(BaseRepository):
 
     def get_schema_relation_by_id(self, schema_relation_id):
         return Session.query(SchemaRelation).filter_by(id=schema_relation_id).first()
+

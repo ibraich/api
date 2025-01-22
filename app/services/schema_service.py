@@ -1,7 +1,7 @@
 import typing
 import random
 
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, Conflict
 
 from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
 from app.repositories.schema_repository import SchemaRepository
@@ -15,7 +15,7 @@ class SchemaService:
     def __init__(self, schema_repository: SchemaRepository, user_service: UserService):
         self.__schema_repository = schema_repository
         self.user_service = user_service
-
+        self.schema_repo = SchemaRepository()
     def check_schema_exists(self, schema_id):
         if self.__schema_repository.get_schema_by_id(schema_id) is None:
             return NotFound("Schema not found")
@@ -140,6 +140,7 @@ class SchemaService:
             is_directed,
         )
 
+
     def verify_constraint(
         self,
         schema,
@@ -199,11 +200,15 @@ class SchemaService:
         if schema_mention.entityPossible is False:
             raise BadRequest("Entity not allowed for this mention")
 
-    def get_schema_by_document_edit(self, document_edit_id):
-        return self.__schema_repository.get_schema_by_document_edit(document_edit_id)
+    def __has_duplicates(self, items, key):
+        seen = set()
+        for item in items:
+            identifier = key(item) if callable(key) else item[key]
+            if identifier in seen:
+                return True
+            seen.add(identifier)
+        return False
 
-    def fix_schema(self, schema_id):
-        self.__schema_repository.fix_schema(schema_id)
 
     def get_schema_mention_by_id(self, schema_mention_id):
         schema_mention = self.__schema_repository.get_schema_mention_by_id(
