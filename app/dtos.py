@@ -199,6 +199,11 @@ schema_constraint_output_dto = api.model(
     },
 )
 
+schema_model_dto = api.model(
+    "SchemaModel",
+    {"id": fields.Integer, "name": fields.String, "type": fields.String},
+)
+
 schema_output_dto = api.model(
     "SchemaOutput",
     {
@@ -208,6 +213,7 @@ schema_output_dto = api.model(
         "modellingLanguage": fields.String,
         "team_id": fields.Integer,
         "team_name": fields.String,
+        "models": fields.List(fields.Nested(schema_model_dto)),
         "schema_mentions": fields.List(fields.Nested(schema_mention_output_dto)),
         "schema_relations": fields.List(fields.Nested(schema_relation_output_dto)),
         "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
@@ -245,10 +251,22 @@ team_user_output_dto = api.model(
     },
 )
 
+recommendation_model_settings_dto = api.model(
+    "RecommendationModelParameter",
+    {
+        "name": fields.String,
+        "value": fields.String,
+    },
+)
+
 document_edit_input_dto = api.model(
     "DocumentInput",
     {
         "document_id": fields.Integer(required=True, min=1),
+        "model_name": fields.String(required=False, default="llm"),
+        "model_settings": {
+            fields.List(fields.Nested(recommendation_model_settings_dto))
+        },
     },
 )
 
@@ -544,5 +562,24 @@ relation_output_list_dto = api.model(
         "relations": fields.List(
             fields.Nested(relation_output_model), description="List of relations"
         ),
+    },
+)
+
+
+model_train_input = api.model(
+    "ModelTrainInput",
+    {
+        "model_name": fields.String(description="Name of trained model"),
+        "model_type": fields.String(description="Type of trained model"),
+    },
+)
+
+document_edit_model_output_dto = api.model(
+    "DocumentEditModelOutput",
+    {
+        "id": fields.Integer(description="Document Edit Model ID"),
+        "model_settings": {
+            fields.List(fields.Nested(recommendation_model_settings_dto))
+        },
     },
 )

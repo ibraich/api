@@ -204,6 +204,32 @@ class DocumentEditState(db.Model):
     type = db.Column(db.String(), unique=True, nullable=False)
 
 
+class RecommendationModel(db.Model):
+    __tablename__ = "RecommendationModel"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    model_name = db.Column(
+        db.String(),
+        unique=False,
+        nullable=False,
+    )
+    model_typ = db.Column(
+        db.String(),
+        unique=False,
+        nullable=False,
+    )
+    schema_id = db.Column(db.Integer, db.ForeignKey("Schema.id"), nullable=False)
+
+
+class DocumentEditModelSetting(db.Model):
+    __tablename__ = "DocumentEditModelSetting"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    document_edit_id = db.Column(
+        db.Integer, db.ForeignKey("DocumentEdit.id"), nullable=False
+    )
+    key = db.Column(db.String(), unique=False, nullable=False)
+    value = db.Column(db.String(), unique=False, nullable=False)
+
+
 def insert_default_values(types, model):
     for t in types:
         if db.session.query(model.id).filter_by(type=t).first() is None:

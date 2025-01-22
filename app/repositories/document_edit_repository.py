@@ -1,4 +1,4 @@
-from app.models import DocumentEdit
+from app.models import DocumentEdit, DocumentEditModelSetting
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
@@ -25,7 +25,6 @@ class DocumentEditRepository(BaseRepository):
             .filter(DocumentEdit.active == True)
             .first()
         )
-
 
     def get_document_edit_by_id(self, document_edit_id):
         return (
@@ -72,3 +71,27 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
+    def store_model_settings(self, document_edit_id, model, model_settings):
+        settings = []
+        settings.append(
+            DocumentEditModelSetting(
+                document_edit_id=document_edit_id, key="model_name", value=model
+            )
+        )
+        for model_setting in model_settings:
+            settings.append(
+                DocumentEditModelSetting(
+                    document_edit_id=document_edit_id,
+                    key=model_setting["name"],
+                    value=model_setting["value"],
+                )
+            )
+        for setting in settings:
+            super().store_object_transactional(setting)
+
+    def get_document_edit_model(self, document_edit_id):
+        return (
+            Session.query(DocumentEditModelSetting)
+            .filter_by(document_edit_id=document_edit_id)
+            .all()
+        )

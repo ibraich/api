@@ -40,6 +40,7 @@ class SchemaService:
         )
         mentions = self.__schema_repository.get_schema_mentions_by_schema(schema.id)
         relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
+        models = self.__schema_repository.get_models_by_schema(schema.id)
         return {
             "id": schema.id,
             "name": schema.name,
@@ -47,6 +48,14 @@ class SchemaService:
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
             "team_name": schema.team_name,
+            "models": [
+                {
+                    "id": model.id,
+                    "name": model.name,
+                    "type": model.type,
+                }
+                for model in models
+            ],
             "schema_mentions": [
                 {
                     "id": mention.id,
@@ -220,6 +229,20 @@ class SchemaService:
         if schema_relation is None:
             raise BadRequest("Relation Tag not allowed")
         return schema_relation
+
+    def train_model_for_schema(self, schema_id, model_name, model_type):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+        duplicate = self.__schema_repository.get_model_by_name(model_name)
+        if duplicate is not None:
+            raise BadRequest("Model Name already exists")
+
+        # TODO call training endpoint
+
+        model = self.__schema_repository.add_model_to_schema(
+            schema_id, model_name, model_type
+        )
+        return model
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)

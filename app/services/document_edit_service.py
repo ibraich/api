@@ -35,7 +35,7 @@ class DocumentEditService:
         self.mention_service = mention_service
         self.relation_service = relation_service
 
-    def create_document_edit(self, document_id):
+    def create_document_edit(self, document_id, model, model_settings):
         user_id = self.user_service.get_logged_in_user_id()
 
         # Check if document edit already exists
@@ -60,12 +60,12 @@ class DocumentEditService:
             )
         )
 
-        # Copy mention recommendations from document to new document edit
-        self.document_recommendation_service.copy_document_recommendations(
-            document.document_recommendation_id,
-            document_edit.id,
-            document_recommendation.id,
+        # Store model settings
+        self.__document_edit_repository.store_model_settings(
+            document_edit.id, model, model_settings
         )
+
+        # TODO: generate recommendations for document edit
         return {
             "id": document_edit.id,
             "schema_id": document_edit.schema_id,
@@ -76,7 +76,6 @@ class DocumentEditService:
         return self.__document_edit_repository.get_document_edit_by_document(
             document_id, user_id
         )
-
 
     def overtake_document_edit(self, document_edit_id):
 
@@ -192,6 +191,20 @@ class DocumentEditService:
             "relations": transformed_relations,
         }
 
+    def get_document_edit_model(self, document_edit_id):
+        settings = self.__document_edit_repository.get_document_edit_model(
+            document_edit_id
+        )
+        return {
+            "id": document_edit_id,
+            "model_settings": [
+                {
+                    "name": setting.key,
+                    "value": setting.value,
+                }
+                for setting in settings
+            ],
+        }
 
 
 document_edit_service = DocumentEditService(

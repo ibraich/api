@@ -10,6 +10,7 @@ from app.models import (
     UserTeam,
     Project,
     DocumentEdit,
+    RecommendationModel,
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
@@ -200,3 +201,18 @@ class SchemaRepository(BaseRepository):
 
     def get_schema_relation_by_id(self, schema_relation_id):
         return Session.query(SchemaRelation).filter_by(id=schema_relation_id).first()
+
+    def add_model_to_schema(self, schema_id, model_name, model_type):
+        model = RecommendationModel(
+            model_name=model_name, model_type=model_type, schema_id=schema_id
+        )
+        self.store_object_transactional(model)
+        return model
+
+    def get_models_by_schema(self, schema_id):
+        return Session.query(RecommendationModel).filter_by(schema_id=schema_id).all()
+
+    def get_model_by_name(self, model_name):
+        return (
+            Session.query(RecommendationModel).filter_by(model_name=model_name).first()
+        )
