@@ -16,7 +16,7 @@ from app.dtos import (
 ns = Namespace("mentions", description="Mention related operations")
 
 
-@ns.route("/")
+@ns.route("")
 @ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
