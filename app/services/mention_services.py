@@ -76,16 +76,16 @@ class MentionService:
                     },
                 }
 
-                if row.token_id is not None:
-                    mentions_dict[row.mention_id]["tokens"].append(
-                        {
-                            "id": row.token_id,
-                            "text": row.text,
-                            "document_index": row.document_index,
-                            "sentence_index": row.sentence_index,
-                            "pos_tag": row.pos_tag,
-                        }
-                    )
+            if row.token_id is not None:
+                mentions_dict[row.mention_id]["tokens"].append(
+                    {
+                        "id": row.token_id,
+                        "text": row.text,
+                        "document_index": row.document_index,
+                        "sentence_index": row.sentence_index,
+                        "pos_tag": row.pos_tag,
+                    }
+                )
         return {"mentions": list(mentions_dict.values())}
 
     def create_mentions(self, data):

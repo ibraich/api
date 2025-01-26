@@ -199,6 +199,24 @@ schema_constraint_output_dto = api.model(
     },
 )
 
+model_step_dto = api.model(
+    "ModelStep",
+    {
+        "id": fields.Integer,
+        "type": fields.String,
+    },
+)
+
+schema_model_dto = api.model(
+    "SchemaModel",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "type": fields.String,
+        "step": fields.Nested(model_step_dto),
+    },
+)
+
 schema_output_dto = api.model(
     "SchemaOutput",
     {
@@ -208,6 +226,7 @@ schema_output_dto = api.model(
         "modellingLanguage": fields.String,
         "team_id": fields.Integer,
         "team_name": fields.String,
+        "models": fields.List(fields.Nested(schema_model_dto)),
         "schema_mentions": fields.List(fields.Nested(schema_mention_output_dto)),
         "schema_relations": fields.List(fields.Nested(schema_relation_output_dto)),
         "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
@@ -245,10 +264,30 @@ team_user_output_dto = api.model(
     },
 )
 
+recommendation_model_settings_dto = api.model(
+    "RecommendationModelParameter",
+    {
+        "key": fields.String,
+        "value": fields.String,
+    },
+)
+
 document_edit_input_dto = api.model(
     "DocumentInput",
     {
         "document_id": fields.Integer(required=True, min=1),
+        "model_mention_id": fields.Integer(required=False),
+        "model_settings_mention": fields.List(
+            fields.Nested(recommendation_model_settings_dto)
+        ),
+        "model_entities_id": fields.Integer(required=False),
+        "model_settings_entities": fields.List(
+            fields.Nested(recommendation_model_settings_dto)
+        ),
+        "model_relation_id": fields.Integer(required=False),
+        "model_settings_relation": fields.List(
+            fields.Nested(recommendation_model_settings_dto)
+        ),
     },
 )
 
@@ -272,6 +311,9 @@ document_edit_output_dto = api.model(
         "id": fields.Integer,
         "schema_id": fields.Integer,
         "document_id": fields.Integer,
+        "mention_model_id": fields.Integer,
+        "entity_model_id": fields.Integer,
+        "relation_model_id": fields.Integer,
     },
 )
 
@@ -570,5 +612,61 @@ heatmap_output_list_dto = api.model(
             fields.Nested(heatmap_output_dto),
             description="List of heatmap token objects",
         )
+
+model_train_input = api.model(
+    "ModelTrainInput",
+    {
+        "model_name": fields.String(description="Name of trained model"),
+        "model_type": fields.String(description="Type of trained model"),
+        "model_steps": fields.List(
+            fields.String(
+                description="Steps this model can be used for, valid steps: MENTIONS, ENTITIES, RELATIONS"
+            ),
+        ),
+    },
+)
+
+model_train_output = api.model(
+    "ModelTrainOutput",
+    {
+        "id": fields.Integer(),
+        "name": fields.String(description="Name of trained model"),
+        "type": fields.String(description="Type of trained model"),
+        "step": fields.Nested(model_step_dto),
+        "schema_id": fields.Integer(description="Schema ID"),
+    },
+)
+
+model_train_output_list_dto = api.model(
+    "ModelTrainOutputList", {"models": fields.List(fields.Nested(model_train_output))}
+)
+
+recommendation_model_settings_output_dto = api.model(
+    "RecommendationModelParameterOutput",
+    {
+        "id": fields.Integer,
+        "key": fields.String,
+        "value": fields.String,
+    },
+)
+
+document_edit_model_output_dto = api.model(
+    "DocumentEditModelOutput",
+    {
+        "id": fields.Integer(description="ID"),
+        "document_edit_id": fields.Integer(description="Document Edit ID"),
+        "name": fields.String(description="Name of trained model"),
+        "type": fields.String(description="Type of trained model"),
+        "step": fields.Nested(model_step_dto),
+        "settings": fields.List(
+            fields.Nested(recommendation_model_settings_output_dto)
+        ),
+    },
+)
+
+document_edit_model_output_list_dto = api.model(
+    "DocumentEditModelOutputList",
+    {
+        "models": fields.List(fields.Nested(document_edit_model_output_dto)),
     },
 )
