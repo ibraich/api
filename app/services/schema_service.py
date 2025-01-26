@@ -3,7 +3,7 @@ import random
 
 from werkzeug.exceptions import NotFound, BadRequest
 
-from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
 
@@ -40,6 +40,7 @@ class SchemaService:
         )
         mentions = self.__schema_repository.get_schema_mentions_by_schema(schema.id)
         relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
+        models = self.__schema_repository.get_models_by_schema(schema.id)
         return {
             "id": schema.id,
             "name": schema.name,
@@ -47,6 +48,7 @@ class SchemaService:
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
             "team_name": schema.team_name,
+            "models": self.get_models_by_schema(schema.id),
             "schema_mentions": [
                 {
                     "id": mention.id,
@@ -101,9 +103,15 @@ class SchemaService:
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
 
     def create_schema(self, modelling_language_id, team_id, name) -> Schema:
-        return self.__schema_repository.create_schema(
+        schema = self.__schema_repository.create_schema(
             modelling_language_id, team_id, name
         )
+        steps = self.__schema_repository.get_model_steps()
+        steps = [step.type for step in steps]
+        schema.models = self.__schema_repository.add_model_to_schema(
+            schema.id, "OpenAI Large Language Model", "llm", steps
+        )
+        return schema
 
     def create_schema_mention(
         self,
@@ -220,6 +228,76 @@ class SchemaService:
         if schema_relation is None:
             raise BadRequest("Relation Tag not allowed")
         return schema_relation
+
+    def train_model_for_schema(self, schema_id, model_name, model_type, steps):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+        duplicate = self.__schema_repository.get_model_by_name(model_name)
+        if duplicate is not None:
+            raise BadRequest("Model Name already exists")
+
+        # TODO call training endpoint
+
+        models = self.__schema_repository.add_model_to_schema(
+            schema_id, model_name, model_type, steps
+        )
+        return {
+            "models": [
+                {
+                    "id": model.id,
+                    "name": model.model_name,
+                    "type": model.model_type,
+                    "step": {
+                        "id": model.model_step_id,
+                        "type": model.model_step_name,
+                    },
+                    "schema_id": model.schema_id,
+                }
+                for model in models
+            ]
+        }
+
+    def check_models_in_schema(
+        self, mention_model_id, entity_model_id, relation_model_id, schema_id
+    ):
+        schema_models = self.__schema_repository.get_models_by_schema(schema_id)
+        validated = 0
+        for schema_model in schema_models:
+            if (
+                schema_model.id == mention_model_id
+                and schema_model.model_step_id == 1  # "MENTIONS"
+            ):
+                validated += 1
+            if (
+                schema_model.id == entity_model_id
+                and schema_model.model_step_id == 2  # "ENTITIES"
+            ):
+                validated += 1
+            if (
+                schema_model.id == relation_model_id
+                and schema_model.model_step_id == 3  # "RELATIONS"
+            ):
+                validated += 1
+
+        if validated != 3:
+            raise BadRequest(
+                "At least one model not found for given steps in this schema"
+            )
+
+    def get_models_by_schema(self, schema_id):
+        models = self.__schema_repository.get_models_by_schema(schema_id)
+        return [
+            {
+                "id": model.id,
+                "name": model.model_name,
+                "type": model.model_type,
+                "step": {
+                    "id": model.model_step_id,
+                    "type": model.model_step_name,
+                },
+            }
+            for model in models
+        ]
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)
