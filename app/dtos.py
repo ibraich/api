@@ -89,6 +89,15 @@ document_list_dto = api.model(
         "id": fields.Integer,
         "content": fields.String,
         "name": fields.String,
+        "state": fields.Nested(
+            api.model(
+                "DocumentState",
+                {
+                    "id": fields.Integer,
+                    "type": fields.String,
+                },
+            )
+        ),
         "project": fields.Nested(project_dto),
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
