@@ -26,10 +26,12 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
-
-    def get_document_edit_by_id(self, document_edit_id):
+    def get_all_document_edits_by_document(self, document_id):
         return (
-            self.db_session.query(DocumentEdit).filter_by(id=document_edit_id).first()
+            Session.query(DocumentEdit)
+            .filter(DocumentEdit.document_id == document_id)
+            .filter(DocumentEdit.active == True)
+            .all()
         )
 
     def soft_delete_document_edit(self, document_edit_id):
@@ -71,4 +73,3 @@ class DocumentEditRepository(BaseRepository):
             .filter(DocumentEdit.active == True)
             .first()
         )
-
