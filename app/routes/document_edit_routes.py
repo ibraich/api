@@ -16,7 +16,7 @@ from flask_jwt_extended import jwt_required
 ns = Namespace("annotations", description="Document-Annotation related operations")
 
 
-@ns.route("/")
+@ns.route("")
 @ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
@@ -66,6 +66,7 @@ class DocumentRoutes(Resource):
 
         response = self.service.overtake_document_edit(request_data["document_edit_id"])
         return response
+
 
 
 @ns.route("/<int:document_edit_id>")
