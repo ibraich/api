@@ -1,8 +1,8 @@
 from app.models import (
     DocumentEdit,
     DocumentEditModelSettings,
-    RecommendationModels,
-    ModelSteps,
+    RecommendationModel,
+    ModelStep,
 )
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
@@ -96,7 +96,7 @@ class DocumentEditRepository(BaseRepository):
                 DocumentEditModelSettings(
                     document_edit_id=document_edit_id,
                     model_id=model_id,
-                    key=model_setting["name"],
+                    key=model_setting["key"],
                     value=model_setting["value"],
                 )
             )
@@ -109,22 +109,30 @@ class DocumentEditRepository(BaseRepository):
                 DocumentEditModelSettings.id.label("settings_id"),
                 DocumentEditModelSettings.value,
                 DocumentEditModelSettings.key,
-                DocumentEditModelSettings.document_edit_id,
-                RecommendationModels.id,
-                RecommendationModels.model_name,
-                RecommendationModels.model_type,
-                RecommendationModels.schema_id,
-                RecommendationModels.model_step.label("model_step_id"),
-                ModelSteps.type.label("model_step_name"),
+                DocumentEdit.id.label("document_edit_id"),
+                RecommendationModel.id,
+                RecommendationModel.model_name,
+                RecommendationModel.model_type,
+                RecommendationModel.schema_id,
+                RecommendationModel.model_step_id,
+                ModelStep.type.label("model_step_name"),
+            )
+            .select_from(DocumentEdit)
+            .join(
+                RecommendationModel,
+                (DocumentEdit.mention_model_id == RecommendationModel.id)
+                | (DocumentEdit.entity_model_id == RecommendationModel.id)
+                | (DocumentEdit.relation_model_id == RecommendationModel.id),
             )
             .join(
-                RecommendationModels,
-                DocumentEditModelSettings.model_id == RecommendationModels.id,
+                ModelStep,
+                RecommendationModel.model_step_id == ModelStep.id,
             )
-            .join(
-                ModelSteps,
-                RecommendationModels.model_step == ModelSteps.id,
+            .outerjoin(
+                DocumentEditModelSettings,
+                DocumentEditModelSettings.recommendation_model_id
+                == RecommendationModel.id,
             )
-            .filter(DocumentEditModelSettings.document_edit_id == document_edit_id)
+            .filter(DocumentEdit.id == document_edit_id)
             .all()
         )

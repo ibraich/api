@@ -11,8 +11,8 @@ from app.models import (
     UserTeam,
     Project,
     DocumentEdit,
-    RecommendationModels,
-    ModelSteps,
+    RecommendationModel,
+    ModelStep,
 )
 from app.repositories.base_repository import BaseRepository
 from app.db import db, Session
@@ -206,7 +206,7 @@ class SchemaRepository(BaseRepository):
 
     def add_model_to_schema(self, schema_id, model_name, model_type, steps):
         models = []
-        db_steps = Session.query(ModelSteps).all()
+        db_steps = self.get_model_steps()
         step_dict = {}
         for db_step in db_steps:
             step_dict[db_step.type] = db_step.id
@@ -214,11 +214,11 @@ class SchemaRepository(BaseRepository):
         for step in steps:
             if step not in step_dict.keys():
                 raise BadRequest("Step " + step + " not allowed.")
-            model = RecommendationModels(
+            model = RecommendationModel(
                 model_name=model_name,
                 model_type=model_type,
                 schema_id=schema_id,
-                model_step=step_dict[step],
+                model_step_id=step_dict[step],
             )
             model.model_step_name = step
             self.store_object_transactional(model)
@@ -228,19 +228,22 @@ class SchemaRepository(BaseRepository):
     def get_models_by_schema(self, schema_id):
         return (
             Session.query(
-                RecommendationModels.id,
-                RecommendationModels.model_name,
-                RecommendationModels.model_type,
-                RecommendationModels.schema_id,
-                RecommendationModels.model_step.label("model_step_id"),
-                ModelSteps.type.label("model_step_name"),
+                RecommendationModel.id,
+                RecommendationModel.model_name,
+                RecommendationModel.model_type,
+                RecommendationModel.schema_id,
+                RecommendationModel.model_step_id,
+                ModelStep.type.label("model_step_name"),
             )
             .filter_by(schema_id=schema_id)
-            .join(ModelSteps, ModelSteps.id == RecommendationModels.model_step)
+            .join(ModelStep, ModelStep.id == RecommendationModel.model_step_id)
             .all()
         )
 
     def get_model_by_name(self, model_name):
         return (
-            Session.query(RecommendationModels).filter_by(model_name=model_name).first()
+            Session.query(RecommendationModel).filter_by(model_name=model_name).first()
         )
+
+    def get_model_steps(self):
+        return Session.query(ModelStep.id, ModelStep.type).all()

@@ -58,7 +58,7 @@ class SchemaTrainResource(Resource):
 
     @jwt_required()
     @transactional
-    @ns.doc(description="Get schema by schema ID")
+    @ns.doc(description="Train model for given schema ID")
     @ns.expect(model_train_input)
     @ns.marshal_with(model_train_output_list_dto)
     def post(self, schema_id):

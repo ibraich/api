@@ -61,6 +61,27 @@ class DocumentEditService:
             user_id, document_id
         )
 
+        # Use default llm if no model is specified
+        if not all([model_mention, model_relation, model_entities]):
+            models = self.schema_service.get_models_by_schema(document.schema_id)
+            models = [
+                model
+                for model in models
+                if model["name"] == "OpenAI Large Language Model"
+            ]
+            if model_mention is None:
+                for model in models:
+                    if model["step"]["id"] == 1:
+                        model_mention = model["id"]
+            if model_entities is None:
+                for model in models:
+                    if model["step"]["id"] == 2:
+                        model_entities = model["id"]
+            if model_relation is None:
+                for model in models:
+                    if model["step"]["id"] == 3:
+                        model_relation = model["id"]
+
         self.schema_service.check_models_in_schema(
             model_mention, model_entities, model_relation, document.schema_id
         )
@@ -238,15 +259,19 @@ class DocumentEditService:
                     "id": setting.id,
                     "name": setting.model_name,
                     "type": setting.model_type,
-                    "step_id": setting.model_step_id,
-                    "step_name": setting.model_step_name,
+                    "step": {
+                        "id": setting.model_step_id,
+                        "type": setting.model_step_name,
+                    },
                     "settings": [],
                 }
+
+            if setting.settings_id is not None:
                 model_dict[setting.id]["settings"].append(
                     {
                         "id": setting.settings_id,
                         "value": setting.value,
-                        "name": setting.key,
+                        "key": setting.key,
                     }
                 )
         return {"models": list(model_dict.values())}

@@ -199,13 +199,21 @@ schema_constraint_output_dto = api.model(
     },
 )
 
+model_step_dto = api.model(
+    "ModelStep",
+    {
+        "id": fields.Integer,
+        "type": fields.String,
+    },
+)
+
 schema_model_dto = api.model(
     "SchemaModel",
     {
         "id": fields.Integer,
         "name": fields.String,
         "type": fields.String,
-        "step": fields.String,
+        "step": fields.Nested(model_step_dto),
     },
 )
 
@@ -259,7 +267,7 @@ team_user_output_dto = api.model(
 recommendation_model_settings_dto = api.model(
     "RecommendationModelParameter",
     {
-        "name": fields.String,
+        "key": fields.String,
         "value": fields.String,
     },
 )
@@ -601,8 +609,7 @@ model_train_output = api.model(
         "id": fields.Integer(),
         "name": fields.String(description="Name of trained model"),
         "type": fields.String(description="Type of trained model"),
-        "step_id": fields.Integer(description="Step ID of the trained model"),
-        "step_name": fields.String(description="Step of the trained model"),
+        "step": fields.Nested(model_step_dto),
         "schema_id": fields.Integer(description="Schema ID"),
     },
 )
@@ -615,7 +622,7 @@ recommendation_model_settings_output_dto = api.model(
     "RecommendationModelParameterOutput",
     {
         "id": fields.Integer,
-        "name": fields.String,
+        "key": fields.String,
         "value": fields.String,
     },
 )
@@ -627,8 +634,7 @@ document_edit_model_output_dto = api.model(
         "document_edit_id": fields.Integer(description="Document Edit ID"),
         "name": fields.String(description="Name of trained model"),
         "type": fields.String(description="Type of trained model"),
-        "step_name": fields.String(description="Step of the trained model"),
-        "step_id": fields.Integer(description="Model Step ID"),
+        "step": fields.Nested(model_step_dto),
         "settings": fields.List(
             fields.Nested(recommendation_model_settings_output_dto)
         ),

@@ -48,15 +48,7 @@ class SchemaService:
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
             "team_name": schema.team_name,
-            "models": [
-                {
-                    "id": model.id,
-                    "name": model.model_name,
-                    "type": model.model_type,
-                    "step": model.model_step_name,
-                }
-                for model in models
-            ],
+            "models": self.get_models_by_schema(schema.id),
             "schema_mentions": [
                 {
                     "id": mention.id,
@@ -111,9 +103,15 @@ class SchemaService:
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
 
     def create_schema(self, modelling_language_id, team_id, name) -> Schema:
-        return self.__schema_repository.create_schema(
+        schema = self.__schema_repository.create_schema(
             modelling_language_id, team_id, name
         )
+        steps = self.__schema_repository.get_model_steps()
+        steps = [step.type for step in steps]
+        schema.models = self.__schema_repository.add_model_to_schema(
+            schema.id, "OpenAI Large Language Model", "llm", steps
+        )
+        return schema
 
     def create_schema_mention(
         self,
@@ -249,8 +247,10 @@ class SchemaService:
                     "id": model.id,
                     "name": model.model_name,
                     "type": model.model_type,
-                    "step_id": model.model_step,
-                    "step_name": model.model_step_name,
+                    "step": {
+                        "id": model.model_step_id,
+                        "type": model.model_step_name,
+                    },
                     "schema_id": model.schema_id,
                 }
                 for model in models
@@ -278,18 +278,26 @@ class SchemaService:
                 and schema_model.model_step_id == 3  # "RELATIONS"
             ):
                 validated += 1
-        # If no model specified, validation does not fail
-        if mention_model_id is None:
-            validated += 1
-        if entity_model_id is None:
-            validated += 1
-        if relation_model_id is None:
-            validated += 1
 
         if validated != 3:
             raise BadRequest(
                 "At least one model not found for given steps in this schema"
             )
+
+    def get_models_by_schema(self, schema_id):
+        models = self.__schema_repository.get_models_by_schema(schema_id)
+        return [
+            {
+                "id": model.id,
+                "name": model.model_name,
+                "type": model.model_type,
+                "step": {
+                    "id": model.model_step_id,
+                    "type": model.model_step_name,
+                },
+            }
+            for model in models
+        ]
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)
