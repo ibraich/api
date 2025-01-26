@@ -1,7 +1,7 @@
+from flask import Flask, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from werkzeug.exceptions import HTTPException, InternalServerError
 
 from app.config import Config
 
@@ -12,29 +12,33 @@ engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
 SessionFactory = sessionmaker(bind=engine)
 Session = scoped_session(SessionFactory)
 
-from functools import wraps
 
+def add_transaction_wrapper(app: Flask):
+    # Transaction management
+    @app.before_request
+    def start_transaction():
+        """Start a session and a transaction before each request."""
+        g.db_session = Session()
+        g.db_session.begin()
 
-def transactional(func):
-    """
-    Decorator to wrap a function in a database transaction.
-    Ensures commit/rollback and proper session cleanup.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+    @app.after_request
+    def commit_or_rollback_transaction(response):
+        """Commit the transaction or rollback in case of an error after the request."""
         try:
-            # Start a transaction
-            with Session.begin():  # Automatically commits
-                result = func(*args, **kwargs)
-            return result
-        except HTTPException as e:  # Reraise HTTP Exceptions
-            Session.rollback()  # Explicit rollback if needed
+            if response.status_code < 400:  # Commit only for successful responses
+                g.db_session.commit()
+            else:
+                g.db_session.rollback()
+        except Exception as e:
+            g.db_session.rollback()
             raise e
-        except Exception as e:  # Raise Internal Server Error on any other exception
-            Session.rollback()  # Explicit rollback if needed
-            raise InternalServerError(str(e))
         finally:
-            Session.remove()  # Remove the session from the scope
+            Session.remove()  # Remove the session after request
 
-    return wrapper
+        return response
+
+    @app.teardown_appcontext
+    def tear_down_exception(exception=None):
+        """Clean up the session when the application context is torn down."""
+        if hasattr(g, "db_session"):
+            Session.remove()

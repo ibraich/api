@@ -2,7 +2,7 @@ from app.models import Entity
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
 from app.services.schema_service import schema_service
-from app.services.user_service import UserService, user_service
+from app.services.user_service import user_service
 from app.repositories.mention_repository import MentionRepository
 
 
@@ -115,8 +115,8 @@ class EntityService:
         # add entity id to mention or replace previous one
         for mention in mentions:
             mention.entity_id = entity.id
+            # transactional session saves updated entity_id
 
-        # commiting db session to save changes
         self.__mention_repository.save_mention()
 
         response = {

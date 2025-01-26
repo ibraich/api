@@ -1,6 +1,6 @@
 from sqlalchemy import text
 
-from app.db import db
+from app.db import db, Session
 
 
 class User(db.Model):
@@ -202,10 +202,3 @@ class DocumentEditState(db.Model):
     __tablename__ = "DocumentEditState"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     type = db.Column(db.String(), unique=True, nullable=False)
-
-
-def insert_default_values(types, model):
-    for t in types:
-        if db.session.query(model.id).filter_by(type=t).first() is None:
-            db.session.add(model(type=t))
-            db.session.commit()

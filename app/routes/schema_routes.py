@@ -1,5 +1,7 @@
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
+
+
 from app.dtos import schema_output_dto, schema_output_list_dto
 from app.services.schema_service import schema_service
 from flask_jwt_extended import jwt_required
@@ -14,9 +16,9 @@ ns = Namespace("schemas", description="Schema related operations")
 class SchemaResource(Resource):
     service = schema_service
 
-    @jwt_required()
     @ns.doc(description="Fetch all schemas of current logged-in user")
     @ns.marshal_with(schema_output_list_dto)
+    @jwt_required()
     def get(self):
         return self.service.get_schemas_by_user()
 
@@ -29,9 +31,9 @@ class SchemaResource(Resource):
 class SchemaQueryResource(Resource):
     service = schema_service
 
-    @jwt_required()
     @ns.doc(description="Get schema by schema ID")
     @ns.marshal_with(schema_output_dto)
+    @jwt_required()
     def get(self, schema_id):
         if not schema_id:
             raise BadRequest("Schema ID is required.")
