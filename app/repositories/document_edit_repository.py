@@ -1,4 +1,9 @@
-from app.models import DocumentEdit, DocumentEditModelSetting
+from app.models import (
+    DocumentEdit,
+    DocumentEditModelSettings,
+    RecommendationModels,
+    ModelSteps,
+)
 from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
@@ -7,13 +12,24 @@ class DocumentEditRepository(BaseRepository):
     def __init__(self):
         self.db_session = db.session  # Automatically use the global db.session
 
-    def create_document_edit(self, document_id, user_id, schema_id):
+    def create_document_edit(
+        self,
+        document_id,
+        user_id,
+        schema_id,
+        model_mention=None,
+        model_entities=None,
+        model_relation=None,
+    ):
         document_edit = DocumentEdit(
             document_id=document_id,
             user_id=user_id,
             schema_id=schema_id,
             state_id=1,
             active=True,
+            mention_model_id=model_mention,
+            entity_model_id=model_entities,
+            relation_model_id=model_relation,
         )
         return super().store_object_transactional(document_edit)
 
@@ -71,17 +87,15 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
-    def store_model_settings(self, document_edit_id, model, model_settings):
+    def store_model_settings(self, document_edit_id, model_id, model_settings):
+        if model_settings is None or model_id is None:
+            return
         settings = []
-        settings.append(
-            DocumentEditModelSetting(
-                document_edit_id=document_edit_id, key="model_name", value=model
-            )
-        )
         for model_setting in model_settings:
             settings.append(
-                DocumentEditModelSetting(
+                DocumentEditModelSettings(
                     document_edit_id=document_edit_id,
+                    model_id=model_id,
                     key=model_setting["name"],
                     value=model_setting["value"],
                 )
@@ -91,7 +105,26 @@ class DocumentEditRepository(BaseRepository):
 
     def get_document_edit_model(self, document_edit_id):
         return (
-            Session.query(DocumentEditModelSetting)
-            .filter_by(document_edit_id=document_edit_id)
+            Session.query(
+                DocumentEditModelSettings.id.label("settings_id"),
+                DocumentEditModelSettings.value,
+                DocumentEditModelSettings.key,
+                DocumentEditModelSettings.document_edit_id,
+                RecommendationModels.id,
+                RecommendationModels.model_name,
+                RecommendationModels.model_type,
+                RecommendationModels.schema_id,
+                RecommendationModels.model_step.label("model_step_id"),
+                ModelSteps.type.label("model_step_name"),
+            )
+            .join(
+                RecommendationModels,
+                DocumentEditModelSettings.model_id == RecommendationModels.id,
+            )
+            .join(
+                ModelSteps,
+                RecommendationModels.model_step == ModelSteps.id,
+            )
+            .filter(DocumentEditModelSettings.document_edit_id == document_edit_id)
             .all()
         )

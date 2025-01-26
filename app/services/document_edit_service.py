@@ -5,6 +5,7 @@ from app.services.document_recommendation_service import (
     DocumentRecommendationService,
     document_recommendation_service,
 )
+from app.services.schema_service import SchemaService, schema_service
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
 from app.services.mention_services import MentionService, mention_service
@@ -18,6 +19,7 @@ class DocumentEditService:
     token_service: TokenService
     mention_service: MentionService
     relation_service: RelationService
+    schema_service: SchemaService
 
     def __init__(
         self,
@@ -27,6 +29,7 @@ class DocumentEditService:
         token_service: TokenService,
         mention_service: MentionService,
         relation_service: RelationService,
+        schema_service: SchemaService,
     ):
         self.__document_edit_repository = document_edit_repository
         self.user_service = user_service
@@ -34,8 +37,18 @@ class DocumentEditService:
         self.token_service = token_service
         self.mention_service = mention_service
         self.relation_service = relation_service
+        self.schema_service = schema_service
 
-    def create_document_edit(self, document_id, model, model_settings):
+    def create_document_edit(
+        self,
+        document_id,
+        model_mention: None,
+        model_entities: None,
+        model_relation: None,
+        model_settings_mention: None,
+        model_settings_entities: None,
+        model_settings_relation: None,
+    ):
         user_id = self.user_service.get_logged_in_user_id()
 
         # Check if document edit already exists
@@ -48,9 +61,18 @@ class DocumentEditService:
             user_id, document_id
         )
 
+        self.schema_service.check_models_in_schema(
+            model_mention, model_entities, model_relation, document.schema_id
+        )
+
         # Create document edit
         document_edit = self.__document_edit_repository.create_document_edit(
-            document_id, user_id, document.schema_id
+            document_id,
+            user_id,
+            document.schema_id,
+            model_mention,
+            model_entities,
+            model_relation,
         )
 
         # Create document recommendation for document edit
@@ -62,14 +84,24 @@ class DocumentEditService:
 
         # Store model settings
         self.__document_edit_repository.store_model_settings(
-            document_edit.id, model, model_settings
+            document_edit.id, model_mention, model_settings_mention
+        )
+        self.__document_edit_repository.store_model_settings(
+            document_edit.id, model_entities, model_settings_entities
+        )
+        self.__document_edit_repository.store_model_settings(
+            document_edit.id, model_relation, model_settings_relation
         )
 
         # TODO: generate recommendations for document edit
+
         return {
             "id": document_edit.id,
             "schema_id": document_edit.schema_id,
             "document_id": document_edit.document_id,
+            "mention_model_id": document_edit.mention_model_id,
+            "entity_model_id": document_edit.entity_model_id,
+            "relation_model_id": document_edit.relation_model_id,
         }
 
     def get_document_edit_by_document(self, document_id, user_id):
@@ -112,6 +144,9 @@ class DocumentEditService:
             "id": document_edit.id,
             "schema_id": document_edit.schema_id,
             "document_id": document_edit.document_id,
+            "mention_model_id": document_edit.mention_model_id,
+            "entity_model_id": document_edit.entity_model_id,
+            "relation_model_id": document_edit.relation_model_id,
         }
 
     def soft_delete_document_edit(self, document_edit_id):
@@ -195,16 +230,26 @@ class DocumentEditService:
         settings = self.__document_edit_repository.get_document_edit_model(
             document_edit_id
         )
-        return {
-            "id": document_edit_id,
-            "model_settings": [
-                {
-                    "name": setting.key,
-                    "value": setting.value,
+        model_dict = {}
+        for setting in settings:
+            if setting.id not in model_dict:
+                model_dict[setting.id] = {
+                    "document_edit_id": setting.document_edit_id,
+                    "id": setting.id,
+                    "name": setting.model_name,
+                    "type": setting.model_type,
+                    "step_id": setting.model_step_id,
+                    "step_name": setting.model_step_name,
+                    "settings": [],
                 }
-                for setting in settings
-            ],
-        }
+                model_dict[setting.id]["settings"].append(
+                    {
+                        "id": setting.settings_id,
+                        "value": setting.value,
+                        "name": setting.key,
+                    }
+                )
+        return {"models": list(model_dict.values())}
 
 
 document_edit_service = DocumentEditService(
@@ -214,4 +259,5 @@ document_edit_service = DocumentEditService(
     token_service,
     mention_service,
     relation_service,
+    schema_service,
 )

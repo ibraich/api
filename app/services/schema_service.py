@@ -3,7 +3,7 @@ import random
 
 from werkzeug.exceptions import NotFound, BadRequest
 
-from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
 
@@ -51,8 +51,9 @@ class SchemaService:
             "models": [
                 {
                     "id": model.id,
-                    "name": model.name,
-                    "type": model.type,
+                    "name": model.model_name,
+                    "type": model.model_type,
+                    "step": model.model_step_name,
                 }
                 for model in models
             ],
@@ -230,7 +231,7 @@ class SchemaService:
             raise BadRequest("Relation Tag not allowed")
         return schema_relation
 
-    def train_model_for_schema(self, schema_id, model_name, model_type):
+    def train_model_for_schema(self, schema_id, model_name, model_type, steps):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_schema_accessible(user_id, schema_id)
         duplicate = self.__schema_repository.get_model_by_name(model_name)
@@ -239,10 +240,56 @@ class SchemaService:
 
         # TODO call training endpoint
 
-        model = self.__schema_repository.add_model_to_schema(
-            schema_id, model_name, model_type
+        models = self.__schema_repository.add_model_to_schema(
+            schema_id, model_name, model_type, steps
         )
-        return model
+        return {
+            "models": [
+                {
+                    "id": model.id,
+                    "name": model.model_name,
+                    "type": model.model_type,
+                    "step_id": model.model_step,
+                    "step_name": model.model_step_name,
+                    "schema_id": model.schema_id,
+                }
+                for model in models
+            ]
+        }
+
+    def check_models_in_schema(
+        self, mention_model_id, entity_model_id, relation_model_id, schema_id
+    ):
+        schema_models = self.__schema_repository.get_models_by_schema(schema_id)
+        validated = 0
+        for schema_model in schema_models:
+            if (
+                schema_model.id == mention_model_id
+                and schema_model.model_step_id == 1  # "MENTIONS"
+            ):
+                validated += 1
+            if (
+                schema_model.id == entity_model_id
+                and schema_model.model_step_id == 2  # "ENTITIES"
+            ):
+                validated += 1
+            if (
+                schema_model.id == relation_model_id
+                and schema_model.model_step_id == 3  # "RELATIONS"
+            ):
+                validated += 1
+        # If no model specified, validation does not fail
+        if mention_model_id is None:
+            validated += 1
+        if entity_model_id is None:
+            validated += 1
+        if relation_model_id is None:
+            validated += 1
+
+        if validated != 3:
+            raise BadRequest(
+                "At least one model not found for given steps in this schema"
+            )
 
 
 schema_service = SchemaService(SchemaRepository(), user_service)

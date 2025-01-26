@@ -9,7 +9,7 @@ from app.dtos import (
     document_overtake_dto,
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
-    document_edit_model_output_dto,
+    document_edit_model_output_list_dto,
 )
 from flask_jwt_extended import jwt_required
 
@@ -31,9 +31,21 @@ class DocumentRoutes(Resource):
     def post(self):
         request_data = request.get_json()
         document_id = request_data.get("document_id")
-        model = request_data.get("model_name")
-        model_settings = request_data.get("model_settings")
-        response = self.service.create_document_edit(document_id, model, model_settings)
+        model_mention = request_data.get("model_mention_id")
+        model_entities = request_data.get("model_entities_id")
+        model_relation = request_data.get("model_relation_id")
+        model_settings_mention = request_data.get("model_settings_mention")
+        model_settings_entities = request_data.get("model_settings_entities")
+        model_settings_relation = request_data.get("model_settings_relation")
+        response = self.service.create_document_edit(
+            document_id,
+            model_mention,
+            model_entities,
+            model_relation,
+            model_settings_mention,
+            model_settings_entities,
+            model_settings_relation,
+        )
         return response
 
 
@@ -53,6 +65,7 @@ class DocumentRoutes(Resource):
         request_data = request.get_json()
 
         response = self.service.overtake_document_edit(request_data["document_edit_id"])
+        return response
 
 
 @ns.route("/<int:document_edit_id>")
@@ -98,11 +111,9 @@ class DocumentEditResource(Resource):
     service = document_edit_service
 
     @jwt_required()
-    @ns.marshal_with(
-        document_edit_model_output_dto
-    )  # Define the DTO structure for output
+    @ns.marshal_with(document_edit_model_output_list_dto)
     @ns.doc(
-        description="Fetch details of a model used in Recommendations for DocumentEdit"
+        description="Fetch details of the models used in Recommendations for DocumentEdit"
     )
     def get(self, document_edit_id):
         response = self.service.get_document_edit_model(document_edit_id)
