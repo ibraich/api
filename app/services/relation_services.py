@@ -1,8 +1,8 @@
 from werkzeug.exceptions import BadRequest, NotFound, Conflict
 
-from app.repositories.mention_repository import MentionRepository
 from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
+from app.services.relation_mention_service import relation_mention_service
 from app.services.schema_service import schema_service
 from app.services.user_service import user_service
 from app.services.mention_services import mention_service
@@ -12,20 +12,23 @@ class RelationService:
     def __init__(
         self,
         relation_repository,
-        mention_repository,
         user_service,
         schema_service,
         mention_service,
+        relation_mention_service,
     ):
         self.__relation_repository = relation_repository
-        self.__mention_repository = mention_repository
         self.user_service = user_service
         self.schema_service = schema_service
         self.mention_service = mention_service
+        self.relation_mention_service = relation_mention_service
 
     def get_relations_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
+
+        user_id = user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 
         mentions_data = self.mention_service.get_mentions_by_document_edit(
             document_edit_id
@@ -89,35 +92,7 @@ class RelationService:
         )
 
     def delete_relation_by_id(self, relation_id):
-        if not isinstance(relation_id, int) or relation_id <= 0:
-            raise BadRequest("Invalid relation ID. It must be a positive integer.")
-
-        # Fetch the relation to perform validation
-        relation = self.__relation_repository.get_relation_by_id(relation_id)
-        if not relation:
-            raise NotFound("Relation not found.")
-
-        # Check if document_edit_id is null
-        if relation.document_edit_id is None:
-            raise BadRequest(
-                "Cannot delete a relation without a valid document_edit_id."
-            )
-
-        # logged_in_user_id = user_service.get_logged_in_user_id()
-        # document_edit_user_id = user_service.get_user_by_document_edit_id(relation.document_edit_id)
-
-        # if logged_in_user_id != document_edit_user_id:
-        # raise NotFound("The logged in user does not belong to this document.")
-
-        # Proceed with deletion
-        deleted = self.__relation_repository.delete_relation_by_id(relation_id)
-        if not deleted:
-            raise NotFound("Relation not found during deletion.")
-
-        return {"message": "OK"}
-
-    def get_relations_by_mention(self, mention_id):
-        return self.__relation_repository.get_relations_by_mention(mention_id)
+        self.relation_mention_service.delete_relation_by_id(relation_id)
 
     def create_relation(self, data):
         # check if user is allowed to access this document edit
@@ -145,10 +120,10 @@ class RelationService:
         self.schema_service.verify_constraint(
             schema_extended,
             data["schema_relation_id"],
-            self.__mention_repository.get_mention_by_id(
+            self.mention_service.get_mention_by_id(
                 data["mention_head_id"]
             ).schema_mention_id,
-            self.__mention_repository.get_mention_by_id(
+            self.mention_service.get_mention_by_id(
                 data["mention_tail_id"]
             ).schema_mention_id,
             data["isDirected"],
@@ -193,14 +168,14 @@ class RelationService:
                 mention_head_id, relation.document_edit_id
             )
         else:
-            mention_head = self.__mention_repository.get_mention_by_id(mention_head_id)
+            mention_head = self.mention_service.get_mention_by_id(mention_head_id)
 
         if mention_tail_id:
             mention_tail = self.verify_mention_in_document_edit(
                 mention_tail_id, relation.document_edit_id
             )
         else:
-            mention_tail = self.__mention_repository.get_mention_by_id(mention_tail_id)
+            mention_tail = self.mention_service.get_mention_by_id(mention_tail_id)
 
         self.check_mentions_not_equal(mention_head.id, mention_tail.id)
 
@@ -334,7 +309,7 @@ class RelationService:
 
     def verify_mention_in_document_edit(self, mention_id, document_edit_id):
         # get mention head and tail
-        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        mention = self.mention_service.get_mention_by_id(mention_id)
 
         # check for none and if mention belongs to same edit
         if mention is None or mention.document_edit_id != document_edit_id:
@@ -351,8 +326,8 @@ class RelationService:
 
 relation_service = RelationService(
     RelationRepository(),
-    MentionRepository(),
     user_service,
     schema_service,
     mention_service,
+    relation_mention_service,
 )
