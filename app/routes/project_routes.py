@@ -10,6 +10,7 @@ from app.dtos import (
     project_output_dto,
     project_user_output_list_dto,
     project_delete_output_model,
+    project_list_dto,
 )
 from flask_jwt_extended import jwt_required
 
@@ -25,7 +26,7 @@ class ProjectRoutes(Resource):
 
     @ns.doc(description="Create a new project")
     @ns.expect(project_input_dto, validate=True)
-    @ns.marshal_with(project_output_dto)
+    @ns.marshal_with(project_list_dto)
     @jwt_required()
     def post(self):
         try:

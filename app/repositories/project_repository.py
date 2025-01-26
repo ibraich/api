@@ -37,7 +37,22 @@ class ProjectRepository(BaseRepository):
 
     def get_project_by_id(self, project_id):
         return (
-            self.get_session().query(Project).filter(Project.id == project_id).first()
+            self.get_session()
+            .query(
+                Project.id,
+                Project.name,
+                Project.creator_id,
+                Project.team_id,
+                Project.schema_id,
+                Schema.name.label("schema_name"),
+                Team.name.label("team_name"),
+            )
+            .select_from(UserTeam)
+            .join(Team, Team.id == UserTeam.team_id)
+            .join(Project, Project.team_id == Team.id)
+            .join(Schema, Schema.id == Project.schema_id)
+            .filter(Project.id == project_id)
+            .first()
         )
 
     def get_projects_by_user(self, user_id):
