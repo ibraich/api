@@ -239,7 +239,7 @@ class SchemaRepository(BaseRepository):
                 model_step_id=step_dict[step],
             )
             model.model_step_name = step
-            self.store_object_transactional(model)
+            self.store_object(model)
             models.append(model)
         return models
 

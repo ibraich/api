@@ -56,7 +56,6 @@ class SchemaTrainResource(Resource):
     service = schema_service
 
     @jwt_required()
-    @transactional
     @ns.doc(description="Train model for given schema ID")
     @ns.expect(model_train_input)
     @ns.marshal_with(model_train_output_list_dto)

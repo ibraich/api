@@ -89,7 +89,6 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
-
     def store_model_settings(self, document_edit_id, model_id, model_settings):
         if model_settings is None or model_id is None:
             return
@@ -104,7 +103,7 @@ class DocumentEditRepository(BaseRepository):
                 )
             )
         for setting in settings:
-            super().store_object_transactional(setting)
+            super().store_object(setting)
 
     def get_document_edit_model(self, document_edit_id):
         return (
