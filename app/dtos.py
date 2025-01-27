@@ -89,6 +89,15 @@ document_list_dto = api.model(
         "id": fields.Integer,
         "content": fields.String,
         "name": fields.String,
+        "state": fields.Nested(
+            api.model(
+                "DocumentState",
+                {
+                    "id": fields.Integer,
+                    "type": fields.String,
+                },
+            )
+        ),
         "project": fields.Nested(project_dto),
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
@@ -112,31 +121,12 @@ entity_input_dto = api.model(
     },
 )
 
-entity_output_dto = api.model(
-    "EntityOutput",
-    {
-        "id": fields.Integer,
-        "isShownRecommendation": fields.Boolean,
-        "document_edit_id": fields.Integer,
-        "document_recommendation_id": fields.Integer,
-    },
-)
-
-entity_output_list_dto = api.model(
-    "EntityOutputList",
-    {
-        "entities": fields.List(fields.Nested(entity_output_dto)),
-    },
-)
-
-
 schema_relation_output_dto = api.model(
     "SchemaRelationOutput",
     {
         "id": fields.Integer,
         "tag": fields.String,
         "description": fields.String,
-        "schema_id": fields.Integer,
     },
 )
 
@@ -199,6 +189,24 @@ schema_constraint_output_dto = api.model(
     },
 )
 
+model_step_dto = api.model(
+    "ModelStep",
+    {
+        "id": fields.Integer,
+        "type": fields.String,
+    },
+)
+
+schema_model_dto = api.model(
+    "SchemaModel",
+    {
+        "id": fields.Integer,
+        "name": fields.String,
+        "type": fields.String,
+        "step": fields.Nested(model_step_dto),
+    },
+)
+
 schema_output_dto = api.model(
     "SchemaOutput",
     {
@@ -208,9 +216,54 @@ schema_output_dto = api.model(
         "modellingLanguage": fields.String,
         "team_id": fields.Integer,
         "team_name": fields.String,
+        "models": fields.List(fields.Nested(schema_model_dto)),
         "schema_mentions": fields.List(fields.Nested(schema_mention_output_dto)),
         "schema_relations": fields.List(fields.Nested(schema_relation_output_dto)),
         "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
+    },
+)
+schema_mention_input_dto = api.model(
+    "SchemaMentionInput",
+    {
+        "tag": fields.String(required=True),
+        "description": fields.String(required=True),
+        "color": fields.String(required=False, example="#12AB3C"),
+        "entity_possible": fields.Boolean(default=True),
+    },
+)
+
+schema_relation_input_dto = api.model(
+    "SchemaRelationInput",
+    {
+        "tag": fields.String(required=True),
+        "description": fields.String(required=True),
+    },
+)
+
+schema_constraint_input_dto = api.model(
+    "SchemaConstraintInput",
+    {
+        "is_directed": fields.Boolean(required=True),
+        "relation_tag": fields.String(required=True),
+        "mention_head_tag": fields.String(required=True),
+        "mention_tail_tag": fields.String(required=True),
+    },
+)
+
+schema_input_dto = api.model(
+    "SchemaInput",
+    {
+        "name": fields.String(required=True),
+        "modelling_language": fields.String(required=True),
+        "schema_mentions": fields.List(
+            fields.Nested(schema_mention_input_dto), required=True
+        ),
+        "schema_relations": fields.List(
+            fields.Nested(schema_relation_input_dto), required=True
+        ),
+        "schema_constraints": fields.List(
+            fields.Nested(schema_constraint_input_dto), required=True
+        ),
     },
 )
 
@@ -245,10 +298,30 @@ team_user_output_dto = api.model(
     },
 )
 
+recommendation_model_settings_dto = api.model(
+    "RecommendationModelParameter",
+    {
+        "key": fields.String,
+        "value": fields.String,
+    },
+)
+
 document_edit_input_dto = api.model(
     "DocumentInput",
     {
         "document_id": fields.Integer(required=True, min=1),
+        "model_mention_id": fields.Integer(required=False),
+        "model_settings_mention": fields.List(
+            fields.Nested(recommendation_model_settings_dto)
+        ),
+        "model_entities_id": fields.Integer(required=False),
+        "model_settings_entities": fields.List(
+            fields.Nested(recommendation_model_settings_dto)
+        ),
+        "model_relation_id": fields.Integer(required=False),
+        "model_settings_relation": fields.List(
+            fields.Nested(recommendation_model_settings_dto)
+        ),
     },
 )
 
@@ -272,6 +345,9 @@ document_edit_output_dto = api.model(
         "id": fields.Integer,
         "schema_id": fields.Integer,
         "document_id": fields.Integer,
+        "mention_model_id": fields.Integer,
+        "entity_model_id": fields.Integer,
+        "relation_model_id": fields.Integer,
     },
 )
 
@@ -304,6 +380,15 @@ signup_input_dto = api.model(
         "password": fields.String(
             required=True, description="Password for the new user"
         ),
+    },
+)
+
+user_update_input_dto = api.model(
+    "UserUpdateInput",
+    {
+        "username": fields.String(description="Username of the new user"),
+        "email": fields.String(description="Email of the new user"),
+        "password": fields.String(description="Password for the new user"),
     },
 )
 
@@ -424,10 +509,10 @@ relation_model = api.model(
     "Relation",
     {
         "tag": fields.String(description="Relation tag"),
-        "head_mention": fields.Nested(
+        "mention_head": fields.Nested(
             head_mention_model, description="Head mention in the relation"
         ),
-        "tail_mention": fields.Nested(
+        "mention_tail": fields.Nested(
             tail_mention_model, description="Tail mention in the relation"
         ),
     },
@@ -492,6 +577,25 @@ mention_output_list_dto = api.model(
     },
 )
 
+entity_output_dto = api.model(
+    "EntityOutput",
+    {
+        "id": fields.Integer,
+        "isShownRecommendation": fields.Boolean,
+        "document_edit_id": fields.Integer,
+        "document_recommendation_id": fields.Integer,
+        "mentions": fields.List(fields.Nested(mention_output_dto)),
+    },
+)
+
+entity_output_list_dto = api.model(
+    "EntityOutputList",
+    {
+        "entities": fields.List(fields.Nested(entity_output_dto)),
+    },
+)
+
+
 schema_relation_model = api.model(
     "SchemaRelation",
     {
@@ -544,5 +648,89 @@ relation_output_list_dto = api.model(
         "relations": fields.List(
             fields.Nested(relation_output_model), description="List of relations"
         ),
+    },
+)
+
+heatmap_output_dto = api.model(
+    "HeatmapOutput",
+    {
+        "id": fields.Integer(description="Token ID"),
+        "text": fields.String(description="Token text"),
+        "document_index": fields.Integer(
+            description="Index of the token in the document"
+        ),
+        "sentence_index": fields.Integer(
+            description="Index of the token in the sentence"
+        ),
+        "pos_tag": fields.String(description="Part-of-speech tag"),
+        "score": fields.Float(description="Score associated with the token"),
+    },
+)
+
+heatmap_output_list_dto = api.model(
+    "HeatmapOutputList",
+    {
+        "items": fields.List(
+            fields.Nested(heatmap_output_dto),
+            description="List of heatmap token objects",
+        ),
+    },
+)
+
+model_train_input = api.model(
+    "ModelTrainInput",
+    {
+        "model_name": fields.String(description="Name of trained model"),
+        "model_type": fields.String(description="Type of trained model"),
+        "model_steps": fields.List(
+            fields.String(
+                description="Steps this model can be used for, valid steps: MENTIONS, ENTITIES, RELATIONS"
+            ),
+        ),
+    },
+)
+
+model_train_output = api.model(
+    "ModelTrainOutput",
+    {
+        "id": fields.Integer(),
+        "name": fields.String(description="Name of trained model"),
+        "type": fields.String(description="Type of trained model"),
+        "step": fields.Nested(model_step_dto),
+        "schema_id": fields.Integer(description="Schema ID"),
+    },
+)
+
+model_train_output_list_dto = api.model(
+    "ModelTrainOutputList", {"models": fields.List(fields.Nested(model_train_output))}
+)
+
+recommendation_model_settings_output_dto = api.model(
+    "RecommendationModelParameterOutput",
+    {
+        "id": fields.Integer,
+        "key": fields.String,
+        "value": fields.String,
+    },
+)
+
+document_edit_model_output_dto = api.model(
+    "DocumentEditModelOutput",
+    {
+        "id": fields.Integer(description="ID"),
+        "document_edit_id": fields.Integer(description="Document Edit ID"),
+        "name": fields.String(description="Name of trained model"),
+        "type": fields.String(description="Type of trained model"),
+        "step": fields.Nested(model_step_dto),
+        "settings": fields.List(
+            fields.Nested(recommendation_model_settings_output_dto)
+        ),
+    },
+)
+
+document_edit_model_output_list_dto = api.model(
+    "DocumentEditModelOutputList",
+    {
+        "models": fields.List(fields.Nested(document_edit_model_output_dto)),
     },
 )

@@ -2,7 +2,6 @@ import typing
 
 from app.models import Mention
 from app.repositories.document_repository import DocumentRepository
-from app.repositories.schema_repository import ModellingLanguagesByName
 from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
@@ -115,9 +114,8 @@ class ImportService:
         self,
         pet_documents: typing.List[any],
         project_id: int,
-        user_id: int,
     ):
-
+        user_id = self._user_service.get_logged_in_user_id()
         for pet_document in pet_documents:
             self._import_pet_document(pet_document, project_id, user_id)
 
@@ -211,56 +209,6 @@ class ImportService:
                 mentions_by_index.get(relation["tailMentionIndex"]).id,
                 document_edit["id"],
             )
-
-    def import_schema(self, schema, team_id: int) -> any:
-        user_id = self._user_service.get_logged_in_user_id()
-        self._user_service.check_user_in_team(user_id, team_id)
-
-        modelling_language_id = ModellingLanguagesByName.get(
-            schema.get("modelling_language")
-        )
-
-        if modelling_language_id is None:
-            raise ValueError(
-                f"Modelling language {schema.get("modelling_language")} is not supported."
-            )
-
-        name = schema.get("name")
-        if name is None:
-            raise ValueError("Schema name is required.")
-
-        created_schema = self._schema_service.create_schema(
-            modelling_language_id, team_id, name
-        )
-
-        schema_mentions_by_tag = {}
-        for schema_mention in schema["schema_mentions"]:
-            created_mention = self._schema_service.create_schema_mention(
-                created_schema.id,
-                schema_mention["tag"],
-                schema_mention["description"],
-                schema_mention["entity_possible"],
-            )
-            schema_mentions_by_tag[schema_mention["tag"]] = created_mention
-
-        schema_relations_by_tag = {}
-        for schema_relation in schema["schema_relations"]:
-            created_relation = self._schema_service.create_schema_relation(
-                created_schema.id,
-                schema_relation.get("tag"),
-                schema_relation.get("description"),
-            )
-            schema_relations_by_tag[schema_relation["tag"]] = created_relation
-
-        for constraint in schema["schema_constraints"]:
-            self._schema_service.create_schema_constraint(
-                schema_relations_by_tag[constraint.get("relation_tag")].id,
-                schema_mentions_by_tag[constraint.get("mention_head_tag")].id,
-                schema_mentions_by_tag[constraint.get("mention_tail_tag")].id,
-                constraint.get("is_directed"),
-            )
-
-        return self._schema_service.get_schema_by_id(created_schema.id)
 
 
 import_service = ImportService(

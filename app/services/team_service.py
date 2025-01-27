@@ -1,4 +1,3 @@
-from flask_jwt_extended import get_jwt_identity
 from werkzeug.exceptions import BadRequest, Conflict, NotFound
 
 from app.repositories.team_repository import TeamRepository
@@ -9,7 +8,7 @@ class TeamService:
     __team_repository: TeamRepository
     user_service: UserService
 
-    def __init__(self, team_repository: TeamRepository, user_service):
+    def __init__(self, team_repository, user_service):
         self.__team_repository = team_repository
         self.user_service = user_service
 

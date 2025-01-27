@@ -1,19 +1,26 @@
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace
+from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.entity_service import entity_service
 from werkzeug.exceptions import BadRequest
-from app.dtos import entity_output_list_dto, entity_input_dto, entity_output_dto
+from app.dtos import (
+    entity_output_list_dto,
+    entity_input_dto,
+    entity_output_dto,
+)
 from flask import request
 
 ns = Namespace("entities", description="Entity related operations")
 
 
+class EntityBaseRoute(AuthorizedBaseRoute):
+    service = entity_service
+
+
 @ns.route("/<int:document_edit_id>")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class EntityQueryResource(Resource):
-    service = entity_service
+class EntityQueryResource(EntityBaseRoute):
 
     @ns.doc(description="Get Entities of document annotation")
     @ns.marshal_with(entity_output_list_dto)
@@ -27,11 +34,9 @@ class EntityQueryResource(Resource):
 
 @ns.route("/<int:entity_id>")
 @ns.doc(params={"entity_id": "An Entity ID"})
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class EntityDeletionResource(Resource):
-    service = entity_service
+class EntityDeletionResource(EntityBaseRoute):
 
     @ns.doc(description="Delete an entity")
     def delete(self, entity_id):
@@ -40,11 +45,9 @@ class EntityDeletionResource(Resource):
 
 
 @ns.route("")
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class EntityCreationResource(Resource):
-    service = entity_service
+class EntityCreationResource(EntityBaseRoute):
 
     @ns.doc(description="Create a new entity")
     @ns.marshal_with(entity_output_dto)

@@ -1,29 +1,32 @@
 from sqlalchemy import exc
-from flask_jwt_extended import get_jwt_identity, jwt_required
 from werkzeug.exceptions import BadRequest
-from flask_restx import Resource, Namespace
+from flask_restx import Namespace
 from flask import request
+
+
 from app.dtos import (
     team_input_dto,
     team_member_input_dto,
     team_user_output_list_dto,
     team_user_output_dto,
 )
+from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.team_service import team_service
 
 ns = Namespace("teams", description="Team related operations")
 
 
-@ns.route("/<int:team_id>/members")
-@ns.response(400, "Invalid input")
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class TeamMemberRoutes(Resource):
+class TeamBaseRoute(AuthorizedBaseRoute):
     service = team_service
 
-    @jwt_required()
+
+@ns.route("/<int:team_id>/members")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class TeamMemberRoutes(TeamBaseRoute):
+
     @ns.doc(description="Add a user to a team")
-    @ns.expect(team_member_input_dto, validate=True)
+    @ns.expect(team_member_input_dto)
     @ns.marshal_with(team_user_output_dto)
     def post(self, team_id):
         request_data = request.get_json()
@@ -35,9 +38,8 @@ class TeamMemberRoutes(Resource):
 
         return response
 
-    @jwt_required()
     @ns.doc(description="Remove a user from a team")
-    @ns.expect(team_member_input_dto, validate=True)
+    @ns.expect(team_member_input_dto)
     @ns.marshal_with(team_user_output_dto)
     def delete(self, team_id):
         request_data = request.get_json()
@@ -51,22 +53,18 @@ class TeamMemberRoutes(Resource):
 
 
 @ns.route("")
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class TeamRoutes(Resource):
-    service = team_service
+class TeamRoutes(TeamBaseRoute):
 
-    @jwt_required()
     @ns.doc(description="Fetch all teams of current logged-in user")
     @ns.marshal_with(team_user_output_list_dto)
     def get(self):
         response = self.service.get_teams_by_user()
         return response
 
-    @jwt_required()
     @ns.doc(description="Create a new team")
-    @ns.expect(team_input_dto, validate=True)
+    @ns.expect(team_input_dto)
     @ns.marshal_with(team_user_output_dto)
     def post(self):
         try:
@@ -83,15 +81,14 @@ class TeamRoutes(Resource):
 
 
 @ns.route("/<int:team_id>")
-class TeamUpdateResource(Resource):
+class TeamUpdateResource(TeamBaseRoute):
     """API endpoint to update team properties."""
 
-    @jwt_required()
-    @ns.expect(team_input_dto, validate=True)
+    @ns.expect(team_input_dto)
     @ns.marshal_with(team_user_output_dto)
     def put(self, team_id):
         """Update the name of a team."""
         data = request.json
 
-        team = team_service.update_team_name(team_id, data["name"])
+        team = self.service.update_team_name(team_id, data["name"])
         return team

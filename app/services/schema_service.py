@@ -1,7 +1,8 @@
-import typing
 import random
+import re
+import typing
 
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, Conflict
 
 from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
 from app.repositories.schema_repository import SchemaRepository
@@ -12,7 +13,7 @@ class SchemaService:
     __schema_repository: SchemaRepository
     user_service: UserService
 
-    def __init__(self, schema_repository: SchemaRepository, user_service: UserService):
+    def __init__(self, schema_repository, user_service):
         self.__schema_repository = schema_repository
         self.user_service = user_service
 
@@ -47,6 +48,7 @@ class SchemaService:
             "modellingLanguage": schema.modelling_language,
             "team_id": schema.team_id,
             "team_name": schema.team_name,
+            "models": self.get_models_by_schema(schema.id),
             "schema_mentions": [
                 {
                     "id": mention.id,
@@ -101,9 +103,15 @@ class SchemaService:
         return {"schemas": [self.get_schema_by_id(schema.id) for schema in schemas]}
 
     def create_schema(self, modelling_language_id, team_id, name) -> Schema:
-        return self.__schema_repository.create_schema(
+        schema = self.__schema_repository.create_schema(
             modelling_language_id, team_id, name
         )
+        steps = self.__schema_repository.get_model_steps()
+        steps = [step.type for step in steps]
+        schema.models = self.__schema_repository.add_model_to_schema(
+            schema.id, "OpenAI Large Language Model", "llm", steps
+        )
+        return schema
 
     def create_schema_mention(
         self,
@@ -113,7 +121,7 @@ class SchemaService:
         entity_possible: bool,
         color: typing.Optional[str] = None,
     ) -> SchemaMention:
-        if color is None:
+        if color is None or not self.validate_color_code(color):
             color = self.generate_random_hex_color()
         return self.__schema_repository.create_schema_mention(
             schema_id, tag, description, entity_possible, color
@@ -220,6 +228,147 @@ class SchemaService:
         if schema_relation is None:
             raise BadRequest("Relation Tag not allowed")
         return schema_relation
+
+    def create_extended_schema(self, schema, team_id: int) -> any:
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user_id, team_id)
+
+        modelling_language = self.__schema_repository.get_modelling_laguage_by_name(
+            schema["modelling_language"]
+        )
+        if modelling_language is None:
+            raise BadRequest("Modelling Language not allowed")
+
+        if self.__has_duplicates(schema["schema_mentions"], key="tag"):
+            raise Conflict("Duplicate tags found in schema mentions.")
+        if self.__has_duplicates(schema["schema_relations"], key="tag"):
+            raise Conflict("Duplicate tags found in schema relations.")
+        if self.__has_duplicates(
+            schema["schema_constraints"],
+            key=lambda x: (
+                x["mention_head_tag"],
+                x["mention_tail_tag"],
+                x["relation_tag"],
+            ),
+        ):
+            raise Conflict("Duplicate constraints found in schema.")
+
+        created_schema = self.create_schema(
+            modelling_language.id, team_id, schema["name"]
+        )
+
+        schema_mentions_by_tag = {}
+        for schema_mention in schema["schema_mentions"]:
+            created_mention = self.create_schema_mention(
+                created_schema.id,
+                schema_mention.get("tag"),
+                schema_mention.get("description"),
+                schema_mention.get("entity_possible"),
+                schema_mention.get("color"),
+            )
+            schema_mentions_by_tag[schema_mention["tag"]] = created_mention
+
+        schema_relations_by_tag = {}
+        for schema_relation in schema["schema_relations"]:
+            created_relation = self.create_schema_relation(
+                created_schema.id,
+                schema_relation.get("tag"),
+                schema_relation.get("description"),
+            )
+            schema_relations_by_tag[schema_relation["tag"]] = created_relation
+
+        for constraint in schema["schema_constraints"]:
+            self.create_schema_constraint(
+                schema_relations_by_tag[constraint.get("relation_tag")].id,
+                schema_mentions_by_tag[constraint.get("mention_head_tag")].id,
+                schema_mentions_by_tag[constraint.get("mention_tail_tag")].id,
+                constraint.get("is_directed"),
+            )
+
+        return self.get_schema_by_id(created_schema.id)
+
+    def __has_duplicates(self, items, key):
+        seen = set()
+        for item in items:
+            identifier = key(item) if callable(key) else item[key]
+            if identifier in seen:
+                return True
+            seen.add(identifier)
+        return False
+
+    def validate_color_code(self, string):
+        hexa_code = re.compile(r"^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
+        return bool(re.match(hexa_code, string))
+
+    def train_model_for_schema(self, schema_id, model_name, model_type, steps):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+        duplicate = self.__schema_repository.get_model_by_name(model_name)
+        if duplicate is not None:
+            raise BadRequest("Model Name already exists")
+
+        # TODO call training endpoint
+
+        models = self.__schema_repository.add_model_to_schema(
+            schema_id, model_name, model_type, steps
+        )
+        return {
+            "models": [
+                {
+                    "id": model.id,
+                    "name": model.model_name,
+                    "type": model.model_type,
+                    "step": {
+                        "id": model.model_step_id,
+                        "type": model.model_step_name,
+                    },
+                    "schema_id": model.schema_id,
+                }
+                for model in models
+            ]
+        }
+
+    def check_models_in_schema(
+        self, mention_model_id, entity_model_id, relation_model_id, schema_id
+    ):
+        schema_models = self.__schema_repository.get_models_by_schema(schema_id)
+        validated = 0
+        for schema_model in schema_models:
+            if (
+                schema_model.id == mention_model_id
+                and schema_model.model_step_id == 1  # "MENTIONS"
+            ):
+                validated += 1
+            if (
+                schema_model.id == entity_model_id
+                and schema_model.model_step_id == 2  # "ENTITIES"
+            ):
+                validated += 1
+            if (
+                schema_model.id == relation_model_id
+                and schema_model.model_step_id == 3  # "RELATIONS"
+            ):
+                validated += 1
+
+        if validated != 3:
+            raise BadRequest(
+                "At least one model not found for given steps in this schema"
+            )
+
+    def get_models_by_schema(self, schema_id):
+        models = self.__schema_repository.get_models_by_schema(schema_id)
+        return [
+            {
+                "id": model.id,
+                "name": model.model_name,
+                "type": model.model_type,
+                "step": {
+                    "id": model.model_step_id,
+                    "type": model.model_step_name,
+                },
+            }
+            for model in models
+        ]
 
     def get_schema_mentions_by_schema(self, schema_id):
         schema_mentions = self.__schema_repository.get_schema_mentions_by_schema(

@@ -4,22 +4,14 @@ from flask import session
 from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized, NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.repositories.user_repository import UserRepository
-from app.repositories.user_team_repository import UserTeamRepository
 from flask_jwt_extended import create_access_token, get_jwt_identity
 
 
 class UserService:
     __user_repository: UserRepository
-    user_team_repository: UserTeamRepository
 
-    def __init__(self, user_repository, user_team_repository):
+    def __init__(self, user_repository):
         self.__user_repository = user_repository
-        self.user_team_repository = user_team_repository
-
-    @staticmethod
-    def check_authentication(user_id):
-        if "user_id" not in session or user_id != session["user_id"]:
-            raise Forbidden("You need to be logged in")
 
     def check_user_in_team(self, user_id, team_id):
         if self.__user_repository.check_user_in_team(user_id, team_id) is None:
@@ -31,9 +23,6 @@ class UserService:
             return user_id
         except Exception as e:
             raise Unauthorized(str(e))
-
-    def get_logged_in_user_team_id(self):
-        return self.user_team_repository.get_user_team_id(self.get_logged_in_user_id())
 
     def get_user_by_email(self, mail):
         return self.__user_repository.get_user_by_email(mail)
@@ -89,21 +78,16 @@ class UserService:
             raise Forbidden("You cannot access this project")
 
     def login(self, email, password):
-        try:
-            user = self.get_user_by_email(email)
-            if not user:
-                raise Unauthorized("Invalid email or password")
+        user = self.get_user_by_email(email)
+        if not user:
+            raise Unauthorized("Invalid email or password")
 
-            if not check_password_hash(user.password, password):
-                raise Unauthorized("Invalid email or password")
-            user_id_str = str(user.id)
-            expires_delta = timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
-            token = create_access_token(
-                identity=user_id_str, expires_delta=expires_delta
-            )
-            return {"token": token}
-        except Exception as e:
-            raise
+        if not check_password_hash(user.password, password):
+            raise Unauthorized("Invalid email or password")
+        user_id_str = str(user.id)
+        expires_delta = timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
+        token = create_access_token(identity=user_id_str, expires_delta=expires_delta)
+        return {"token": token}
 
     def update_user_data(self, username=None, email=None, password=None):
         """
@@ -126,16 +110,17 @@ class UserService:
         if email and self.get_user_by_email(email):
             raise BadRequest("Email already exists")
 
-        try:
-            updated_user = self.__user_repository.update_user_data(
-                user_id=user_id,
-                username=username,
-                email=email,
-                password=password,
-            )
-            return updated_user
-        except NotFound as e:
-            raise NotFound(str(e))
+        updated_user = self.__user_repository.update_user_data(
+            user_id=user_id,
+            username=username,
+            email=email,
+            password=password,
+        )
+        return {
+            "id": updated_user.id,
+            "username": updated_user.username,
+            "email": updated_user.email,
+        }
 
     def get_user_by_id(self, user_id):
         user = self.__user_repository.get_user_by_id(user_id)
@@ -144,4 +129,4 @@ class UserService:
         return {"id": user.id, "username": user.username, "email": user.email}
 
 
-user_service = UserService(UserRepository(), UserTeamRepository())
+user_service = UserService(UserRepository())

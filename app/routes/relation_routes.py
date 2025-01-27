@@ -1,8 +1,7 @@
-from app.db import transactional
-from app.services.relation_services import relation_service, RelationService
-from werkzeug.exceptions import NotFound, BadRequest
-from flask_restx import Namespace, Resource
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.routes.base_routes import AuthorizedBaseRoute
+from app.services.relation_services import relation_service
+from werkzeug.exceptions import BadRequest
+from flask_restx import Namespace
 from app.dtos import (
     relation_output_list_dto,
     relation_output_dto,
@@ -14,15 +13,16 @@ from flask import request
 ns = Namespace("relations", description="Relation related operations")
 
 
-@ns.route("/<int:document_edit_id>")
-@ns.doc(params={"document_edit_id": "A Document Edit ID"})
-@ns.response(400, "Invalid input")
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class RelationQueryResource(Resource):
+class RelationBaseRoute(AuthorizedBaseRoute):
     service = relation_service
 
-    @jwt_required()
+
+@ns.route("/<int:document_edit_id>")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class RelationQueryResource(RelationBaseRoute):
+
     @ns.doc(description="Get Relations of document annotation")
     @ns.marshal_with(relation_output_list_dto)
     def get(self, document_edit_id):
@@ -35,18 +35,15 @@ class RelationQueryResource(Resource):
 
 @ns.route("/<int:relation_id>")
 @ns.doc(params={"relation_id": "A Relation ID"})
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class RelationDeleteResource(Resource):
-    service = relation_service
+class RelationDeleteResource(RelationBaseRoute):
 
     @ns.doc(description="Delete a Relation by ID")
     def delete(self, relation_id):
         response = self.service.delete_relation_by_id(relation_id)
-        return response, 200
+        return response
 
-    @jwt_required()
     @ns.expect(relation_update_input_dto)
     @ns.marshal_with(relation_output_dto)
     @ns.doc(description="Update a Relation by ID")
@@ -67,13 +64,10 @@ class RelationDeleteResource(Resource):
 
 
 @ns.route("")
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class RelationCreationResource(Resource):
-    service = relation_service
+class RelationCreationResource(RelationBaseRoute):
 
-    @jwt_required()
     @ns.doc(description="Create a new relation")
     @ns.marshal_with(relation_output_dto)
     @ns.expect(relation_input_dto)
@@ -84,12 +78,9 @@ class RelationCreationResource(Resource):
 
 @ns.route("/<int:relation_id>/accept")
 @ns.doc(params={"relation_id": "A Relation ID"})
-@ns.response(400, "Invalid input")
 @ns.response(404, "Relation not found")
-class RelationAcceptResource(Resource):
+class RelationAcceptResource(RelationBaseRoute):
 
-    @jwt_required()
-    @transactional
     @ns.marshal_with(relation_output_dto)
     @ns.doc(description="Accept a relation by copying it and marking it as processed")
     def post(self, relation_id):
@@ -97,21 +88,18 @@ class RelationAcceptResource(Resource):
         Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
         """
 
-        return relation_service.accept_relation(relation_id)
+        return self.service.accept_relation(relation_id)
 
 
 @ns.route("/<int:relation_id>/reject")
 @ns.doc(params={"relation_id": "A Relation ID"})
-@ns.response(400, "Invalid input")
 @ns.response(404, "Relation not found")
-class RelationRejectResource(Resource):
+class RelationRejectResource(RelationBaseRoute):
 
-    @jwt_required()
-    @transactional
     @ns.doc(description="Reject a relation by marking it as processed")
     def post(self, relation_id):
         """
         Reject a relation by setting isShownRecommendation to False.
         """
 
-        return relation_service.reject_relation(relation_id)
+        return self.service.reject_relation(relation_id)

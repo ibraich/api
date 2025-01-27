@@ -1,7 +1,6 @@
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace
 from werkzeug.exceptions import BadRequest
-
-from app.db import transactional
+from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.document_service import document_service
 from flask import request
 from app.dtos import (
@@ -10,32 +9,28 @@ from app.dtos import (
     document_output_dto,
     document_delete_output_dto,
 )
-from flask_jwt_extended import jwt_required
 
 ns = Namespace("documents", description="Document related operations")
 
 
-@ns.route("")
-@ns.response(400, "Invalid input")
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class DocumentRoutes(Resource):
+class DocumentBaseRoute(AuthorizedBaseRoute):
     service = document_service
 
-    @jwt_required()
+
+@ns.route("")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentRoutes(DocumentBaseRoute):
+
     @ns.doc(description="Get all documents current user has access to")
     @ns.marshal_with(document_output_dto, as_list=True)
     def get(self):
         response = self.service.get_documents_by_user()
         return response
 
-    @jwt_required()
-    @transactional
     @ns.doc(description="Upload a document to a specific project.")
-    @ns.expect(document_create_dto, validate=True)
+    @ns.expect(document_create_dto)
     @ns.response(201, "Document uploaded successfully.")
-    @ns.response(400, "Invalid input.")
-    @ns.response(403, "Authorization required.")
     @ns.response(404, "Data not found.")
     @ns.marshal_with(document_create_output_dto)
     def post(self):
@@ -58,13 +53,10 @@ class DocumentRoutes(Resource):
 
 @ns.route("/project/<int:project_id>")
 @ns.doc(params={"project_id": "A Project ID"})
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class DocumentProjectRoutes(Resource):
-    service = document_service
+class DocumentProjectRoutes(DocumentBaseRoute):
 
-    @jwt_required()
     @ns.doc(description="Get all documents of project")
     @ns.marshal_with(document_output_dto)
     def get(self, project_id):
@@ -76,15 +68,12 @@ class DocumentProjectRoutes(Resource):
 
 @ns.route("/<int:document_id>")
 @ns.doc(params={"document_id": "Document ID to soft-delete"})
-@ns.response(400, "Invalid input")
 @ns.response(404, "Document not found")
 @ns.response(200, "Document set to inactive successfully")
-class DocumentDeletionResource(Resource):
-    service = document_service  # an instance of DocumentService
+class DocumentDeletionResource(DocumentBaseRoute):
 
-    @jwt_required()
     @ns.marshal_with(document_delete_output_dto)
     @ns.doc(description="Soft-delete a Document by setting 'active' to False")
     def delete(self, document_id):
         response = self.service.soft_delete_document(document_id)
-        return response, 200
+        return response

@@ -1,11 +1,9 @@
 from flask import request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.exceptions import NotFound, BadRequest
-from flask_restx import Resource, Namespace
+from werkzeug.exceptions import BadRequest
+from flask_restx import Namespace
 
-
-from app.db import transactional
-from app.services.mention_services import mention_service, MentionService
+from app.routes.base_routes import AuthorizedBaseRoute
+from app.services.mention_services import mention_service
 from app.dtos import (
     mention_output_dto,
     mention_output_list_dto,
@@ -16,15 +14,15 @@ from app.dtos import (
 ns = Namespace("mentions", description="Mention related operations")
 
 
-@ns.route("")
-@ns.response(400, "Invalid input")
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class MentionResource(Resource):
+class MentionBaseRoute(AuthorizedBaseRoute):
     service = mention_service
 
-    @jwt_required()
-    @transactional
+
+@ns.route("")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class MentionResource(MentionBaseRoute):
+
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
     def post(self):
@@ -34,13 +32,10 @@ class MentionResource(Resource):
 
 @ns.route("/<int:document_edit_id>")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class MentionQueryResource(Resource):
-    service = mention_service
+class MentionQueryResource(MentionBaseRoute):
 
-    @jwt_required()
     @ns.doc(description="Get Mentions of document annotation")
     @ns.marshal_with(mention_output_list_dto)
     def get(self, document_edit_id):
@@ -53,10 +48,9 @@ class MentionQueryResource(Resource):
 
 @ns.route("/<int:mention_id>")
 @ns.doc(params={"mention_id": "A Mention ID"})
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class MentionDeletionResource(Resource):
+class MentionDeletionResource(MentionBaseRoute):
     service = mention_service
 
     @ns.doc(description="Delete a mention and its related relations")
@@ -64,7 +58,6 @@ class MentionDeletionResource(Resource):
         response = self.service.delete_mention(mention_id)
         return response
 
-    @jwt_required()
     @ns.expect(mention_update_input_dto)
     @ns.marshal_with(mention_output_dto)
     def patch(self, mention_id):
@@ -82,10 +75,8 @@ class MentionDeletionResource(Resource):
 @ns.doc(params={"mention_id": "A Mention ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Mention not found")
-class MentionAcceptResource(Resource):
+class MentionAcceptResource(MentionBaseRoute):
 
-    @jwt_required()
-    @transactional
     @ns.doc(description="Accept a mention by copying it and marking it as processed")
     @ns.marshal_with(mention_output_dto)
     def post(self, mention_id):
@@ -93,21 +84,19 @@ class MentionAcceptResource(Resource):
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
         """
 
-        return mention_service.accept_mention(mention_id)
+        return self.service.accept_mention(mention_id)
 
 
 @ns.route("/<int:mention_id>/reject")
 @ns.doc(params={"mention_id": "A Mention ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Mention not found")
-class MentionRejectResource(Resource):
+class MentionRejectResource(MentionBaseRoute):
 
-    @jwt_required()
-    @transactional
     @ns.doc(description="Reject a mention by marking it as processed")
     def post(self, mention_id):
         """
         Reject a mention by setting isShownRecommendation to False.
         """
 
-        return mention_service.reject_mention(mention_id)
+        return self.service.reject_mention(mention_id)

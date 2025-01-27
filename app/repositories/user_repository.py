@@ -11,14 +11,14 @@ from app.models import (
     DocumentRecommendation,
 )
 from app.repositories.base_repository import BaseRepository
-from app.db import db, Session
 from werkzeug.security import generate_password_hash
 
 
 class UserRepository(BaseRepository):
     def check_user_in_team(self, user_id, team_id):
         return (
-            Session.query(UserTeam)
+            self.get_session()
+            .query(UserTeam)
             .join(Team, Team.id == UserTeam.team_id)
             .filter(UserTeam.user_id == user_id, UserTeam.team_id == team_id)
             .filter(Team.active == True)
@@ -26,11 +26,12 @@ class UserRepository(BaseRepository):
         )
 
     def get_user_by_email(self, mail):
-        return db.session.query(User).filter(User.email == mail).first()
+        return self.get_session().query(User).filter(User.email == mail).first()
 
     def get_user_by_document_edit_id(self, document_edit_id) -> int:
         document_edit = (
-            Session.query(DocumentEdit)
+            self.get_session()
+            .query(DocumentEdit)
             .filter(DocumentEdit.id == document_edit_id)
             .filter(DocumentEdit.active == True)
             .first()
@@ -44,13 +45,13 @@ class UserRepository(BaseRepository):
 
     def create_user(self, username, email, hashed_password):
         new_user = User(username=username, email=email, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+        self.get_session().add(new_user)
         return new_user
 
     def check_user_document_accessible(self, user_id, document_id):
         return (
-            Session.query(
+            self.get_session()
+            .query(
                 Document,
                 Project.schema_id,
                 DocumentRecommendation.id.label("document_recommendation_id"),
@@ -73,7 +74,8 @@ class UserRepository(BaseRepository):
 
     def check_user_schema_accessible(self, user_id, schema_id):
         return (
-            Session.query(UserTeam)
+            self.get_session()
+            .query(UserTeam)
             .join(Team, UserTeam.team_id == Team.id)
             .join(Schema, Schema.team_id == Team.id)
             .filter((Schema.id == schema_id) & (UserTeam.user_id == user_id))
@@ -83,18 +85,11 @@ class UserRepository(BaseRepository):
 
     def check_user_project_accessible(self, user_id, project_id):
         return (
-            Session.query(UserTeam)
+            self.get_session()
+            .query(UserTeam)
             .join(Project, Project.team_id == UserTeam.team_id)
             .filter((Project.id == project_id) & (UserTeam.user_id == user_id))
             .first()
-        )
-
-    def check_user_in_team(self, user_id, team_id):
-        return (
-            Session.query(UserTeam)
-            .join(Team, Team.id == UserTeam.team_id)
-            .filter(and_(UserTeam.user_id == user_id, UserTeam.team_id == team_id))
-            .one_or_none()
         )
 
     def update_user_data(self, user_id, username=None, email=None, password=None):
@@ -107,7 +102,7 @@ class UserRepository(BaseRepository):
         :param password: New password, will be hashed before storing (optional).
         :raises NotFound: If the user is not found.
         """
-        user = Session.query(User).filter_by(id=user_id).one_or_none()
+        user = self.get_session().query(User).filter_by(id=user_id).one_or_none()
         if not user:
             raise NotFound(f"User with ID {user_id} not found.")
 
@@ -121,4 +116,4 @@ class UserRepository(BaseRepository):
         return user
 
     def get_user_by_id(self, user_id):
-        return Session.query(User).filter_by(id=user_id).first()
+        return self.get_session().query(User).filter_by(id=user_id).first()
