@@ -1,4 +1,6 @@
+import requests
 from flask_restx import Namespace, Resource
+from werkzeug.exceptions import NotFound, BadRequest
 
 
 from app.services.document_edit_service import document_edit_service
@@ -9,6 +11,7 @@ from app.dtos import (
     document_overtake_dto,
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
+    heatmap_output_list_dto,
     document_edit_model_output_list_dto,
 )
 from flask_jwt_extended import jwt_required
@@ -101,6 +104,54 @@ class DocumentEditResource(Resource):
         return response
 
 
+@ns.route("/<int:document_id>/heatmap")
+@ns.doc(params={"document_id": "A Document ID"})
+@ns.response(400, "Invalid input")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+@ns.response(500, "Internal server error")
+class DocumentEditsSenderResource(Resource):
+    service = document_edit_service
+
+    @jwt_required()
+    @ns.doc(
+        description="Send all DocumentEdit data for a specific Document ID to an external service"
+    )
+    @ns.expect(finished_document_edit_output_dto, validate=False)
+    @ns.marshal_with(heatmap_output_list_dto)
+    def post(self, document_id):
+        try:
+            transformed_edits = self.service.get_all_document_edits_by_document(
+                document_id
+            )
+
+            external_endpoint = (
+                "http://annotation_difference_calc:8443/difference-calc/heatmap"
+            )
+
+            headers = {
+                "accept": "application/json",
+                "Content-Type": "application/json",
+            }
+            response = requests.post(
+                external_endpoint, json=transformed_edits, headers=headers
+            )
+
+            # Handle response from the external endpoint
+            if response.status_code != 200:
+                return {
+                    "message": f"Failed to send data: {response.text}"
+                }, response.status_code
+
+            return {"items": response.json()}, 200
+
+        except NotFound as e:
+            return {"message": str(e)}, 404
+        except BadRequest as e:
+            return {"message": str(e)}, 400
+        except Exception as e:
+            return {"message": f"An unexpected error occurred: {str(e)}"}, 500
+          
 @ns.route("/<int:document_edit_id>/model")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
 @ns.response(400, "Invalid input")

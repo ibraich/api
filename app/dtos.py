@@ -500,10 +500,10 @@ relation_model = api.model(
     "Relation",
     {
         "tag": fields.String(description="Relation tag"),
-        "head_mention": fields.Nested(
+        "mention_head": fields.Nested(
             head_mention_model, description="Head mention in the relation"
         ),
-        "tail_mention": fields.Nested(
+        "mention_tail": fields.Nested(
             tail_mention_model, description="Tail mention in the relation"
         ),
     },
@@ -642,6 +642,31 @@ relation_output_list_dto = api.model(
     },
 )
 
+heatmap_output_dto = api.model(
+    "HeatmapOutput",
+    {
+        "id": fields.Integer(description="Token ID"),
+        "text": fields.String(description="Token text"),
+        "document_index": fields.Integer(
+            description="Index of the token in the document"
+        ),
+        "sentence_index": fields.Integer(
+            description="Index of the token in the sentence"
+        ),
+        "pos_tag": fields.String(description="Part-of-speech tag"),
+        "score": fields.Float(description="Score associated with the token"),
+    },
+)
+
+heatmap_output_list_dto = api.model(
+    "HeatmapOutputList",
+    {
+        "items": fields.List(
+            fields.Nested(heatmap_output_dto),
+            description="List of heatmap token objects",
+        ),
+    },
+)
 
 model_train_input = api.model(
     "ModelTrainInput",
