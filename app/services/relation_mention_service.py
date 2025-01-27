@@ -1,10 +1,7 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict
+from werkzeug.exceptions import BadRequest, NotFound
 
-from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
-from app.services.schema_service import schema_service
 from app.services.user_service import user_service
-from app.services.mention_services import mention_service
 
 
 class RelationMentionService:
