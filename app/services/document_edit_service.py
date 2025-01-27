@@ -66,6 +66,17 @@ class DocumentEditService:
             document_edit.id,
             document_recommendation.id,
         )
+
+        # Create mention recommendation
+        mention_recommendations = (
+            self.document_recommendation_service.get_mention_recommendation(
+                document_id, document.schema_id
+            )
+        )
+        self.mention_service.create_recommended_mention(
+            document_edit.id, document_recommendation.id, mention_recommendations
+        )
+
         return {
             "id": document_edit.id,
             "schema_id": document_edit.schema_id,
@@ -76,7 +87,6 @@ class DocumentEditService:
         return self.__document_edit_repository.get_document_edit_by_document(
             document_id, user_id
         )
-
 
     def overtake_document_edit(self, document_edit_id):
 
@@ -191,7 +201,6 @@ class DocumentEditService:
             "mentions": transformed_mentions,
             "relations": transformed_relations,
         }
-
 
 
 document_edit_service = DocumentEditService(
