@@ -362,6 +362,18 @@ class MentionService:
         self.__mention_repository.update_is_shown_recommendation(mention_id, False)
         return {"message": "Mention successfully rejected."}
 
+    def create_recommended_mention(
+        self, document_edit_id, document_recommendation_id, mention_recommendations
+    ):
+        for mention_recommendation in mention_recommendations:
+            mention = self.__mention_repository.create_mention(
+                mention_recommendation["mention_schema_id"],
+                document_edit_id,
+                document_recommendation_id,
+            )
+            for token_id in mention_recommendation["tokens"]:
+                self.token_mention_service.create_token_mention(token_id, mention.id)
+
 
 mention_service = MentionService(
     MentionRepository(),
