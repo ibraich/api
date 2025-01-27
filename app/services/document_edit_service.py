@@ -225,12 +225,12 @@ class DocumentEditService:
         transformed_relations = [
             {
                 "tag": relation["tag"],
-                "head_mention": {
+                "mention_head": {
                     "tag": relation["head_mention"]["tag"],
                     "tokens": relation["head_mention"]["tokens"],
                     "entity": {"id": relation["head_mention"]["entity"]},
                 },
-                "tail_mention": {
+                "mention_tail": {
                     "tag": relation["tail_mention"]["tag"],
                     "tokens": relation["tail_mention"]["tokens"],
                     "entity": {"id": relation["tail_mention"]["entity"]},
@@ -247,6 +247,22 @@ class DocumentEditService:
             "relations": transformed_relations,
         }
 
+    def get_all_document_edits_by_document(self, document_id):
+        document_edits = (
+            self.__document_edit_repository.get_all_document_edits_by_document(
+                document_id
+            )
+        )
+        if not document_edits:
+            raise NotFound("No DocumentEdits found for document ID")
+
+        transformed_edits = [
+            self.get_document_edit_by_id(document_edit.id)
+            for document_edit in document_edits
+        ]
+
+        return transformed_edits
+      
     def get_document_edit_model(self, document_edit_id):
         settings = self.__document_edit_repository.get_document_edit_model(
             document_edit_id
