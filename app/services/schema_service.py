@@ -1,9 +1,10 @@
-import typing
 import random
+import re
+import typing
 
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, Conflict
 
-from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
 
@@ -121,7 +122,7 @@ class SchemaService:
         entity_possible: bool,
         color: typing.Optional[str] = None,
     ) -> SchemaMention:
-        if color is None:
+        if color is None or not self.validate_color_code(color):
             color = self.generate_random_hex_color()
         return self.__schema_repository.create_schema_mention(
             schema_id, tag, description, entity_possible, color
@@ -228,6 +229,77 @@ class SchemaService:
         if schema_relation is None:
             raise BadRequest("Relation Tag not allowed")
         return schema_relation
+
+    def create_extended_schema(self, schema, team_id: int) -> any:
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user_id, team_id)
+
+        modelling_language = self.__schema_repository.get_modelling_laguage_by_name(
+            schema["modelling_language"]
+        )
+        if modelling_language is None:
+            raise BadRequest("Modelling Language not allowed")
+
+        if self.__has_duplicates(schema["schema_mentions"], key="tag"):
+            raise Conflict("Duplicate tags found in schema mentions.")
+        if self.__has_duplicates(schema["schema_relations"], key="tag"):
+            raise Conflict("Duplicate tags found in schema relations.")
+        if self.__has_duplicates(
+            schema["schema_constraints"],
+            key=lambda x: (
+                x["mention_head_tag"],
+                x["mention_tail_tag"],
+                x["relation_tag"],
+            ),
+        ):
+            raise Conflict("Duplicate constraints found in schema.")
+
+        created_schema = self.create_schema(
+            modelling_language.id, team_id, schema["name"]
+        )
+
+        schema_mentions_by_tag = {}
+        for schema_mention in schema["schema_mentions"]:
+            created_mention = self.create_schema_mention(
+                created_schema.id,
+                schema_mention.get("tag"),
+                schema_mention.get("description"),
+                schema_mention.get("entity_possible"),
+                schema_mention.get("color"),
+            )
+            schema_mentions_by_tag[schema_mention["tag"]] = created_mention
+
+        schema_relations_by_tag = {}
+        for schema_relation in schema["schema_relations"]:
+            created_relation = self.create_schema_relation(
+                created_schema.id,
+                schema_relation.get("tag"),
+                schema_relation.get("description"),
+            )
+            schema_relations_by_tag[schema_relation["tag"]] = created_relation
+
+        for constraint in schema["schema_constraints"]:
+            self.create_schema_constraint(
+                schema_relations_by_tag[constraint.get("relation_tag")].id,
+                schema_mentions_by_tag[constraint.get("mention_head_tag")].id,
+                schema_mentions_by_tag[constraint.get("mention_tail_tag")].id,
+                constraint.get("is_directed"),
+            )
+
+        return self.get_schema_by_id(created_schema.id)
+
+    def __has_duplicates(self, items, key):
+        seen = set()
+        for item in items:
+            identifier = key(item) if callable(key) else item[key]
+            if identifier in seen:
+                return True
+            seen.add(identifier)
+        return False
+
+    def validate_color_code(self, string):
+        hexa_code = re.compile(r"^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
+        return bool(re.match(hexa_code, string))
 
     def train_model_for_schema(self, schema_id, model_name, model_type, steps):
         user_id = self.user_service.get_logged_in_user_id()

@@ -16,10 +16,6 @@ from app.models import (
 )
 from app.repositories.base_repository import BaseRepository
 
-ModellingLanguagesByName = {
-    "BPMN": 1,
-}
-
 
 class SchemaRepository(BaseRepository):
     def get_schema_by_id(self, schema_id):
@@ -219,6 +215,13 @@ class SchemaRepository(BaseRepository):
             self.get_session()
             .query(SchemaRelation)
             .filter_by(id=schema_relation_id)
+            .first()
+        )
+
+    def get_modelling_laguage_by_name(self, modelling_language_name):
+        return (
+            self.get_session().query(ModellingLanguage)
+            .filter_by(type=modelling_language_name)
             .first()
         )
 
