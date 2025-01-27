@@ -1,6 +1,4 @@
 from flask_restx import Namespace, Resource
-
-from app.db import transactional
 from app.services.entity_service import entity_service
 from werkzeug.exceptions import BadRequest
 from app.dtos import (

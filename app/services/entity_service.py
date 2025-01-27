@@ -108,6 +108,7 @@ class EntityService:
             self.mention_service.add_to_entity(entity.id, mention["id"])
             mention["entity_id"] = entity.id
 
+
         response = {
             "id": entity.id,
             "isShownRecommendation": entity.isShownRecommendation,

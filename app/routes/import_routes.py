@@ -1,9 +1,9 @@
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Namespace, Resource, fields
+from flask_restx import Namespace, Resource
 from werkzeug.exceptions import BadRequest
 
-from app.db import transactional
+
 from app.services.import_service import import_service
 
 ns = Namespace("imports", description="Import data from different sources")
@@ -30,7 +30,6 @@ class Imports(Resource):
         }
     )
     @jwt_required()
-    @transactional
     def post(self):
         """
         Import documents from different data sources.
@@ -61,7 +60,6 @@ class Imports(Resource):
         }
     )
     @jwt_required()
-    @transactional
     def post(self):
         import_schema = request.get_json()
 

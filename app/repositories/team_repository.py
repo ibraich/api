@@ -1,13 +1,13 @@
 from app.models import UserTeam, Team, User, Project
 from app.repositories.base_repository import BaseRepository
-from app.db import db
 
 
 class TeamRepository(BaseRepository):
 
     def get_teams_by_user(self, user_id):
         return (
-            db.session.query(Team.id, Team.name, Team.creator_id)
+            self.get_session()
+            .query(Team.id, Team.name, Team.creator_id)
             .join(UserTeam, UserTeam.team_id == Team.id)
             .filter(UserTeam.user_id == user_id)
             .filter(Team.active == True)
@@ -16,7 +16,8 @@ class TeamRepository(BaseRepository):
 
     def get_members_of_team(self, team_id):
         return (
-            db.session.query(User.id, User.username, User.email)
+            self.get_session()
+            .query(User.id, User.username, User.email)
             .select_from(UserTeam)
             .join(User, User.id == UserTeam.user_id)
             .filter(UserTeam.team_id == team_id)
@@ -39,16 +40,18 @@ class TeamRepository(BaseRepository):
 
     def remove_user(self, team_id, user_id):
         userteam = (
-            db.session.query(UserTeam)
+            self.get_session()
+            .query(UserTeam)
             .filter(UserTeam.team_id == team_id, UserTeam.user_id == user_id)
             .first()
         )
-        db.session.delete(userteam)
-        db.session.commit()
+        self.get_session().delete(userteam)
 
     def get_team_by_project_id(self, project_id):
 
-        project = db.session.query(Project).filter(Project.id == project_id).first()
+        project = (
+            self.get_session().query(Project).filter(Project.id == project_id).first()
+        )
         if project:
             return project.team_id
         return None
@@ -60,5 +63,4 @@ class TeamRepository(BaseRepository):
             return False
 
         team.name = new_name
-        db.session.commit()
         return team

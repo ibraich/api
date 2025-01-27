@@ -42,13 +42,7 @@ class ProjectService:
             team_id,
             schema_id,
         )
-        return {
-            "id": project.id,
-            "name": project.name,
-            "team_id": project.team_id,
-            "schema_id": project.schema_id,
-            "creator": self.user_service.get_user_by_id(project.creator_id),
-        }
+        return self.get_project_by_id(project.id)
 
     def team_is_in_project(self, team_id, document_edit_id):
         return team_id == self.__project_repository.get_team_id_by_document_edit_id(
@@ -59,30 +53,28 @@ class ProjectService:
         project = self.__project_repository.get_project_by_id(project_id)
         if project is None:
             raise BadRequest("Project not found")
-        return project
+        return self.build_project(project)
 
     def get_projects_by_user(self):
         user_id = self.user_service.get_logged_in_user_id()
         projects = self.__project_repository.get_projects_by_user(user_id)
         if projects is None:
             return {"projects": []}
+        return {"projects": [self.build_project(project) for project in projects]}
+
+    def build_project(self, project):
         return {
-            "projects": [
-                {
-                    "id": project.id,
-                    "name": project.name,
-                    "creator": self.user_service.get_user_by_id(project.creator_id),
-                    "team": {
-                        "id": project.team_id,
-                        "name": project.team_name,
-                    },
-                    "schema": {
-                        "id": project.schema_id,
-                        "name": project.schema_name,
-                    },
-                }
-                for project in projects
-            ]
+            "id": project.id,
+            "name": project.name,
+            "creator": self.user_service.get_user_by_id(project.creator_id),
+            "team": {
+                "id": project.team_id,
+                "name": project.team_name,
+            },
+            "schema": {
+                "id": project.schema_id,
+                "name": project.schema_name,
+            },
         }
 
     def soft_delete_project(self, project_id):

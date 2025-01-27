@@ -1,12 +1,8 @@
 from app.models import Relation, SchemaRelation
-from app.db import db
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy.orm import Session
 
 
 class RelationRepository(BaseRepository):
-    def __init__(self):
-        self.db_session = db.session  # Automatically use the global db.session
 
     def create_relation(
         self,
@@ -33,7 +29,8 @@ class RelationRepository(BaseRepository):
 
     def get_relations_by_document_edit(self, document_edit_id):
         return (
-            self.db_session.query(
+            self.get_session()
+            .query(
                 Relation.id,
                 Relation.isDirected,
                 Relation.isShownRecommendation,
@@ -65,7 +62,7 @@ class RelationRepository(BaseRepository):
         mention_tail_id,
         document_edit_id,
     ) -> Relation:
-        return super().store_object_transactional(
+        return super().store_object(
             Relation(
                 schema_relation_id=schema_relation_id,
                 isDirected=is_directed,
@@ -76,19 +73,19 @@ class RelationRepository(BaseRepository):
         )
 
     def delete_relation_by_id(self, relation_id):
-        relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
+        relation = self.get_session().query(Relation).filter_by(id=relation_id).first()
         if not relation:
             return False
-        self.db_session.delete(relation)
-        self.db_session.commit()
+        self.get_session().delete(relation)
         return True
 
     def get_relation_by_id(self, relation_id):
-        return self.db_session.query(Relation).filter_by(id=relation_id).first()
+        return self.get_session().query(Relation).filter_by(id=relation_id).first()
 
     def get_relations_by_mention(self, mention_id):
         return (
-            self.db_session.query(Relation)
+            self.get_session()
+            .query(Relation)
             .filter(
                 (Relation.mention_head_id == mention_id)
                 | (Relation.mention_tail_id == mention_id)
@@ -98,7 +95,8 @@ class RelationRepository(BaseRepository):
 
     def get_relations_by_mention_head_and_tail(self, mention_head_id, mention_tail_id):
         return (
-            self.db_session.query(Relation)
+            self.get_session()
+            .query(Relation)
             .filter(
                 (Relation.mention_head_id == mention_head_id)
                 & (Relation.mention_tail_id == mention_tail_id)
@@ -109,8 +107,7 @@ class RelationRepository(BaseRepository):
     def delete_relations_by_mention(self, mention_id):
         relations = self.get_relations_by_mention(mention_id)
         for relation in relations:
-            self.db_session.delete(relation)
-        self.db_session.commit()
+            self.get_session().delete(relation)
 
     def update_relation(
         self,
@@ -137,8 +134,7 @@ class RelationRepository(BaseRepository):
         """
         Aktualisiert den isShownRecommendation-Wert eines Mention-Eintrags.
         """
-        relation = self.db_session.query(Relation).filter_by(id=relation_id).first()
+        relation = self.get_session().query(Relation).filter_by(id=relation_id).first()
         if relation:
             relation.isShownRecommendation = value
-            self.db_session.commit()
         return relation

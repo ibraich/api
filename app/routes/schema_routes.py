@@ -2,7 +2,6 @@ from flask import request
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 
-from app.db import transactional
 from app.dtos import (
     schema_output_dto,
     schema_output_list_dto,
@@ -22,9 +21,9 @@ ns = Namespace("schemas", description="Schema related operations")
 class SchemaResource(Resource):
     service = schema_service
 
-    @jwt_required()
     @ns.doc(description="Fetch all schemas of current logged-in user")
     @ns.marshal_with(schema_output_list_dto)
+    @jwt_required()
     def get(self):
         return self.service.get_schemas_by_user()
 
@@ -37,9 +36,9 @@ class SchemaResource(Resource):
 class SchemaQueryResource(Resource):
     service = schema_service
 
-    @jwt_required()
     @ns.doc(description="Get schema by schema ID")
     @ns.marshal_with(schema_output_dto)
+    @jwt_required()
     def get(self, schema_id):
         if not schema_id:
             raise BadRequest("Schema ID is required.")
@@ -57,7 +56,6 @@ class SchemaTrainResource(Resource):
     service = schema_service
 
     @jwt_required()
-    @transactional
     @ns.doc(description="Train model for given schema ID")
     @ns.expect(model_train_input)
     @ns.marshal_with(model_train_output_list_dto)

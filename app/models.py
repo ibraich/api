@@ -1,6 +1,6 @@
 from sqlalchemy import text
 
-from app.db import db
+from app.db import db, Session
 
 
 class User(db.Model):
@@ -235,7 +235,6 @@ class DocumentEditState(db.Model):
     __tablename__ = "DocumentEditState"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     type = db.Column(db.String(), unique=True, nullable=False)
-
 
 class DocumentEditModelSettings(db.Model):
     __tablename__ = "DocumentEditModelSettings"
