@@ -5,11 +5,14 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import logging
 
+from app.db import add_transaction_wrapper
+
 
 def create_app(config_class):
     app = Flask(__name__)
     load_dotenv()
     app.config.from_object(config_class)
+    add_transaction_wrapper(app)
     JWTManager(app)
 
     logging.basicConfig(
@@ -58,7 +61,5 @@ def create_app(config_class):
 
         db.init_app(app)
         Migrate(app, db)
-        with app.app_context():
-            db.create_all()
 
     return app

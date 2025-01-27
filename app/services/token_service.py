@@ -18,7 +18,7 @@ class TokenService:
 
     def tokenize_document(self, doc_id, content):
         url = current_app.config.get("PIPELINE_URL") + "/steps/tokenize"
-        request_data = json.dumps({"content": content})
+        request_data = json.dumps({"content": content, "document_id": str(doc_id)})
         response = requests.post(
             url=url,
             data=request_data,

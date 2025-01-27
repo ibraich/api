@@ -1,11 +1,10 @@
 from flask import request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.exceptions import NotFound, BadRequest
+from flask_jwt_extended import jwt_required
+from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 
 
-from app.db import transactional
-from app.services.mention_services import mention_service, MentionService
+from app.services.mention_services import mention_service
 from app.dtos import (
     mention_output_dto,
     mention_output_list_dto,
@@ -16,7 +15,7 @@ from app.dtos import (
 ns = Namespace("mentions", description="Mention related operations")
 
 
-@ns.route("/")
+@ns.route("")
 @ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
@@ -24,7 +23,6 @@ class MentionResource(Resource):
     service = mention_service
 
     @jwt_required()
-    @transactional
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
     def post(self):
@@ -84,10 +82,9 @@ class MentionDeletionResource(Resource):
 @ns.response(404, "Mention not found")
 class MentionAcceptResource(Resource):
 
-    @jwt_required()
-    @transactional
     @ns.doc(description="Accept a mention by copying it and marking it as processed")
     @ns.marshal_with(mention_output_dto)
+    @jwt_required()
     def post(self, mention_id):
         """
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
@@ -102,9 +99,8 @@ class MentionAcceptResource(Resource):
 @ns.response(404, "Mention not found")
 class MentionRejectResource(Resource):
 
-    @jwt_required()
-    @transactional
     @ns.doc(description="Reject a mention by marking it as processed")
+    @jwt_required()
     def post(self, mention_id):
         """
         Reject a mention by setting isShownRecommendation to False.

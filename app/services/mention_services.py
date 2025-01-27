@@ -6,8 +6,14 @@ from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 from app.services.user_service import UserService, user_service
 
-# from app.services.relation_services import RelationService, relation_service
-from app.services.entity_service import EntityService, entity_service
+from app.services.relation_mention_service import (
+    RelationMentionService,
+    relation_mention_service,
+)
+from app.services.entity_mention_service import (
+    EntityMentionService,
+    entity_mention_service,
+)
 
 from app.services.token_mention_service import (
     token_mention_service,
@@ -19,8 +25,8 @@ class MentionService:
     __mention_repository: MentionRepository
     token_mention_service: TokenMentionService
     user_service: UserService
-    # relation_service: RelationService
-    entity_service: EntityService
+    relation_mention_service: RelationMentionService
+    entity_mention_service: EntityMentionService
     token_service: TokenService
     schema_service: SchemaService
 
@@ -29,16 +35,16 @@ class MentionService:
         mention_repository,
         token_mention_service,
         user_service,
-        # relation_service,
-        entity_service,
+        relation_mention_service,
+        entity_mention_service,
         token_service,
         schema_service,
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
         self.user_service = user_service
-        # self.relation_service = relation_service
-        self.entity_service = entity_service
+        self.relation_mention_service = relation_mention_service
+        self.entity_mention_service = entity_mention_service
         self.token_service = token_service
         self.schema_service = schema_service
 
@@ -76,16 +82,16 @@ class MentionService:
                     },
                 }
 
-                if row.token_id is not None:
-                    mentions_dict[row.mention_id]["tokens"].append(
-                        {
-                            "id": row.token_id,
-                            "text": row.text,
-                            "document_index": row.document_index,
-                            "sentence_index": row.sentence_index,
-                            "pos_tag": row.pos_tag,
-                        }
-                    )
+            if row.token_id is not None:
+                mentions_dict[row.mention_id]["tokens"].append(
+                    {
+                        "id": row.token_id,
+                        "text": row.text,
+                        "document_index": row.document_index,
+                        "sentence_index": row.sentence_index,
+                        "pos_tag": row.pos_tag,
+                    }
+                )
         return {"mentions": list(mentions_dict.values())}
 
     def create_mentions(self, data):
@@ -169,33 +175,36 @@ class MentionService:
                 "Cannot delete a mention without a valid document_edit_id."
             )
 
-        # logged_in_user_id = user_service.get_logged_in_user_id()
-        # self.user_service.check_user_document_edit_accessible(user_id, mention.document_edit_id)
+        user_id = user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, mention.document_edit_id
+        )
 
-        # related_relations = self.relation_service.get_relations_by_mention(mention_id)
-        # for relation in related_relations:
-        # self.relation_service.delete_relation_by_id(relation.id)
+        related_relations = self.relation_mention_service.get_relations_by_mention(
+            mention_id
+        )
+        for relation in related_relations:
+            self.relation_mention_service.delete_relation_by_id(relation.id)
 
         self.token_mention_service.delete_token_mentions_by_mention_id(mention_id)
-        self.delete_entity_if_only_consists_mention(mention_id, mention.entity_id)
 
         deleted = self.__mention_repository.delete_mention_by_id(mention_id)
+
+        self.delete_entity_if_empty(mention.entity_id)
+
         if not deleted:
             raise NotFound("Mention not found during deletion.")
 
         return {"message": "OK"}
 
-    def delete_entity_if_only_consists_mention(self, mention_id, entity_id):
+    def delete_entity_if_empty(self, entity_id):
         if entity_id is not None:
             mentions_with_entity = self.__mention_repository.get_mentions_by_entity_id(
                 entity_id
             )
 
-            if (
-                len(mentions_with_entity) == 1
-                and mentions_with_entity[0].id == mention_id
-            ):
-                self.entity_service.delete_entity(entity_id)
+            if len(mentions_with_entity) == 0:
+                self.entity_mention_service.delete_entity(entity_id)
 
     def update_mention(self, mention_id, schema_mention_id, token_ids, entity_id):
         # Check that mention exists
@@ -247,23 +256,23 @@ class MentionService:
                 self.token_mention_service.create_token_mention(token_id, mention_id)
 
         if entity_id is not None or mention.entity_id is not None:
-            if schema_mention.entityPossible == False:
+            if not schema_mention.entityPossible:
                 raise BadRequest("Entity not allowed for this mention")
 
         # Delete entity if it is empty after update, id = 0: clear entity_id of mention
         if entity_id is not None:
             if entity_id != 0:
-                self.entity_service.check_entity_in_document_edit(
+                self.entity_mention_service.check_entity_in_document_edit(
                     entity_id, mention.document_edit_id
-                )
-            if mention.entity_id and entity_id != mention.entity_id:
-                self.delete_entity_if_only_consists_mention(
-                    mention_id, mention.entity_id
                 )
 
         updated_mention = self.__mention_repository.update_mention(
             mention_id, schema_mention_id, entity_id
         )
+
+        if mention.entity_id and entity_id != mention.entity_id:
+            self.delete_entity_if_empty(mention.entity_id)
+
         token_mentions = self.token_mention_service.get_token_mentions_by_mention_id(
             mention_id
         )
@@ -362,13 +371,16 @@ class MentionService:
         self.__mention_repository.update_is_shown_recommendation(mention_id, False)
         return {"message": "Mention successfully rejected."}
 
+    def get_mention_by_id(self, mention_id):
+        return self.__mention_repository.get_mention_by_id(mention_id)
+
 
 mention_service = MentionService(
     MentionRepository(),
     token_mention_service,
     user_service,
-    # relation_service,
-    entity_service,
+    relation_mention_service,
+    entity_mention_service,
     token_service,
     schema_service,
 )

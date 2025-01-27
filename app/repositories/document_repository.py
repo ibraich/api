@@ -12,18 +12,15 @@ from app.models import (
 )
 from app.repositories.base_repository import BaseRepository
 from sqlalchemy import and_
-from app.db import db, Session
 
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
 
-    def __init__(self):
-        self.db_session = db.session
-
     def get_documents_by_user(self, user_id):
         return (
-            db.session.query(
+            self.get_session()
+            .query(
                 Document.id,
                 Document.content,
                 Document.name,
@@ -35,6 +32,8 @@ class DocumentRepository(BaseRepository):
                 Team.id.label("team_id"),
                 DocumentEditState.type.label("document_edit_state"),
                 DocumentEdit.id.label("document_edit_id"),
+                DocumentState.id.label("document_state_id"),
+                DocumentState.type.label("document_state_type"),
             )
             .select_from(User)
             .filter(User.id == user_id)
@@ -80,7 +79,8 @@ class DocumentRepository(BaseRepository):
 
     def get_document_by_id(self, document_id):
         return (
-            Session.query(
+            self.get_session()
+            .query(
                 Document.content,
                 Document.name,
                 Document.project_id,
@@ -113,11 +113,12 @@ class DocumentRepository(BaseRepository):
             state_id=state_id,
             active=True,
         )
-        return super().store_object_transactional(document)
+        return super().store_object(document)
 
     def soft_delete_document(self, document_id: int):
         document = (
-            self.db_session.query(Document)
+            self.get_session()
+            .query(Document)
             .filter(Document.id == document_id, Document.active == True)
             .first()
         )
@@ -125,13 +126,13 @@ class DocumentRepository(BaseRepository):
             return False
 
         document.active = False
-        self.db_session.commit()
         return True
 
     def bulk_soft_delete_documents_by_project_id(self, project_id: int) -> list[int]:
         # Step 1: Get all doc IDs first
         doc_ids = (
-            self.db_session.query(Document.id)
+            self.get_session()
+            .query(Document.id)
             .filter(Document.project_id == project_id, Document.active == True)
             .all()
         )  # returns list of tuples like [(1,), (2,)...]
@@ -141,9 +142,8 @@ class DocumentRepository(BaseRepository):
             return []
 
         # Step 2: Bulk update
-        self.db_session.query(Document).filter(Document.id.in_(doc_ids)).update(
+        self.get_session().query(Document).filter(Document.id.in_(doc_ids)).update(
             {Document.active: False}, synchronize_session=False
         )
-        self.db_session.commit()
 
         return doc_ids
