@@ -121,24 +121,6 @@ entity_input_dto = api.model(
     },
 )
 
-entity_output_dto = api.model(
-    "EntityOutput",
-    {
-        "id": fields.Integer,
-        "isShownRecommendation": fields.Boolean,
-        "document_edit_id": fields.Integer,
-        "document_recommendation_id": fields.Integer,
-    },
-)
-
-entity_output_list_dto = api.model(
-    "EntityOutputList",
-    {
-        "entities": fields.List(fields.Nested(entity_output_dto)),
-    },
-)
-
-
 schema_relation_output_dto = api.model(
     "SchemaRelationOutput",
     {
@@ -542,6 +524,25 @@ mention_output_list_dto = api.model(
         ),
     },
 )
+
+entity_output_dto = api.model(
+    "EntityOutput",
+    {
+        "id": fields.Integer,
+        "isShownRecommendation": fields.Boolean,
+        "document_edit_id": fields.Integer,
+        "document_recommendation_id": fields.Integer,
+        "mentions": fields.List(fields.Nested(mention_output_dto)),
+    },
+)
+
+entity_output_list_dto = api.model(
+    "EntityOutputList",
+    {
+        "entities": fields.List(fields.Nested(entity_output_dto)),
+    },
+)
+
 
 schema_relation_model = api.model(
     "SchemaRelation",

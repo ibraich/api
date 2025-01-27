@@ -1,24 +1,40 @@
 from app.models import Entity
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
+
+from app.services.entity_mention_service import entity_mention_service
+from app.services.mention_services import MentionService, mention_service
 from app.services.schema_service import schema_service
-from app.services.user_service import user_service
-from app.repositories.mention_repository import MentionRepository
+from app.services.user_service import UserService, user_service
 
 
 class EntityService:
-    def __init__(self, entity_repository, mention_repository, schema_service):
+    def __init__(
+        self,
+        entity_repository,
+        schema_service,
+        user_service,
+        entity_mention_service,
+        mention_service,
+    ):
         self.__entity_repository = entity_repository
-        self.__mention_repository = mention_repository
         self.schema_service = schema_service
+        self.user_service = user_service
+        self.entity_mention_service = entity_mention_service
+        self.mention_service = mention_service
 
     def get_entities_by_document_edit(self, document_edit_id):
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
+        user_id = user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
         entities = self.__entity_repository.get_entities_by_document_edit(
             document_edit_id
         )
+
+        mentions = self.mention_service.get_mentions_by_document_edit(document_edit_id)
         if not entities:
             raise NotFound("No entities found for the given document edit.")
 
@@ -28,6 +44,11 @@ class EntityService:
                 "isShownRecommendation": entity.isShownRecommendation,
                 "document_edit_id": entity.document_edit_id,
                 "document_recommendation_id": entity.document_recommendation_id,
+                "mentions": [
+                    mention
+                    for mention in mentions["mentions"]
+                    if mention["entity_id"] == entity.id
+                ],
             }
             for entity in entities
         ]
@@ -37,73 +58,43 @@ class EntityService:
         return self.__entity_repository.create_in_edit(document_edit_id)
 
     def delete_entity(self, entity_id):
-        entity = self.__entity_repository.get_entity_by_id(entity_id)
-        if not entity:
-            raise NotFound("Entity not found.")
-
-        if entity.document_edit_id is None:
-            raise BadRequest("Entity must belong to a valid document_edit_id.")
-
-        # logged_in_user_id = user_service.get_logged_in_user_id()
-        # document_edit_user_id = user_service.get_user_by_document_edit_id(entity.document_edit_id)
-
-        # if logged_in_user_id != document_edit_user_id:
-        # raise NotFound("The logged in user does not belong to this document.")
-
-        mentions_updated = self.__mention_repository.set_entity_id_to_null(entity_id)
-        if mentions_updated > 0:
-            print(f"Updated {mentions_updated} mentions to set entity_id to NULL.")
-
-        self.__entity_repository.delete_entity_by_id(entity_id)
-        return {"message": "Entity deleted successfully."}
-
-    def check_entity_in_document_edit(self, entity_id, document_edit_id):
-        entity = self.__entity_repository.get_entity_by_id(entity_id)
-        if not entity:
-            raise BadRequest("Entity does not exist")
-        if entity.document_edit_id != document_edit_id:
-            raise Forbidden("Entity does not belong to this document")
+        return self.entity_mention_service.delete_entity(entity_id)
 
     def create_entity(self, data):
 
         # check if user is allowed to access this document edit
-        logged_in_user_id = user_service.get_logged_in_user_id()
-        document_edit_user_id = user_service.get_user_by_document_edit_id(
+        user_id = user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, data["document_edit_id"]
+        )
+
+        # Fetch all mentions of document
+        mentions_of_edit = self.mention_service.get_mentions_by_document_edit(
             data["document_edit_id"]
         )
 
-        if logged_in_user_id != document_edit_user_id:
-            raise NotFound("The logged in user does not belong to this document.")
-
-        mention_ids = data["mention_ids"]
-        mentions = []
-
-        schema = self.schema_service.get_schema_by_document_edit(
-            data["document_edit_id"]
-        )
+        # Filter mentions of entity
+        mentions_of_entity = [
+            mention
+            for mention in mentions_of_edit["mentions"]
+            if mention["id"] in data["mention_ids"]
+        ]
+        # Check if a mention does not exist already
+        if len(mentions_of_entity) != len(data["mention_ids"]):
+            raise BadRequest("Invalid mention ids.")
 
         tag_count = dict()
-        for mention_id in mention_ids:
-            mention = self.__mention_repository.get_mention_by_id(mention_id)
-            if mention is None:
-                raise BadRequest("Invalid mention ids.")
-
-            if mention.document_edit_id != data["document_edit_id"]:
-                raise BadRequest("Invalid mention id")
+        for mention in mentions_of_entity:
 
             # Check that entity is allowed for mentions
-            self.schema_service.verify_entity_possible(schema.id, mention.tag)
+            if not mention["schema_mention"]["entityPossible"]:
+                raise BadRequest("Entity not allowed for this mention")
 
             # counting tags to check if all tags are same or not
-            if mention.tag not in tag_count:
-                tag_count[mention.tag] = 0
+            if mention["schema_mention"]["id"] not in tag_count:
+                tag_count[mention["schema_mention"]["id"]] = 1
             else:
-                tag_count[mention.tag] += 1
-            mentions.append(mention)
-
-        # if a mention does not exist already
-        if len(mentions) != len(mention_ids):
-            raise BadRequest("Invalid mention ids.")
+                tag_count[mention["schema_mention"]["id"]] += 1
 
         # if two or more tags exist in mention then throw error
         if len(tag_count) > 1:
@@ -113,20 +104,42 @@ class EntityService:
         entity = self.__entity_repository.create_entity(data["document_edit_id"])
 
         # add entity id to mention or replace previous one
-        for mention in mentions:
-            mention.entity_id = entity.id
-            # transactional session saves updated entity_id
+        for mention in mentions_of_entity:
+            self.mention_service.add_to_entity(entity.id, mention["id"])
+            mention["entity_id"] = entity.id
 
-        self.__mention_repository.save_mention()
 
         response = {
             "id": entity.id,
             "isShownRecommendation": entity.isShownRecommendation,
             "document_edit_id": entity.document_edit_id,
             "document_recommendation_id": entity.document_recommendation_id,
+            "mentions": mentions_of_entity,
         }
 
         return response
 
+    def create_entity_for_mentions(self, document_edit_id):
+        mentions = self.mention_service.get_mentions_by_document_edit(document_edit_id)
+        mentions_without_entity = []
+        for mention in mentions["mentions"]:
+            if (
+                mention["entity_id"] is None
+                and mention["schema_mention"]["entityPossible"] is True
+            ):
+                mentions_without_entity.append(mention)
 
-entity_service = EntityService(EntityRepository(), MentionRepository(), schema_service)
+        for mention in mentions_without_entity:
+            entity = self.__entity_repository.create_entity(document_edit_id)
+            self.mention_service.add_to_entity(entity.id, mention["id"])
+            mention["entity_id"] = entity.id
+        return mentions_without_entity
+
+
+entity_service = EntityService(
+    EntityRepository(),
+    schema_service,
+    user_service,
+    entity_mention_service,
+    mention_service,
+)
