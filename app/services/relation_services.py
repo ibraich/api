@@ -2,19 +2,28 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict
 
 from app.models import Relation
 from app.repositories.relation_repository import RelationRepository
-from app.services.relation_mention_service import relation_mention_service
-from app.services.schema_service import schema_service
-from app.services.user_service import user_service
-from app.services.mention_services import mention_service
+from app.services.relation_mention_service import (
+    relation_mention_service,
+    RelationMentionService,
+)
+from app.services.schema_service import schema_service, SchemaService
+from app.services.user_service import user_service, UserService
+from app.services.mention_services import mention_service, MentionService
 
 
 class RelationService:
+    __relation_repository: RelationRepository
+    user_service: UserService
+    schema_service: SchemaService
+    mention_service: MentionService
+    relation_mention_service: RelationMentionService
+
     def __init__(
         self,
         relation_repository,
         user_service,
         schema_service,
-        mention_service,
+        mention_service: MentionService,
         relation_mention_service,
     ):
         self.__relation_repository = relation_repository

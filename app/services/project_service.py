@@ -11,9 +11,9 @@ from app.services.document_service import DocumentService, document_service
 
 
 class ProjectService:
+    __project_repository: ProjectRepository
     user_service: UserService
     schema_service: SchemaService
-    __project_repository: ProjectRepository
     team_service: TeamService
     document_service: DocumentService
 

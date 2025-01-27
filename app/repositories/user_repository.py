@@ -92,15 +92,6 @@ class UserRepository(BaseRepository):
             .first()
         )
 
-    def check_user_in_team(self, user_id, team_id):
-        return (
-            self.get_session()
-            .query(UserTeam)
-            .join(Team, Team.id == UserTeam.team_id)
-            .filter(and_(UserTeam.user_id == user_id, UserTeam.team_id == team_id))
-            .one_or_none()
-        )
-
     def update_user_data(self, user_id, username=None, email=None, password=None):
         """
         Update user information in the database.

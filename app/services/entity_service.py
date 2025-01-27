@@ -2,13 +2,22 @@ from app.models import Entity
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
 
-from app.services.entity_mention_service import entity_mention_service
+from app.services.entity_mention_service import (
+    entity_mention_service,
+    EntityMentionService,
+)
 from app.services.mention_services import MentionService, mention_service
-from app.services.schema_service import schema_service
+from app.services.schema_service import schema_service, SchemaService
 from app.services.user_service import UserService, user_service
 
 
 class EntityService:
+    __entity_repository: EntityRepository
+    schema_service: SchemaService
+    user_service: UserService
+    entity_mention_service: EntityMentionService
+    mention_service: MentionService
+
     def __init__(
         self,
         entity_repository,
@@ -107,7 +116,6 @@ class EntityService:
         for mention in mentions_of_entity:
             self.mention_service.add_to_entity(entity.id, mention["id"])
             mention["entity_id"] = entity.id
-
 
         response = {
             "id": entity.id,

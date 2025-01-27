@@ -40,14 +40,6 @@ class DocumentEditRepository(BaseRepository):
             .first()
         )
 
-    def get_document_edit_by_id(self, document_edit_id):
-        return (
-            self.get_session()
-            .query(DocumentEdit)
-            .filter_by(id=document_edit_id)
-            .first()
-        )
-
     def soft_delete_document_edit(self, document_edit_id):
         document_edit = (
             self.get_session()
