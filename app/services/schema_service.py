@@ -221,5 +221,13 @@ class SchemaService:
             raise BadRequest("Relation Tag not allowed")
         return schema_relation
 
+    def get_schema_mentions_by_schema(self, schema_id):
+        schema_mentions = self.__schema_repository.get_schema_mentions_by_schema(
+            schema_id
+        )
+        if schema_mentions is None:
+            raise BadRequest("No Schema Mentions Found")
+        return schema_mentions
+
 
 schema_service = SchemaService(SchemaRepository(), user_service)
