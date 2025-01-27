@@ -734,3 +734,33 @@ document_edit_model_output_list_dto = api.model(
         "models": fields.List(fields.Nested(document_edit_model_output_dto)),
     },
 )
+
+model_type_with_settings = api.model(
+    "ModelTypeWithSettings",
+    {
+        "model_type": fields.String(required=True),
+        "settings": fields.Raw(
+            required=False,
+            description="""
+Dictionary of key value pairs, that can be added as query param to the _model_type_.
+_Keys_ are always of type string.
+_Values_ are of type object containing the following keys:
+- **values** => possible values for the key
+    - if the value is an array, all values of the array are valid (enum like behavior)
+    - if the value is an string, the possible type is the value of the string
+        - _"string"_ => any string can be an input
+        - _"integer"_ => any integer can be an input
+- **default** => the default value for the key. _Null_ if there is no default value      
+                        """,
+        ),
+    },
+)
+
+get_recommendation_models_output_dto = api.model(
+    "GetRecommendationModelsOutput",
+    {
+        "mention": fields.Nested(model_type_with_settings),
+        "entity": fields.Nested(model_type_with_settings),
+        "relation": fields.Nested(model_type_with_settings),
+    },
+)
