@@ -4,7 +4,6 @@ from app.models import (
     RecommendationModel,
     ModelStep,
 )
-from app.db import db, Session
 from app.repositories.base_repository import BaseRepository
 
 
@@ -107,7 +106,8 @@ class DocumentEditRepository(BaseRepository):
 
     def get_document_edit_model(self, document_edit_id):
         return (
-            Session.query(
+            self.get_session()
+            .query(
                 DocumentEditModelSettings.id.label("settings_id"),
                 DocumentEditModelSettings.value,
                 DocumentEditModelSettings.key,

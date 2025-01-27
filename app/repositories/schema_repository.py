@@ -220,7 +220,8 @@ class SchemaRepository(BaseRepository):
 
     def get_modelling_laguage_by_name(self, modelling_language_name):
         return (
-            self.get_session().query(ModellingLanguage)
+            self.get_session()
+            .query(ModellingLanguage)
             .filter_by(type=modelling_language_name)
             .first()
         )
@@ -248,7 +249,8 @@ class SchemaRepository(BaseRepository):
 
     def get_models_by_schema(self, schema_id):
         return (
-            Session.query(
+            self.get_session()
+            .query(
                 RecommendationModel.id,
                 RecommendationModel.model_name,
                 RecommendationModel.model_type,
@@ -263,8 +265,11 @@ class SchemaRepository(BaseRepository):
 
     def get_model_by_name(self, model_name):
         return (
-            Session.query(RecommendationModel).filter_by(model_name=model_name).first()
+            self.get_session()
+            .query(RecommendationModel)
+            .filter_by(model_name=model_name)
+            .first()
         )
 
     def get_model_steps(self):
-        return Session.query(ModelStep.id, ModelStep.type).all()
+        return self.get_session().query(ModelStep.id, ModelStep.type).all()
