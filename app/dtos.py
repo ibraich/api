@@ -89,6 +89,15 @@ document_list_dto = api.model(
         "id": fields.Integer,
         "content": fields.String,
         "name": fields.String,
+        "state": fields.Nested(
+            api.model(
+                "DocumentState",
+                {
+                    "id": fields.Integer,
+                    "type": fields.String,
+                },
+            )
+        ),
         "project": fields.Nested(project_dto),
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
@@ -112,31 +121,12 @@ entity_input_dto = api.model(
     },
 )
 
-entity_output_dto = api.model(
-    "EntityOutput",
-    {
-        "id": fields.Integer,
-        "isShownRecommendation": fields.Boolean,
-        "document_edit_id": fields.Integer,
-        "document_recommendation_id": fields.Integer,
-    },
-)
-
-entity_output_list_dto = api.model(
-    "EntityOutputList",
-    {
-        "entities": fields.List(fields.Nested(entity_output_dto)),
-    },
-)
-
-
 schema_relation_output_dto = api.model(
     "SchemaRelationOutput",
     {
         "id": fields.Integer,
         "tag": fields.String,
         "description": fields.String,
-        "schema_id": fields.Integer,
     },
 )
 
@@ -230,6 +220,50 @@ schema_output_dto = api.model(
         "schema_mentions": fields.List(fields.Nested(schema_mention_output_dto)),
         "schema_relations": fields.List(fields.Nested(schema_relation_output_dto)),
         "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
+    },
+)
+schema_mention_input_dto = api.model(
+    "SchemaMentionInput",
+    {
+        "tag": fields.String(required=True),
+        "description": fields.String(required=True),
+        "color": fields.String(required=False, example="#12AB3C"),
+        "entity_possible": fields.Boolean(default=True),
+    },
+)
+
+schema_relation_input_dto = api.model(
+    "SchemaRelationInput",
+    {
+        "tag": fields.String(required=True),
+        "description": fields.String(required=True),
+    },
+)
+
+schema_constraint_input_dto = api.model(
+    "SchemaConstraintInput",
+    {
+        "is_directed": fields.Boolean(required=True),
+        "relation_tag": fields.String(required=True),
+        "mention_head_tag": fields.String(required=True),
+        "mention_tail_tag": fields.String(required=True),
+    },
+)
+
+schema_input_dto = api.model(
+    "SchemaInput",
+    {
+        "name": fields.String(required=True),
+        "modelling_language": fields.String(required=True),
+        "schema_mentions": fields.List(
+            fields.Nested(schema_mention_input_dto), required=True
+        ),
+        "schema_relations": fields.List(
+            fields.Nested(schema_relation_input_dto), required=True
+        ),
+        "schema_constraints": fields.List(
+            fields.Nested(schema_constraint_input_dto), required=True
+        ),
     },
 )
 
@@ -533,6 +567,25 @@ mention_output_list_dto = api.model(
         ),
     },
 )
+
+entity_output_dto = api.model(
+    "EntityOutput",
+    {
+        "id": fields.Integer,
+        "isShownRecommendation": fields.Boolean,
+        "document_edit_id": fields.Integer,
+        "document_recommendation_id": fields.Integer,
+        "mentions": fields.List(fields.Nested(mention_output_dto)),
+    },
+)
+
+entity_output_list_dto = api.model(
+    "EntityOutputList",
+    {
+        "entities": fields.List(fields.Nested(entity_output_dto)),
+    },
+)
+
 
 schema_relation_model = api.model(
     "SchemaRelation",

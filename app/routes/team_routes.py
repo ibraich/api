@@ -1,8 +1,10 @@
 from sqlalchemy import exc
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import BadRequest
 from flask_restx import Resource, Namespace
 from flask import request
+
+
 from app.dtos import (
     team_input_dto,
     team_member_input_dto,
@@ -57,17 +59,17 @@ class TeamMemberRoutes(Resource):
 class TeamRoutes(Resource):
     service = team_service
 
-    @jwt_required()
     @ns.doc(description="Fetch all teams of current logged-in user")
     @ns.marshal_with(team_user_output_list_dto)
+    @jwt_required()
     def get(self):
         response = self.service.get_teams_by_user()
         return response
 
-    @jwt_required()
     @ns.doc(description="Create a new team")
     @ns.expect(team_input_dto, validate=True)
     @ns.marshal_with(team_user_output_dto)
+    @jwt_required()
     def post(self):
         try:
             request_data = request.get_json()
@@ -86,9 +88,9 @@ class TeamRoutes(Resource):
 class TeamUpdateResource(Resource):
     """API endpoint to update team properties."""
 
-    @jwt_required()
     @ns.expect(team_input_dto, validate=True)
     @ns.marshal_with(team_user_output_dto)
+    @jwt_required()
     def put(self, team_id):
         """Update the name of a team."""
         data = request.json

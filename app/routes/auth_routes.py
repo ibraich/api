@@ -1,8 +1,8 @@
 from flask import request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from flask_restx import Namespace, Resource
 
-from app.db import transactional
+
 from app.services.user_service import user_service
 from app.dtos import (
     signup_input_dto,
@@ -10,7 +10,7 @@ from app.dtos import (
     login_output_dto,
     login_input_dto,
 )
-from werkzeug.exceptions import BadRequest, Unauthorized, NotFound
+from werkzeug.exceptions import Unauthorized
 
 ns = Namespace("auth", description="User Authentication related operations")
 
@@ -66,9 +66,8 @@ class LoginRoute(Resource):
 @ns.response(404, "User not found")
 class UpdateProfileRoute(Resource):
 
-    @jwt_required()
-    @transactional
     @ns.expect(signup_input_dto)
+    @jwt_required()
     def put(self):
         """
         Update user profile information.

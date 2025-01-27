@@ -51,6 +51,10 @@ class DocumentService:
                 "id": doc.id,
                 "content": doc.content,
                 "name": doc.name,
+                "state": {
+                    "id": doc.document_state_id,
+                    "type": doc.document_state_type,
+                },
                 "project": {
                     "id": doc.project_id,
                     "name": doc.project_name,

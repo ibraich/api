@@ -2,7 +2,7 @@ import requests
 from flask_restx import Namespace, Resource
 from werkzeug.exceptions import NotFound, BadRequest
 
-from app.db import transactional
+
 from app.services.document_edit_service import document_edit_service
 from flask import request
 from app.dtos import (
@@ -30,7 +30,6 @@ class DocumentRoutes(Resource):
     @ns.doc(description="Create a new document annotation")
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_edit_input_dto, validate=True)
-    @transactional
     def post(self):
         request_data = request.get_json()
         document_id = request_data.get("document_id")
@@ -63,7 +62,6 @@ class DocumentRoutes(Resource):
     @ns.doc(description="overtake another user annotation")
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_overtake_dto, validate=True)
-    @transactional
     def post(self):
         request_data = request.get_json()
 
@@ -80,9 +78,9 @@ class DocumentRoutes(Resource):
 class DocumentEditDeletionResource(Resource):
     service = document_edit_service
 
-    @jwt_required()
     @ns.marshal_with(document_edit_output_soft_delete_dto)
     @ns.doc(description="Soft-delete a DocumentEdit by setting 'active' to False")
+    @jwt_required()
     def delete(self, document_edit_id):
         response = self.service.soft_delete_document_edit(document_edit_id)
         return response
@@ -96,11 +94,11 @@ class DocumentEditDeletionResource(Resource):
 class DocumentEditResource(Resource):
     service = document_edit_service
 
-    @jwt_required()
     @ns.marshal_with(
         finished_document_edit_output_dto
     )  # Define the DTO structure for output
     @ns.doc(description="Fetch details of a DocumentEdit by its ID")
+    @jwt_required()
     def get(self, document_edit_id):
         response = self.service.get_document_edit_by_id(document_edit_id)
         return response

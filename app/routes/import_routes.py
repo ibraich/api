@@ -1,9 +1,9 @@
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Namespace, Resource, fields
+from flask_restx import Namespace, Resource
 from werkzeug.exceptions import BadRequest
 
-from app.db import transactional
+
 from app.services.import_service import import_service
 
 ns = Namespace("imports", description="Import data from different sources")
@@ -30,7 +30,6 @@ class Imports(Resource):
         }
     )
     @jwt_required()
-    @transactional
     def post(self):
         """
         Import documents from different data sources.
@@ -46,25 +45,3 @@ class Imports(Resource):
             return import_service.import_pet_documents(import_list, project_id, user_id)
         else:
             raise BadRequest(f"Invalid source {source}")
-
-
-@ns.route("/schema")
-@ns.response(400, "Invalid input")
-@ns.response(403, "Authorization required")
-class Imports(Resource):
-    import_service = import_service
-
-    @ns.doc(description="Import schema.")
-    @ns.doc(
-        params={
-            "team_id": "Target team of the schema.",
-        }
-    )
-    @jwt_required()
-    @transactional
-    def post(self):
-        import_schema = request.get_json()
-
-        team_id = int(request.args.get("team_id"))
-
-        return import_service.import_schema(import_schema, team_id)
