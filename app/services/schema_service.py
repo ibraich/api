@@ -13,7 +13,7 @@ class SchemaService:
     __schema_repository: SchemaRepository
     user_service: UserService
 
-    def __init__(self, schema_repository: SchemaRepository, user_service: UserService):
+    def __init__(self, schema_repository, user_service):
         self.__schema_repository = schema_repository
         self.user_service = user_service
 
@@ -41,7 +41,6 @@ class SchemaService:
         )
         mentions = self.__schema_repository.get_schema_mentions_by_schema(schema.id)
         relations = self.__schema_repository.get_schema_relations_by_schema(schema.id)
-        models = self.__schema_repository.get_models_by_schema(schema.id)
         return {
             "id": schema.id,
             "name": schema.name,

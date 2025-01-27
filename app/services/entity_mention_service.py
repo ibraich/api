@@ -1,10 +1,14 @@
 from app.repositories.entity_repository import EntityRepository
 from werkzeug.exceptions import BadRequest, NotFound, Forbidden
-from app.services.user_service import user_service
+from app.services.user_service import user_service, UserService
 from app.repositories.mention_repository import MentionRepository
 
 
 class EntityMentionService:
+    __entity_repository: EntityRepository
+    __mention_repository: MentionRepository
+    user_service: UserService
+
     def __init__(self, entity_repository, mention_repository, user_service):
         self.__entity_repository = entity_repository
         self.__mention_repository = mention_repository

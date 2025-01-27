@@ -1,10 +1,14 @@
 from werkzeug.exceptions import BadRequest, NotFound
 
 from app.repositories.relation_repository import RelationRepository
-from app.services.user_service import user_service
+from app.services.user_service import user_service, UserService
 
 
 class RelationMentionService:
+
+    __relation_repository: RelationRepository
+    user_service: UserService
+
     def __init__(
         self,
         relation_repository,

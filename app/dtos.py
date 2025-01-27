@@ -383,6 +383,15 @@ signup_input_dto = api.model(
     },
 )
 
+user_update_input_dto = api.model(
+    "UserUpdateInput",
+    {
+        "username": fields.String(description="Username of the new user"),
+        "email": fields.String(description="Email of the new user"),
+        "password": fields.String(description="Password for the new user"),
+    },
+)
+
 signup_output_dto = api.model(
     "SignupOutput",
     {

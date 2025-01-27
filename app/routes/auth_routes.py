@@ -1,29 +1,35 @@
 from flask import request
-from flask_jwt_extended import jwt_required
-from flask_restx import Namespace, Resource
-
-
+from flask_restx import Namespace
+from app.routes.base_routes import AuthorizedBaseRoute, UnauthorizedBaseRoute
 from app.services.user_service import user_service
 from app.dtos import (
     signup_input_dto,
     signup_output_dto,
     login_output_dto,
     login_input_dto,
+    user_output_dto,
+    user_update_input_dto,
 )
 from werkzeug.exceptions import Unauthorized
 
 ns = Namespace("auth", description="User Authentication related operations")
 
 
-@ns.route("/signup")
-@ns.response(400, "Invalid input")
-@ns.response(409, "User already exists")
-class SignupRoute(Resource):
+class AuthBaseRoute(UnauthorizedBaseRoute):
     service = user_service
+
+
+class UserBaseRoute(AuthorizedBaseRoute):
+    service = user_service
+
+
+@ns.route("/signup")
+@ns.response(409, "User already exists")
+class SignupRoute(AuthBaseRoute):
 
     @ns.doc(description="Sign up a new user")
     @ns.marshal_with(signup_output_dto)
-    @ns.expect(signup_input_dto, validate=True)  # Use the DTO here
+    @ns.expect(signup_input_dto)  # Use the DTO here
     def post(self):
         request_data = request.get_json()
 
@@ -36,38 +42,30 @@ class SignupRoute(Resource):
 
 
 @ns.route("/login")
-@ns.response(400, "Invalid input")
 @ns.response(401, "Unauthorized")
-class LoginRoute(Resource):
+class LoginRoute(AuthBaseRoute):
     service = user_service
 
     @ns.doc(description="Log in an existing user")
     @ns.marshal_with(login_output_dto)
-    @ns.expect(login_input_dto, validate=True)  # Use the DTO here
+    @ns.expect(login_input_dto)  # Use the DTO here
     def post(self):
-        try:
-            request_data = request.get_json()
-            email = request_data.get("email")
-            password = request_data.get("password")
+        request_data = request.get_json()
+        email = request_data.get("email")
+        password = request_data.get("password")
 
-            result = self.service.login(email, password)
+        result = self.service.login(email, password)
 
-            return result, 200
-
-        except Unauthorized as e:
-            return {"error": str(e)}, 401
-        except Exception as e:
-            return {"error": "An unexpected error occurred"}, 500
+        return result, 200
 
 
 @ns.route("/update-profile")
 @ns.response(200, "Profile updated successfully")
-@ns.response(400, "Invalid input")
 @ns.response(404, "User not found")
-class UpdateProfileRoute(Resource):
+class UpdateProfileRoute(UserBaseRoute):
 
-    @ns.expect(signup_input_dto)
-    @jwt_required()
+    @ns.expect(user_update_input_dto)
+    @ns.marshal_with(user_output_dto)
     def put(self):
         """
         Update user profile information.
@@ -79,12 +77,9 @@ class UpdateProfileRoute(Resource):
         """
         data = request.get_json()
 
-        updated_user = user_service.update_user_data(
+        updated_user = self.service.update_user_data(
             username=data.get("username"),
             email=data.get("email"),
             password=data.get("password"),
         )
-        return {
-            "message": "Profile updated successfully",
-            "user": updated_user.username,
-        }, 200
+        return updated_user

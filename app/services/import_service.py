@@ -114,9 +114,8 @@ class ImportService:
         self,
         pet_documents: typing.List[any],
         project_id: int,
-        user_id: int,
     ):
-
+        user_id = self._user_service.get_logged_in_user_id()
         for pet_document in pet_documents:
             self._import_pet_document(pet_document, project_id, user_id)
 

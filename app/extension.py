@@ -18,4 +18,5 @@ api = Api(
     doc="/docs",
     security="Bearer",
     authorizations=authorizations,
+    validate=True,
 )

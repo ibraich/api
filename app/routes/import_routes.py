@@ -1,19 +1,20 @@
 from flask import request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace
 from werkzeug.exceptions import BadRequest
 
-
+from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.import_service import import_service
 
 ns = Namespace("imports", description="Import data from different sources")
 
 
+class ImportBaseRoute(AuthorizedBaseRoute):
+    service = import_service
+
+
 @ns.route("/documents")
-@ns.response(400, "Invalid input")
 @ns.response(403, "Authorization required")
-class Imports(Resource):
-    import_service = import_service
+class Imports(ImportBaseRoute):
 
     @ns.doc(description="Import documents from other source.")
     @ns.doc(
@@ -29,19 +30,19 @@ class Imports(Resource):
             },
         }
     )
-    @jwt_required()
     def post(self):
         """
         Import documents from different data sources.
         Currently, only a list of PET documents is supported
         """
-        user_id = int(get_jwt_identity())
         import_list = request.get_json()
 
         project_id = int(request.args.get("project_id"))
+        self.verify_positive_integer(project_id)
+
         source = request.args.get("source")
 
         if source == "pet":
-            return import_service.import_pet_documents(import_list, project_id, user_id)
+            return self.service.import_pet_documents(import_list, project_id)
         else:
             raise BadRequest(f"Invalid source {source}")

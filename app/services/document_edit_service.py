@@ -23,13 +23,13 @@ class DocumentEditService:
 
     def __init__(
         self,
-        document_edit_repository: DocumentEditRepository,
-        user_service: UserService,
-        document_recommendation_service: DocumentRecommendationService,
-        token_service: TokenService,
-        mention_service: MentionService,
-        relation_service: RelationService,
-        schema_service: SchemaService,
+        document_edit_repository,
+        user_service,
+        document_recommendation_service,
+        token_service,
+        mention_service,
+        relation_service,
+        schema_service,
     ):
         self.__document_edit_repository = document_edit_repository
         self.user_service = user_service
