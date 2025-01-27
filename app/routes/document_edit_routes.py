@@ -91,6 +91,7 @@ class DocumentEditResource(DocumentEditBaseRoute):
 @ns.doc(params={"document_id": "A Document ID"})
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
+@ns.response(500, "Internal server error")
 class DocumentEditsSenderResource(DocumentEditBaseRoute):
 
     @ns.doc(
@@ -129,7 +130,8 @@ class DocumentEditsSenderResource(DocumentEditBaseRoute):
             return {"message": str(e)}, 400
         except Exception as e:
             return {"message": f"An unexpected error occurred: {str(e)}"}, 500
-          
+
+
 @ns.route("/<int:document_edit_id>/model")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
 @ns.response(403, "Authorization required")

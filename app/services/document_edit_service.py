@@ -214,7 +214,11 @@ class DocumentEditService:
             {
                 "tag": mention["tag"],
                 "tokens": mention["tokens"],
-                "entity": {"id": mention["entity_id"]},
+                **(
+                    {"entity": {"id": mention["entity_id"]}}
+                    if mention.get("entity_id")
+                    else {}
+                ),  # Only add entity object if entity_id exists
             }
             for mention in mentions_data.get("mentions", [])
         ]
@@ -262,7 +266,7 @@ class DocumentEditService:
         ]
 
         return transformed_edits
-      
+
     def get_document_edit_model(self, document_edit_id):
         settings = self.__document_edit_repository.get_document_edit_model(
             document_edit_id
