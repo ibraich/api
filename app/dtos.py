@@ -664,7 +664,9 @@ heatmap_output_list_dto = api.model(
         "items": fields.List(
             fields.Nested(heatmap_output_dto),
             description="List of heatmap token objects",
-        )
+        ),
+    },
+)
 
 model_train_input = api.model(
     "ModelTrainInput",
