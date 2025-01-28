@@ -114,8 +114,8 @@ class ImportService:
         self,
         pet_documents: typing.List[any],
         project_id: int,
+        user_id,
     ):
-        user_id = self._user_service.get_logged_in_user_id()
         for pet_document in pet_documents:
             self._import_pet_document(pet_document, project_id, user_id)
 
@@ -160,14 +160,12 @@ class ImportService:
                     f'Given Mention type "{mention.get("type")}" does not exist in the schema of the project'
                 )
             created_mention = self._mention_service.create_mentions(
-                {
-                    "document_edit_id": document_edit["id"],
-                    "schema_mention_id": schema_mention_id,
-                    "token_ids": [
-                        token_ids_by_index.get(t)
-                        for t in mention.get("tokenDocumentIndices")
-                    ],
-                },
+                document_edit_id=document_edit["id"],
+                schema_mention_id=schema_mention_id,
+                token_ids=[
+                    token_ids_by_index.get(t)
+                    for t in mention.get("tokenDocumentIndices")
+                ],
             )
             mentions_by_index[index] = created_mention
 

@@ -9,6 +9,9 @@ class Config:
     db_name = os.getenv("DB_NAME", "annotation_db")
 
     PIPELINE_URL = os.getenv("PIPELINE_URL", "http://annotation_pipeline:8080/pipeline")
+    DIFFERENCE_CALC_URL = os.getenv(
+        "DIFFERENCE_CALC_URL", "http://annotation_difference_calc:8443/difference-calc"
+    )
     DEBUG = os.getenv("DEBUG", True)
 
     SQLALCHEMY_DATABASE_URI = (

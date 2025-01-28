@@ -135,7 +135,7 @@ relation_input_dto = api.model(
     {
         "schema_relation_id": fields.Integer,
         "document_edit_id": fields.Integer(required=True),
-        "isDirected": fields.Boolean,
+        "isDirected": fields.Boolean(default=True),
         "mention_head_id": fields.Integer(required=True),
         "mention_tail_id": fields.Integer(required=True),
     },

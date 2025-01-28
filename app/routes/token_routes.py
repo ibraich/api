@@ -4,13 +4,13 @@ from flask_restx import Namespace
 
 from app.dtos import token_output_list_dto
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.services.token_service import token_service
+from app.services.token_service import token_service, TokenService
 
 ns = Namespace("tokens", description="Token related operations")
 
 
 class TokenBaseRoute(AuthorizedBaseRoute):
-    service = token_service
+    service: TokenService = token_service
 
 
 @ns.route("/<int:document_id>")
@@ -22,8 +22,8 @@ class TokenQueryResource(TokenBaseRoute):
     @ns.doc(description="Get Tokens of document")
     @ns.marshal_with(token_output_list_dto)
     def get(self, document_id):
-        if not document_id:
-            raise BadRequest("Document Edit ID is required.")
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
 
         response = self.service.get_tokens_by_document(document_id)
         return response

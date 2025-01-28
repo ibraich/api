@@ -31,10 +31,11 @@ class ProjectService:
         self.team_service = team_service
         self.document_service = document_service
 
-    def create_project(self, team_id, schema_id, projectname):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_in_team(user_id, team_id)
-        self.user_service.check_user_schema_accessible(user_id, schema_id)
+    def create_project(self, user_id, team_id, schema_id, projectname):
+        duplicate_project = self.__project_repository.get_project_by_name(projectname)
+        if duplicate_project:
+            raise BadRequest("Project with name " + projectname + " already exists")
+
         self.schema_service.fix_schema(schema_id)
         project = self.__project_repository.create_project(
             projectname,
@@ -55,8 +56,7 @@ class ProjectService:
             raise BadRequest("Project not found")
         return self.build_project(project)
 
-    def get_projects_by_user(self):
-        user_id = self.user_service.get_logged_in_user_id()
+    def get_projects_by_user(self, user_id):
         projects = self.__project_repository.get_projects_by_user(user_id)
         if projects is None:
             return {"projects": []}
@@ -78,9 +78,6 @@ class ProjectService:
         }
 
     def soft_delete_project(self, project_id):
-        user_id = self.user_service.get_logged_in_user_id()
-        team_id = self.team_service.get_team_by_project_id(project_id)
-        self.user_service.check_user_in_team(user_id, team_id)
         if not isinstance(project_id, int) or project_id <= 0:
             raise BadRequest("Invalid project ID. Must be a positive integer.")
 

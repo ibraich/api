@@ -2,8 +2,11 @@ from flask_restx import Namespace
 import requests
 from werkzeug.exceptions import NotFound, BadRequest
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.services.document_edit_service import document_edit_service
-from flask import request
+from app.services.document_edit_service import (
+    document_edit_service,
+    DocumentEditService,
+)
+from flask import request, current_app
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
@@ -18,7 +21,7 @@ ns = Namespace("annotations", description="Document-Annotation related operation
 
 
 class DocumentEditBaseRoute(AuthorizedBaseRoute):
-    service = document_edit_service
+    service: DocumentEditService = document_edit_service
 
 
 @ns.route("")
@@ -30,16 +33,22 @@ class DocumentRoutes(DocumentEditBaseRoute):
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_edit_input_dto)
     def post(self):
-        request_data = request.get_json()
+        data = request.get_json()
+
+        document_id = (data.get("document_id"),)
+        user_id = self.user_service.get_logged_in_user_id()
+
+        self.user_service.check_user_document_accessible(user_id, document_id)
 
         response = self.service.create_document_edit(
-            request_data.get("document_id"),
-            request_data.get("model_mention_id"),
-            request_data.get("model_entities_id"),
-            request_data.get("model_relation_id"),
-            request_data.get("model_settings_mention"),
-            request_data.get("model_settings_entities"),
-            request_data.get("model_settings_relation"),
+            user_id,
+            document_id,
+            data.get("model_mention_id"),
+            data.get("model_entities_id"),
+            data.get("model_relation_id"),
+            data.get("model_settings_mention"),
+            data.get("model_settings_entities"),
+            data.get("model_settings_relation"),
         )
         return response
 
@@ -53,9 +62,9 @@ class DocumentRoutes(DocumentEditBaseRoute):
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_overtake_dto)
     def post(self):
-        request_data = request.get_json()
+        data = request.json
 
-        response = self.service.overtake_document_edit(request_data["document_edit_id"])
+        response = self.service.overtake_document_edit(data.get("document_edit_id"))
         return response
 
 
@@ -68,6 +77,9 @@ class DocumentEditDeletionResource(DocumentEditBaseRoute):
     @ns.marshal_with(document_edit_output_soft_delete_dto)
     @ns.doc(description="Soft-delete a DocumentEdit by setting 'active' to False")
     def delete(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
         response = self.service.soft_delete_document_edit(document_edit_id)
         return response
 
@@ -78,11 +90,12 @@ class DocumentEditDeletionResource(DocumentEditBaseRoute):
 @ns.response(404, "Data not found")
 class DocumentEditResource(DocumentEditBaseRoute):
 
-    @ns.marshal_with(
-        finished_document_edit_output_dto
-    )  # Define the DTO structure for output
+    @ns.marshal_with(finished_document_edit_output_dto)
     @ns.doc(description="Fetch details of a DocumentEdit by its ID")
     def get(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
         response = self.service.get_document_edit_by_id(document_edit_id)
         return response
 
@@ -99,37 +112,26 @@ class DocumentEditsSenderResource(DocumentEditBaseRoute):
     )
     @ns.marshal_with(heatmap_output_list_dto)
     def post(self, document_id):
-        try:
-            transformed_edits = self.service.get_all_document_edits_by_document(
-                document_id
-            )
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
 
-            external_endpoint = (
-                "http://annotation_difference_calc:8443/difference-calc/heatmap"
-            )
+        transformed_edits = self.service.get_all_document_edits_by_document(document_id)
 
-            headers = {
-                "accept": "application/json",
-                "Content-Type": "application/json",
-            }
-            response = requests.post(
-                external_endpoint, json=transformed_edits, headers=headers
-            )
+        external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/heatmap"
 
-            # Handle response from the external endpoint
-            if response.status_code != 200:
-                return {
-                    "message": f"Failed to send data: {response.text}"
-                }, response.status_code
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            external_endpoint, json=transformed_edits, headers=headers
+        )
 
-            return {"items": response.json()}, 200
+        # Handle response from the external endpoint
+        if response.status_code != 200:
+            raise BadRequest("Heatmap calculation failed: " + response.text)
 
-        except NotFound as e:
-            return {"message": str(e)}, 404
-        except BadRequest as e:
-            return {"message": str(e)}, 400
-        except Exception as e:
-            return {"message": f"An unexpected error occurred: {str(e)}"}, 500
+        return {"items": response.json()}
 
 
 @ns.route("/<int:document_edit_id>/model")
@@ -143,5 +145,8 @@ class DocumentEditResource(DocumentEditBaseRoute):
         description="Fetch details of the models used in Recommendations for DocumentEdit"
     )
     def get(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
         response = self.service.get_document_edit_model(document_edit_id)
         return response
