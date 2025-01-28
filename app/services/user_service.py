@@ -1,6 +1,5 @@
 from datetime import timedelta
 from app.config import Config
-from flask import session
 from werkzeug.exceptions import BadRequest, Forbidden, Unauthorized, NotFound
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.repositories.user_repository import UserRepository
@@ -55,7 +54,6 @@ class UserService:
         )
         if document is None:
             raise Forbidden("You cannot access this document")
-        return document
 
     def check_user_document_edit_accessible(self, user_id, document_edit_id):
         document_edit_user_id = self.get_user_by_document_edit_id(document_edit_id)

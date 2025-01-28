@@ -373,6 +373,19 @@ class MentionService:
     def get_mention_by_id(self, mention_id):
         return self.__mention_repository.get_mention_by_id(mention_id)
 
+    def create_recommended_mention(
+        self, document_edit_id, document_recommendation_id, mention_recommendations
+    ):
+        for mention_recommendation in mention_recommendations:
+            mention = self.__mention_repository.create_mention(
+                mention_recommendation["mention_schema_id"],
+                document_edit_id,
+                document_recommendation_id,
+                is_shown_recommendation=True,
+            )
+            for token_id in mention_recommendation["token_ids"]:
+                self.token_mention_service.create_token_mention(token_id, mention.id)
+
 
 mention_service = MentionService(
     MentionRepository(),

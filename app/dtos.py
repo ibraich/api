@@ -529,7 +529,7 @@ document_model = api.model(
 )
 
 finished_document_edit_output_dto = api.model(
-    "DocumentEditOutput",
+    "FinishedDocumentEditOutput",
     {
         "document": fields.Nested(document_model, description="Document details"),
         "mentions": fields.List(
