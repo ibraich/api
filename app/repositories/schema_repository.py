@@ -13,6 +13,7 @@ from app.models import (
     DocumentEdit,
     RecommendationModel,
     ModelStep,
+    Document,
 )
 from app.repositories.base_repository import BaseRepository
 
@@ -273,3 +274,14 @@ class SchemaRepository(BaseRepository):
 
     def get_model_steps(self):
         return self.get_session().query(ModelStep.id, ModelStep.type).all()
+
+    def get_schema_by_document(self, document_id):
+        return (
+            self.get_session()
+            .query(Schema)
+            .select_from(Document)
+            .join(Project, Project.id == Document.project_id)
+            .join(Schema, Schema.id == Project.schema_id)
+            .filter(Document.id == document_id)
+            .one()
+        )

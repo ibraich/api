@@ -57,13 +57,14 @@ class DocumentEditService:
             raise BadRequest("Document Edit already exists")
 
         # Check if user has access to this document
-        document = self.user_service.check_user_document_accessible(
-            user_id, document_id
-        )
+        self.user_service.check_user_document_accessible(user_id, document_id)
+
+        # Get schema of document
+        schema = self.schema_service.get_schema_by_document(document_id)
 
         # Use default llm if no model is specified
         if not all([model_mention, model_relation, model_entities]):
-            models = self.schema_service.get_models_by_schema(document.schema_id)
+            models = self.schema_service.get_models_by_schema(schema.id)
             models = [
                 model
                 for model in models
@@ -83,18 +84,19 @@ class DocumentEditService:
                         model_relation = model["id"]
 
         self.schema_service.check_models_in_schema(
-            model_mention, model_entities, model_relation, document.schema_id
+            model_mention, model_entities, model_relation, schema.id
         )
 
         # Create document edit
         document_edit = self.__document_edit_repository.create_document_edit(
             document_id,
             user_id,
-            document.schema_id,
+            schema.id,
             model_mention,
             model_entities,
             model_relation,
         )
+        doc_edit = self.get_document_edit_with_document_by_id(document_edit.id)
 
         # Create document recommendation for document edit
         document_recommendation = (
@@ -114,12 +116,19 @@ class DocumentEditService:
             document_edit.id, model_relation, model_settings_relation
         )
 
-        # TODO: generate recommendations for document edit
-
         # Create mention recommendation
+        params = {}
+        models = self.get_document_edit_model(document_edit.id)["models"]
+        for model in models:
+            if model["step"]["id"] == 1:  # MENTIONS
+                params["model_type"] = model["type"]
+                params["name"] = model["name"]
+                for setting in model["settings"]:
+                    params[setting["key"]] = setting["value"]
+
         mention_recommendations = (
             self.document_recommendation_service.get_mention_recommendation(
-                document_id, document.schema_id
+                document_id, doc_edit.schema_id, doc_edit.content, params
             )
         )
         self.mention_service.create_recommended_mention(
@@ -138,6 +147,11 @@ class DocumentEditService:
     def get_document_edit_by_document(self, document_id, user_id):
         return self.__document_edit_repository.get_document_edit_by_document(
             document_id, user_id
+        )
+
+    def get_document_edit_with_document_by_id(self, document_edit_id):
+        return self.__document_edit_repository.get_document_edit_with_document_by_id(
+            document_edit_id
         )
 
     def overtake_document_edit(self, document_edit_id):

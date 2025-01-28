@@ -378,5 +378,8 @@ class SchemaService:
             raise BadRequest("No Schema Mentions Found")
         return schema_mentions
 
+    def get_schema_by_document(self, document_id):
+        return self.__schema_repository.get_schema_by_document(document_id)
+
 
 schema_service = SchemaService(SchemaRepository(), user_service)

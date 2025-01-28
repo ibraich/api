@@ -5,7 +5,6 @@ import requests
 from app.repositories.document_recommendation_repository import (
     DocumentRecommendationRepository,
 )
-from app.services.document_service import DocumentService, document_service
 from app.services.mention_services import MentionService, mention_service
 from app.services.schema_service import schema_service, SchemaService
 from app.services.token_service import token_service, TokenService
@@ -14,7 +13,6 @@ from app.services.token_service import token_service, TokenService
 class DocumentRecommendationService:
     __document_recommendation_repository: DocumentRecommendationRepository
     mention_service: MentionService
-    document_service: DocumentService
     token_service: TokenService
     schema_service: SchemaService
 
@@ -22,13 +20,11 @@ class DocumentRecommendationService:
         self,
         document_recommendation_repository,
         mention_service,
-        document_service,
         token_service,
         schema_service,
     ):
         self.__document_recommendation_repository = document_recommendation_repository
         self.mention_service = mention_service
-        self.document_service = document_service
         self.token_service = token_service
         self.schema_service = schema_service
 
@@ -49,17 +45,23 @@ class DocumentRecommendationService:
             document_recommendation_id_target,
         )
 
-    def get_mention_recommendation(self, document_id, schema_id):
+    def get_mention_recommendation(self, document_id, schema_id, content, params):
         # get schema_mention
         schema_mentions = self.schema_service.get_schema_mentions_by_schema(schema_id)
         if schema_mentions is None:
             raise BadRequest("Schema mentions not found")
 
-        # get mention_recommendation from pipeline service and tokens from database
-        tokens, mention_recommendations = (
-            self.get_mention_recommendation_from_pipeline_service(
-                document_id, schema_id, schema_mentions
-            )
+        tokens = self.token_service.get_tokens_by_document(document_id)["tokens"]
+        if tokens is None:
+            raise BadRequest("Tokens not found")
+
+        mention_recommendation_input = self.get_mention_recommendation_input_dto(
+            tokens, schema_id, schema_mentions, content, document_id
+        )
+
+        # get mention_recommendation from pipeline service
+        mention_recommendations = self.get_mention_recommendation_from_pipeline_service(
+            mention_recommendation_input, params=params
         )
 
         # check for duplicate and overlapping tokens
@@ -83,16 +85,12 @@ class DocumentRecommendationService:
         return filtered_token_ids_and_schema_mention_id
 
     def get_mention_recommendation_from_pipeline_service(
-        self, document_id, schema_id, schema_mentions
+        self, mention_recommendation_input, params
     ):
         # get request dto for pipeline service
-        mention_recommendation_input = self.get_mention_recommendation_input_dto(
-            document_id, schema_id, schema_mentions
-        )
+
         # Define the base URL
         url = current_app.config.get("PIPELINE_URL") + "/steps/mention"
-        # Define the query parameters
-        params = {"model_type": "llm"}
         # Define the headers
         headers = {
             "accept": "application/json",
@@ -101,28 +99,25 @@ class DocumentRecommendationService:
         response = requests.post(
             url, params=params, json=mention_recommendation_input, headers=headers
         )
+        if response.status_code != 200:
+            raise BadRequest("Failed to fetch recommendations: " + response.text)
         mention_recommendations = response.json()
-        return mention_recommendation_input["tokens"], mention_recommendations
+        return mention_recommendations
 
     def get_mention_recommendation_input_dto(
-        self, document_id, schema_id, schema_mentions
+        self, tokens, schema_id, schema_mentions, content, document_id
     ):
-        document = self.document_service.get_document_by_id(document_id)
-        if document is None:
-            raise BadRequest("Document not found")
-        tokens = self.token_service.get_tokens_by_document(document_id)
-        if tokens is None:
-            raise BadRequest("Tokens not found")
         schema_mention_recommendation_input = (
             self.get_schema_mention_recommendation_input_dto(schema_mentions)
         )
 
         return {
+            "document_id": str(document_id),
             "schema": {
                 "id": schema_id,
                 "schema_mentions": schema_mention_recommendation_input,
             },
-            "content": document.content,
+            "content": content,
             "tokens": tokens,
         }
 
@@ -143,8 +138,8 @@ class DocumentRecommendationService:
 
         # Check for tokens with the same start and end index
         for token in sorted_tokens:
-            if token["startTokenDocumentIndex"] == token["endTokenDocumentIndex"]:
-                return False  # Token with same start and end index found
+            if token["startTokenDocumentIndex"] > token["endTokenDocumentIndex"]:
+                return False  # Token with higher start than end index found
 
         # Iterate through the sorted tokens and check for overlaps
         for i in range(len(sorted_tokens) - 1):
@@ -154,7 +149,7 @@ class DocumentRecommendationService:
             # Check if the current token overlaps with the next token
             if (
                 current_token["endTokenDocumentIndex"]
-                > next_token["startTokenDocumentIndex"]
+                >= next_token["startTokenDocumentIndex"]
             ):
                 return False  # Overlap found
 
@@ -191,7 +186,6 @@ class DocumentRecommendationService:
 document_recommendation_service = DocumentRecommendationService(
     DocumentRecommendationRepository(),
     mention_service,
-    document_service,
     token_service,
     schema_service,
 )

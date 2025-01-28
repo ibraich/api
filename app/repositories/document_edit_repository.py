@@ -3,6 +3,7 @@ from app.models import (
     DocumentEditModelSettings,
     RecommendationModel,
     ModelStep,
+    Document,
 )
 from app.repositories.base_repository import BaseRepository
 
@@ -36,6 +37,25 @@ class DocumentEditRepository(BaseRepository):
             .query(DocumentEdit)
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.user_id == user_id)
+            .filter(DocumentEdit.active == True)
+            .first()
+        )
+
+    def get_document_edit_with_document_by_id(self, document_edit_id):
+        return (
+            self.get_session()
+            .query(
+                DocumentEdit.id,
+                DocumentEdit.user_id,
+                DocumentEdit.schema_id,
+                DocumentEdit.state_id,
+                DocumentEdit.document_id,
+                Document.content,
+                Document.name,
+                Document.project_id,
+            )
+            .join(Document, Document.id == DocumentEdit.document_id)
+            .filter(DocumentEdit.id == document_edit_id)
             .filter(DocumentEdit.active == True)
             .first()
         )
@@ -97,7 +117,7 @@ class DocumentEditRepository(BaseRepository):
             settings.append(
                 DocumentEditModelSettings(
                     document_edit_id=document_edit_id,
-                    model_id=model_id,
+                    recommendation_model_id=model_id,
                     key=model_setting["key"],
                     value=model_setting["value"],
                 )

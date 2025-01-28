@@ -381,8 +381,9 @@ class MentionService:
                 mention_recommendation["mention_schema_id"],
                 document_edit_id,
                 document_recommendation_id,
+                is_shown_recommendation=True,
             )
-            for token_id in mention_recommendation["tokens"]:
+            for token_id in mention_recommendation["token_ids"]:
                 self.token_mention_service.create_token_mention(token_id, mention.id)
 
 
