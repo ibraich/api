@@ -147,3 +147,27 @@ class DocumentRepository(BaseRepository):
         )
 
         return doc_ids
+
+    def get_all_document_edits_by_document(self, document_id):
+        return (
+            self.get_session()
+            .query(DocumentEdit)
+            .filter(DocumentEdit.document_id == document_id)
+            .filter(DocumentEdit.active == True)
+            .all()
+        )
+
+    def get_all_document_edits_with_user_by_document(self, document_id):
+        return (
+            self.get_session()
+            .query(
+                DocumentEdit.id.label("edit_id"),
+                User.id.label("user_id"),
+                User.email.label("user_email"),
+                User.username.label("user_username"),
+            )
+            .join(User, User.id == DocumentEdit.user_id)
+            .filter(DocumentEdit.document_id == document_id)
+            .filter(DocumentEdit.active == True)
+            .all()
+        )

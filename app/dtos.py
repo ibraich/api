@@ -667,12 +667,50 @@ heatmap_output_dto = api.model(
     },
 )
 
+heat_user_dto = api.model(
+    "User",
+    {
+        "id": fields.Integer(description="User ID"),
+        "email": fields.String(description="User email"),
+        "username": fields.String(description="User username"),
+    },
+)
+
+
+# Define a DocumentEdit DTO
+heat_document_edit_dto = api.model(
+    "DocumentEdit",
+    {
+        "id": fields.Integer(description="DocumentEdit ID"),
+        "user": fields.Nested(
+            heat_user_dto, description="Details of the user who edited the document"
+        ),
+    },
+)
+
+# Define a Document DTO
+heat_document_dto = api.model(
+    "Document",
+    {
+        "id": fields.Integer(description="Document ID"),
+        "name": fields.String(description="Document name"),
+    },
+)
+
+# Extend HeatmapOutputList DTO to include document and document_edits
 heatmap_output_list_dto = api.model(
     "HeatmapOutputList",
     {
         "items": fields.List(
             fields.Nested(heatmap_output_dto),
             description="List of heatmap token objects",
+        ),
+        "document": fields.Nested(
+            heat_document_dto, description="Details of the document"
+        ),
+        "document_edits": fields.List(
+            fields.Nested(heat_document_edit_dto),
+            description="List of document edits with user details",
         ),
     },
 )
