@@ -16,6 +16,10 @@ from app.models import (
     Document,
 )
 from app.repositories.base_repository import BaseRepository
+from flask import request, jsonify
+
+
+
 
 
 class SchemaRepository(BaseRepository):
@@ -285,3 +289,31 @@ class SchemaRepository(BaseRepository):
             .filter(Document.id == document_id)
             .one()
         )
+
+    def get_schema_by_id(self, schema_id):
+        return (
+            self.get_session()
+            .query(Schema.id, Schema.isFixed, Schema.mentions, Schema.relations, Schema.constraints)
+            .filter(Schema.id == schema_id)
+            .first()
+        )
+
+    def add_schema_elements(self, schema_id, mentions, relations, constraints):
+        session = self.get_session()
+        for mention in mentions:
+            session.add(SchemaMention(schema_id=schema_id, **mention))
+        for relation in relations:
+            session.add(SchemaRelation(schema_id=schema_id, **relation))
+        for constraint in constraints:
+            session.add(SchemaConstraint(schema_id=schema_id, **constraint))
+        session.commit()
+
+    def remove_schema_elements(self, schema_id, element_ids, element_type):
+        session = self.get_session()
+        if element_type == "mention":
+            session.query(SchemaMention).filter(SchemaMention.id.in_(element_ids)).delete(synchronize_session=False)
+        elif element_type == "relation":
+            session.query(SchemaRelation).filter(SchemaRelation.id.in_(element_ids)).delete(synchronize_session=False)
+        elif element_type == "constraint":
+            session.query(SchemaConstraint).filter(SchemaConstraint.id.in_(element_ids)).delete(synchronize_session=False)
+        session.commit()

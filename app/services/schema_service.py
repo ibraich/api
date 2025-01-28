@@ -381,5 +381,29 @@ class SchemaService:
     def get_schema_by_document(self, document_id):
         return self.__schema_repository.get_schema_by_document(document_id)
 
+    def update_schema(self, schema_id, mentions, relations, constraints):
+        schema = self.schema_repository.get_schema_by_id(schema_id)
+        if not schema:
+            raise BadRequest("Schema not found.")
+        if schema.isFixed:
+            raise BadRequest("Schema is fixed and cannot be modified.")
+
+        existing_mentions = [mention.id for mention in schema.mentions]
+        existing_relations = [relation.id for relation in schema.relations]
+        existing_constraints = [constraint.id for constraint in schema.constraints]
+
+        new_mentions = [m for m in mentions if m['id'] not in existing_mentions]
+        obsolete_mentions = set(existing_mentions) - {m['id'] for m in mentions}
+
+        new_relations = [r for r in relations if r['id'] not in existing_relations]
+        obsolete_relations = set(existing_relations) - {r['id'] for r in relations}
+
+        new_constraints = [c for c in constraints if c['id'] not in existing_constraints]
+        obsolete_constraints = set(existing_constraints) - {c['id'] for c in constraints}
+
+        self.schema_repository.add_schema_elements(schema_id, new_mentions, new_relations, new_constraints)
+        self.schema_repository.remove_schema_elements(schema_id, obsolete_mentions, "mention")
+        self.schema_repository.remove_schema_elements(schema_id, obsolete_relations, "relation")
+        self.schema_repository.remove_schema_elements(schema_id, obsolete_constraints, "constraint")
 
 schema_service = SchemaService(SchemaRepository(), user_service)
