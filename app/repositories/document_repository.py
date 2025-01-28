@@ -17,6 +17,9 @@ from sqlalchemy import and_
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
 
+    def __init__(self, db_session):
+        self.db_session = db_session
+
     def get_documents_by_user(self, user_id):
         return (
             self.get_session()
@@ -147,3 +150,9 @@ class DocumentRepository(BaseRepository):
         )
 
         return doc_ids
+
+    def get_ids_by_project_ids(self, project_ids: list):
+        return [d.id for d in self.db_session.query(Document).filter(Document.project_id.in_(project_ids), Document.active == True).all()]
+
+    def mark_inactive_bulk(self, document_ids: list):
+        self.db_session.query(Document).filter(Document.id.in_(document_ids)).update({"active": False}, synchronize_session="fetch")

@@ -3,6 +3,9 @@ from app.repositories.base_repository import BaseRepository
 
 
 class TeamRepository(BaseRepository):
+    
+    def __init__(self, db_session):
+        self.db_session = db_session
 
     def get_teams_by_user(self, user_id):
         return (
@@ -64,3 +67,9 @@ class TeamRepository(BaseRepository):
 
         team.name = new_name
         return team
+
+    def get_by_id(self, team_id: int):
+        return self.db_session.query(Team).filter_by(id=team_id, active=True).first()
+
+    def mark_inactive(self, team_id: int):
+        self.db_session.query(Team).filter_by(id=team_id).update({"active": False})

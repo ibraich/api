@@ -2,15 +2,22 @@ from werkzeug.exceptions import BadRequest, Conflict, NotFound
 
 from app.repositories.team_repository import TeamRepository
 from app.services.user_service import UserService, user_service
-
+from app.repositories.project_repository import ProjectRepository
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.document_edit_repository import DocumentEditRepository
 
 class TeamService:
     __team_repository: TeamRepository
     user_service: UserService
 
-    def __init__(self, team_repository, user_service):
+    def __init__(self, team_repository, user_service, db_session):
         self.__team_repository = team_repository
         self.user_service = user_service
+        self.db_session = db_session
+        self.team_repository = TeamRepository(self.db_session)
+        self.project_repository = ProjectRepository(self.db_session)
+        self.document_repository = DocumentRepository(self.db_session)
+        self.document_edit_repository = DocumentEditRepository(self.db_session)
 
     def get_teams_by_user(self):
         current_user_id = self.user_service.get_logged_in_user_id()
@@ -114,5 +121,36 @@ class TeamService:
             raise NotFound(f"Team with ID {team_id} not found.")
         return self.get_team_by_id(team_id)
 
+    def delete_team_logically(self, team_id: int):
+        """
+        Marks a team and all its associated projects, documents, and document edits as inactive.
+
+        :param team_id: The ID of the team to delete logically.
+        :raises NotFound: If the team does not exist.
+        """
+        # Check if the team exists
+        team = self.team_repository.get_by_id(team_id)
+        if not team:
+            raise NotFound(f"Team with ID {team_id} not found.")
+
+        # Mark the team as inactive
+        self.team_repository.mark_inactive(team_id)
+
+        # Retrieve associated projects
+        project_ids = self.project_repository.get_ids_by_team_id(team_id)
+        if project_ids:
+            self.project_repository.mark_inactive_bulk(project_ids)
+
+            # Retrieve associated documents
+            document_ids = self.document_repository.get_ids_by_project_ids(project_ids)
+            if document_ids:
+                self.document_repository.mark_inactive_bulk(document_ids)
+
+                # Retrieve associated document edits
+                document_edit_ids = self.document_edit_repository.get_ids_by_document_ids(document_ids)
+                if document_edit_ids:
+                    self.document_edit_repository.mark_inactive_bulk(document_edit_ids)
+
+        self.db_session.commit()
 
 team_service = TeamService(TeamRepository(), user_service)
