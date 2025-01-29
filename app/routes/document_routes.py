@@ -1,8 +1,7 @@
 import requests
 from flask_restx import Namespace
-from werkzeug.exceptions import BadRequest, NotFound, InternalServerError
+from werkzeug.exceptions import NotFound, InternalServerError
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.services.document_service import document_service
 from flask import request, current_app
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (

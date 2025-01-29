@@ -4,7 +4,7 @@ from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from flask import request, current_app
+from flask import request
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
