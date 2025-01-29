@@ -150,14 +150,13 @@ class DocumentEditService:
             document_edit_id
         )
 
-    def overtake_document_edit(self, document_edit_id):
+    def overtake_document_edit(self, logged_in_user_id, document_edit_id):
         document_edit = self.__document_edit_repository.get_document_edit_by_id(
             document_edit_id
         )
         if document_edit is None:
             raise BadRequest("Document edit does not exist")
 
-        logged_in_user_id = self.user_service.get_logged_in_user_id()
         current_owner_id = document_edit.user_id
 
         if logged_in_user_id == current_owner_id:

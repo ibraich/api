@@ -63,8 +63,11 @@ class DocumentRoutes(DocumentEditBaseRoute):
     @ns.expect(document_overtake_dto)
     def post(self):
         data = request.json
+        user_id = self.user_service.get_logged_in_user_id()
 
-        response = self.service.overtake_document_edit(data.get("document_edit_id"))
+        response = self.service.overtake_document_edit(
+            user_id, data.get("document_edit_id")
+        )
         return response
 
 

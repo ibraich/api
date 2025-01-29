@@ -144,7 +144,7 @@ class MentionService:
                     is_shown_recommendation=True,
                 )
 
-    def delete_mention(self, mention_id):
+    def delete_mention(self, user_id, mention_id):
         if not isinstance(mention_id, int) or mention_id <= 0:
             raise BadRequest("Invalid mention ID. It must be a positive integer.")
 
@@ -157,7 +157,6 @@ class MentionService:
                 "Cannot delete a mention without a valid document_edit_id."
             )
 
-        user_id = user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
             user_id, mention.document_edit_id
         )

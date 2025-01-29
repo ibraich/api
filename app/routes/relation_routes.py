@@ -81,7 +81,7 @@ class RelationCreationResource(RelationBaseRoute):
         data = request.json
 
         user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_relation_accessible(
+        self.user_service.check_user_document_edit_accessible(
             user_id, data["document_edit_id"]
         )
 
