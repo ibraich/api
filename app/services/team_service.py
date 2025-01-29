@@ -19,29 +19,25 @@ class TeamService:
         self.document_repository = DocumentRepository(self.db_session)
         self.document_edit_repository = DocumentEditRepository(self.db_session)
 
-    def get_teams_by_user(self):
-        current_user_id = self.user_service.get_logged_in_user_id()
-        teams = self.__team_repository.get_teams_by_user(current_user_id)
+    def get_teams_by_user(self, user_id):
+        teams = self.__team_repository.get_teams_by_user(user_id)
         if teams is None:
             return {"teams": []}
-        return {
-            "teams": [
-                {
-                    "id": team.id,
-                    "name": team.name,
-                    "creator": self.user_service.get_user_by_id(team.creator_id),
-                    "members": self.__get_team_members_by_team_id(team.id),
-                }
-                for team in teams
-            ]
-        }
+        return {"teams": [self.map_to_team_output_dto(team) for team in teams]}
 
     def get_team_by_id(self, team_id):
-        teams = self.get_teams_by_user()
-        for team in teams["teams"]:
-            if team["id"] == team_id:
-                return team
-        raise BadRequest("Team not found or no access to this team")
+        team = self.__team_repository.get_team_by_id(team_id)
+        if team is None:
+            raise BadRequest("Team not found")
+        return self.map_to_team_output_dto(team)
+
+    def map_to_team_output_dto(self, team):
+        return {
+            "id": team.id,
+            "name": team.name,
+            "creator": self.user_service.get_user_by_id(team.creator_id),
+            "members": self.__get_team_members_by_team_id(team.id),
+        }
 
     def __get_team_members_by_team_id(self, team_id):
         members = self.__team_repository.get_members_of_team(team_id)
@@ -57,10 +53,6 @@ class TeamService:
         if new_member is None:
             raise BadRequest("User not found")
 
-        # Check if logged-in user is part of the team
-        user = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_in_team(user, team_id)
-
         # Check that new member is not already part of the team
         try:
             self.user_service.check_user_in_team(new_member.id, team_id)
@@ -72,11 +64,13 @@ class TeamService:
     def __add_user(self, team_id, user_id):
         return self.__team_repository.add_user(team_id, user_id)
 
-    def create_team(self, team_name):
-        user_id = self.user_service.get_logged_in_user_id()
+    def create_team(self, creator_id, team_name):
+        duplicate_team = self.__team_repository.get_team_by_name(team_name)
+        if duplicate_team:
+            raise BadRequest("Team with name " + team_name + " already exists")
 
-        team = self.__team_repository.create_team(team_name, user_id)
-        self.__add_user(team.id, user_id)
+        team = self.__team_repository.create_team(team_name, creator_id)
+        self.__add_user(team.id, creator_id)
         return self.get_team_by_id(team.id)
 
     def remove_user_from_team(self, user_mail, team_id):
@@ -85,10 +79,6 @@ class TeamService:
         # If user does not exist, raise exception
         if member is None:
             raise BadRequest("User not found")
-
-        # Check if logged-in user is part of the team
-        user = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_in_team(user, team_id)
 
         # Check that member is currently part of the team
         try:
@@ -112,9 +102,6 @@ class TeamService:
         """Update the name of a team."""
         if not new_name or not new_name.strip():
             raise BadRequest("Team name cannot be empty.")
-
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_in_team(user_id, team_id)
 
         updated = self.__team_repository.update_team_name(team_id, new_name)
         if not updated:

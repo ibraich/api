@@ -36,9 +36,6 @@ class EntityService:
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        user_id = user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
-
         entities = self.__entity_repository.get_entities_by_document_edit(
             document_edit_id
         )
@@ -69,27 +66,20 @@ class EntityService:
     def delete_entity(self, entity_id):
         return self.entity_mention_service.delete_entity(entity_id)
 
-    def create_entity(self, data):
-
-        # check if user is allowed to access this document edit
-        user_id = user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, data["document_edit_id"]
-        )
-
+    def create_entity(self, document_edit_id, mention_ids):
         # Fetch all mentions of document
         mentions_of_edit = self.mention_service.get_mentions_by_document_edit(
-            data["document_edit_id"]
+            document_edit_id
         )
 
         # Filter mentions of entity
         mentions_of_entity = [
             mention
             for mention in mentions_of_edit["mentions"]
-            if mention["id"] in data["mention_ids"]
+            if mention["id"] in mention_ids
         ]
         # Check if a mention does not exist already
-        if len(mentions_of_entity) != len(data["mention_ids"]):
+        if len(mentions_of_entity) != len(mention_ids):
             raise BadRequest("Invalid mention ids.")
 
         tag_count = dict()
@@ -110,7 +100,7 @@ class EntityService:
             raise BadRequest("Mention with multiple types of tag detected")
 
         # save entity
-        entity = self.__entity_repository.create_entity(data["document_edit_id"])
+        entity = self.__entity_repository.create_entity(document_edit_id)
 
         # add entity id to mention or replace previous one
         for mention in mentions_of_entity:

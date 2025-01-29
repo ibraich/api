@@ -50,8 +50,6 @@ class TokenService:
         )
 
     def get_tokens_by_document(self, document_id):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_accessible(user_id, document_id)
         tokens = self.__token_repository.get_tokens_by_document(document_id)
         if tokens is None:
             return {"tokens": []}

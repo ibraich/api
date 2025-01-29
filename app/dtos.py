@@ -13,8 +13,8 @@ user_output_dto = api.model(
 mention_input_dto = api.model(
     "CreateMentionInput",
     {
-        "schema_mention_id": fields.Integer(required=True),
-        "document_edit_id": fields.Integer(required=True),
+        "schema_mention_id": fields.Integer(required=True, min=1),
+        "document_edit_id": fields.Integer(required=True, min=1),
         "token_ids": fields.List(fields.Integer, required=True),
     },
 )
@@ -29,7 +29,6 @@ schema_mention_output_dto = api.model(
         "entityPossible": fields.Boolean,
     },
 )
-
 
 project_input_dto = api.model(
     "ProjectInput",
@@ -112,11 +111,10 @@ document_output_dto = api.model(
     },
 )
 
-
 entity_input_dto = api.model(
     "EntityInput",
     {
-        "document_edit_id": fields.Integer(required=True),
+        "document_edit_id": fields.Integer(required=True, min=1),
         "mention_ids": fields.List(fields.Integer, required=True),
     },
 )
@@ -133,11 +131,11 @@ schema_relation_output_dto = api.model(
 relation_input_dto = api.model(
     "RelationInput",
     {
-        "schema_relation_id": fields.Integer,
-        "document_edit_id": fields.Integer(required=True),
-        "isDirected": fields.Boolean,
-        "mention_head_id": fields.Integer(required=True),
-        "mention_tail_id": fields.Integer(required=True),
+        "schema_relation_id": fields.Integer(required=True, min=1),
+        "document_edit_id": fields.Integer(required=True, min=1),
+        "isDirected": fields.Boolean(default=True),
+        "mention_head_id": fields.Integer(required=True, min=1),
+        "mention_tail_id": fields.Integer(required=True, min=1),
     },
 )
 
@@ -154,11 +152,12 @@ relation_output_dto = api.model(
     },
 )
 
-
 document_create_dto = api.model(
     "DocumentUpload",
     {
-        "project_id": fields.Integer(required=True, description="ID of the project"),
+        "project_id": fields.Integer(
+            required=True, min=1, description="ID of the project"
+        ),
         "file_name": fields.String(required=True, description="Name of the document"),
         "file_content": fields.String(
             required=True, description="Content of the document"
@@ -222,6 +221,7 @@ schema_output_dto = api.model(
         "schema_constraints": fields.List(fields.Nested(schema_constraint_output_dto)),
     },
 )
+
 schema_mention_input_dto = api.model(
     "SchemaMentionInput",
     {
@@ -350,7 +350,6 @@ document_edit_output_dto = api.model(
         "relation_model_id": fields.Integer,
     },
 )
-
 
 project_list_dto = api.model(
     "project_list_dto",
@@ -680,12 +679,14 @@ heatmap_output_list_dto = api.model(
 model_train_input = api.model(
     "ModelTrainInput",
     {
-        "model_name": fields.String(description="Name of trained model"),
-        "model_type": fields.String(description="Type of trained model"),
+        "model_name": fields.String(description="Name of trained model", required=True),
+        "model_type": fields.String(description="Type of trained model", required=True),
         "model_steps": fields.List(
             fields.String(
-                description="Steps this model can be used for, valid steps: MENTIONS, ENTITIES, RELATIONS"
+                description="Steps this model can be used for, valid steps: MENTIONS, ENTITIES, RELATIONS",
+                required=True,
             ),
+            required=True,
         ),
     },
 )

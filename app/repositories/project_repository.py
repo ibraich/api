@@ -92,8 +92,12 @@ class ProjectRepository(BaseRepository):
         project.active = False
         return True
 
-    def get_ids_by_team_id(self, team_id: int):
-        return [p.id for p in self.db_session.query(Project).filter_by(team_id=team_id, active=True).all()]
+    def get_project_by_name(self, name):
+        return (
+            self.get_session()
+            .query(Project)
+            .filter(Project.name == name)
+            .filter(Project.active == True)
+            .first()
+        )
 
-    def mark_inactive_bulk(self, project_ids: list):
-        self.db_session.query(Project).filter(Project.id.in_(project_ids)).update({"active": False}, synchronize_session="fetch")

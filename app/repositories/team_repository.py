@@ -17,6 +17,15 @@ class TeamRepository(BaseRepository):
             .all()
         )
 
+    def get_team_by_id(self, team_id):
+        return (
+            self.get_session()
+            .query(Team.id, Team.name, Team.creator_id)
+            .filter(Team.id == team_id)
+            .filter(Team.active == True)
+            .first()
+        )
+
     def get_members_of_team(self, team_id):
         return (
             self.get_session()
@@ -53,7 +62,11 @@ class TeamRepository(BaseRepository):
     def get_team_by_project_id(self, project_id):
 
         project = (
-            self.get_session().query(Project).filter(Project.id == project_id).first()
+            self.get_session()
+            .query(Project)
+            .filter(Project.id == project_id)
+            .filter(Project.active == True)
+            .first()
         )
         if project:
             return project.team_id
@@ -68,8 +81,11 @@ class TeamRepository(BaseRepository):
         team.name = new_name
         return team
 
-    def get_by_id(self, team_id: int):
-        return self.db_session.query(Team).filter_by(id=team_id, active=True).first()
-
-    def mark_inactive(self, team_id: int):
-        self.db_session.query(Team).filter_by(id=team_id).update({"active": False})
+    def get_team_by_name(self, name):
+        return (
+            self.get_session()
+            .query(Team)
+            .filter(Team.name == name)
+            .filter(Team.active == True)
+            .first()
+        )
