@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required
 from werkzeug.exceptions import BadRequest
 
 from app.extension import api
+from app.services.user_service import user_service, UserService
 
 
 @api.response(400, "Invalid input")
@@ -26,6 +27,8 @@ class __BaseRoute(Resource):
 
 @api.response(401, "Authorization required")
 class AuthorizedBaseRoute(__BaseRoute):
+
+    user_service: UserService = user_service
 
     def dispatch_request(self, *args, **kwargs):
         jwt_required()(lambda: None)()

@@ -22,8 +22,6 @@ class SchemaService:
             return NotFound("Schema not found")
 
     def get_schema_by_id(self, schema_id):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_schema_accessible(user_id, schema_id)
         schema = self.__schema_repository.get_schema_by_id(schema_id)
         if schema is None:
             raise BadRequest("Schema not found")
@@ -95,8 +93,7 @@ class SchemaService:
             ],
         }
 
-    def get_schemas_by_user(self):
-        user_id = self.user_service.get_logged_in_user_id()
+    def get_schemas_by_user(self, user_id):
         schemas = self.__schema_repository.get_schema_ids_by_user(user_id)
         if schemas is None:
             return {"schemas": []}
@@ -230,9 +227,6 @@ class SchemaService:
         return schema_relation
 
     def create_extended_schema(self, schema, team_id: int) -> any:
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_in_team(user_id, team_id)
-
         modelling_language = self.__schema_repository.get_modelling_laguage_by_name(
             schema["modelling_language"]
         )
@@ -301,8 +295,6 @@ class SchemaService:
         return bool(re.match(hexa_code, string))
 
     def train_model_for_schema(self, schema_id, model_name, model_type, steps):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_schema_accessible(user_id, schema_id)
         duplicate = self.__schema_repository.get_model_by_name(model_name)
         if duplicate is not None:
             raise BadRequest("Model Name already exists")
