@@ -154,15 +154,6 @@ class DocumentService:
 
         return transformed_edits
 
-    def get_all_document_edits_by_document(self, document_id):
-        document_edits = self.__document_repository.get_all_document_edits_by_document(
-            document_id
-        )
-        if not document_edits:
-            raise NotFound("No DocumentEdits found for document ID")
-
-        return document_edits
-
     def get_all_document_edits_with_user_by_document(self, document_id):
         document_edits = (
             self.__document_repository.get_all_document_edits_with_user_by_document(

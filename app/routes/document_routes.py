@@ -1,9 +1,9 @@
 import requests
 from flask_restx import Namespace
-from werkzeug.exceptions import BadRequest, NotFound
+from werkzeug.exceptions import BadRequest, NotFound, InternalServerError
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.document_service import document_service
-from flask import request
+from flask import request, current_app
 from app.dtos import (
     document_create_output_dto,
     document_create_dto,
@@ -85,7 +85,6 @@ class DocumentDeletionResource(DocumentBaseRoute):
 @ns.doc(params={"document_id": "A Document ID"})
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-@ns.response(500, "Internal server error")
 class DocumentEditsSenderResource(DocumentBaseRoute):
 
     @ns.marshal_with(heatmap_output_list_dto)
@@ -93,6 +92,9 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
         description="Send all DocumentEdit data for a specific Document ID to an external service"
     )
     def get(self, document_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
+
         document_edits = self.service.get_all_document_edits_with_user_by_document(
             document_id
         )
@@ -107,9 +109,7 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             document_id
         )
 
-        external_endpoint = (
-            "http://annotation_difference_calc:8443/difference-calc/heatmap"
-        )
+        external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/heatmap"
 
         headers = {
             "accept": "application/json",
@@ -120,9 +120,8 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
         )
 
         if response.status_code != 200:
-            return {
-                "message": f"Failed to send data: {response.text}"
-            }, response.status_code
+            raise InternalServerError("Heatmap calculation failed: " + response.text)
+
         return {
             "items": response.json(),
             "document": {
@@ -130,4 +129,4 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
                 "name": document.name,
             },
             "document_edits": document_edits,
-        }, 200
+        }
