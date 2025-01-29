@@ -38,18 +38,40 @@ class MentionRepository(BaseRepository):
         )
         return results
 
+    def get_mention_with_schema_by_id(self, mention_id):
+        return (
+            self.get_session()
+            .query(
+                Mention.id.label("mention_id"),
+                Mention.isShownRecommendation,
+                Mention.document_edit_id,
+                Mention.document_recommendation_id,
+                Mention.entity_id,
+                SchemaMention.id.label("schema_mention_id"),
+                SchemaMention.tag,
+                SchemaMention.description,
+                SchemaMention.color,
+                SchemaMention.entityPossible,
+            )
+            .join(SchemaMention, Mention.schema_mention_id == SchemaMention.id)
+            .filter(Mention.id == mention_id)
+            .first()
+        )
+
     def create_mention(
         self,
         schema_mention_id,
         document_edit_id=None,
         document_recommendation_id=None,
         is_shown_recommendation=False,
+        entity_id=None,
     ):
         mention = Mention(
             document_edit_id=document_edit_id,
             schema_mention_id=schema_mention_id,
             document_recommendation_id=document_recommendation_id,
             isShownRecommendation=is_shown_recommendation,
+            entity_id=entity_id,
         )
         return self.store_object(mention)
 
