@@ -1,19 +1,16 @@
 from flask_restx import Namespace
-import requests
-from werkzeug.exceptions import NotFound, BadRequest
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from flask import request, current_app
+from flask import request
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
     document_overtake_dto,
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
-    heatmap_output_list_dto,
     document_edit_model_output_list_dto,
 )
 
@@ -101,40 +98,6 @@ class DocumentEditResource(DocumentEditBaseRoute):
 
         response = self.service.get_document_edit_by_id(document_edit_id)
         return response
-
-
-@ns.route("/<int:document_id>/heatmap")
-@ns.doc(params={"document_id": "A Document ID"})
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-@ns.response(500, "Internal server error")
-class DocumentEditsSenderResource(DocumentEditBaseRoute):
-
-    @ns.doc(
-        description="Send all DocumentEdit data for a specific Document ID to an external service"
-    )
-    @ns.marshal_with(heatmap_output_list_dto)
-    def post(self, document_id):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_accessible(user_id, document_id)
-
-        transformed_edits = self.service.get_all_document_edits_by_document(document_id)
-
-        external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/heatmap"
-
-        headers = {
-            "accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        response = requests.post(
-            external_endpoint, json=transformed_edits, headers=headers
-        )
-
-        # Handle response from the external endpoint
-        if response.status_code != 200:
-            raise BadRequest("Heatmap calculation failed: " + response.text)
-
-        return {"items": response.json()}
 
 
 @ns.route("/<int:document_edit_id>/model")
