@@ -32,11 +32,6 @@ class RelationMentionService:
                 "Cannot delete a relation without a valid document_edit_id."
             )
 
-        user_id = user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, relation.document_edit_id
-        )
-
         # Proceed with deletion
         deleted = self.__relation_repository.delete_relation_by_id(relation_id)
         if not deleted:

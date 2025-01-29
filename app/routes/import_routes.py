@@ -3,13 +3,13 @@ from flask_restx import Namespace
 from werkzeug.exceptions import BadRequest
 
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.services.import_service import import_service
+from app.services.import_service import import_service, ImportService
 
 ns = Namespace("imports", description="Import data from different sources")
 
 
 class ImportBaseRoute(AuthorizedBaseRoute):
-    service = import_service
+    service: ImportService = import_service
 
 
 @ns.route("/documents")
@@ -39,6 +39,9 @@ class Imports(ImportBaseRoute):
 
         project_id = int(request.args.get("project_id"))
         self.verify_positive_integer(project_id)
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_project_accessible(user_id, project_id)
 
         source = request.args.get("source")
 

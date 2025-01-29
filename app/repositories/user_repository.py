@@ -9,6 +9,9 @@ from app.models import (
     Document,
     Schema,
     DocumentRecommendation,
+    Entity,
+    Relation,
+    Mention,
 )
 from app.repositories.base_repository import BaseRepository
 from werkzeug.security import generate_password_hash
@@ -89,6 +92,36 @@ class UserRepository(BaseRepository):
             .query(UserTeam)
             .join(Project, Project.team_id == UserTeam.team_id)
             .filter((Project.id == project_id) & (UserTeam.user_id == user_id))
+            .first()
+        )
+
+    def check_user_entity_accessible(self, user_id, entity_id):
+        return (
+            self.get_session()
+            .query(Entity)
+            .join(DocumentEdit, DocumentEdit.id == Entity.document_edit_id)
+            .filter(Entity.id == entity_id)
+            .filter(DocumentEdit.user_id == user_id)
+            .first()
+        )
+
+    def check_user_relation_accessible(self, user_id, relation_id):
+        return (
+            self.get_session()
+            .query(Relation)
+            .join(DocumentEdit, DocumentEdit.id == Relation.document_edit_id)
+            .filter(Relation.id == relation_id)
+            .filter(DocumentEdit.user_id == user_id)
+            .first()
+        )
+
+    def check_user_mention_accessible(self, user_id, mention_id):
+        return (
+            self.get_session()
+            .query(Mention)
+            .join(DocumentEdit, DocumentEdit.id == Mention.document_edit_id)
+            .filter(Mention.id == mention_id)
+            .filter(DocumentEdit.user_id == user_id)
             .first()
         )
 

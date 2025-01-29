@@ -88,3 +88,12 @@ class ProjectRepository(BaseRepository):
 
         project.active = False
         return True
+
+    def get_project_by_name(self, name):
+        return (
+            self.get_session()
+            .query(Project)
+            .filter(Project.name == name)
+            .filter(Project.active == True)
+            .first()
+        )
