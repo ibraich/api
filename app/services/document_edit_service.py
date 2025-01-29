@@ -41,23 +41,19 @@ class DocumentEditService:
 
     def create_document_edit(
         self,
+        user_id,
         document_id,
-        model_mention: None,
-        model_entities: None,
-        model_relation: None,
-        model_settings_mention: None,
-        model_settings_entities: None,
-        model_settings_relation: None,
+        model_mention=None,
+        model_entities=None,
+        model_relation=None,
+        model_settings_mention=None,
+        model_settings_entities=None,
+        model_settings_relation=None,
     ):
-        user_id = self.user_service.get_logged_in_user_id()
-
         # Check if document edit already exists
-        doc_edit = self.get_document_edit_by_document(document_id, user_id)
-        if doc_edit is not None:
+        existing_doc_edit = self.get_document_edit_by_document(document_id, user_id)
+        if existing_doc_edit is not None:
             raise BadRequest("Document Edit already exists")
-
-        # Check if user has access to this document
-        self.user_service.check_user_document_accessible(user_id, document_id)
 
         # Get schema of document
         schema = self.schema_service.get_schema_by_document(document_id)
@@ -154,24 +150,18 @@ class DocumentEditService:
             document_edit_id
         )
 
-    def overtake_document_edit(self, document_edit_id):
-
+    def overtake_document_edit(self, logged_in_user_id, document_edit_id):
         document_edit = self.__document_edit_repository.get_document_edit_by_id(
             document_edit_id
         )
-
         if document_edit is None:
             raise BadRequest("Document edit does not exist")
 
-        logged_in_user_id = self.user_service.get_logged_in_user_id()
         current_owner_id = document_edit.user_id
 
         if logged_in_user_id == current_owner_id:
             raise BadRequest("User already has access to this document edit")
         # check for team
-        user_service.check_user_document_accessible(
-            logged_in_user_id, document_edit.document_id
-        )
 
         # check if another document edit exist for current user
         existing_document_edit = self.get_document_edit_by_document(
@@ -195,10 +185,6 @@ class DocumentEditService:
         }
 
     def soft_delete_document_edit(self, document_edit_id):
-
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
-
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. Must be a positive integer.")
 

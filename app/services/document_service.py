@@ -31,8 +31,8 @@ class DocumentService:
         self.token_service = token_service
         self.document_edit_service = document_edit_service
 
-    def get_documents_by_project(self, project_id):
-        response = self.get_documents_by_user()
+    def get_documents_by_project(self, user_id, project_id):
+        response = self.get_documents_by_user(user_id)
         documents = response["documents"]
         filtered_documents = [
             document
@@ -41,8 +41,7 @@ class DocumentService:
         ]
         return {"documents": filtered_documents}
 
-    def get_documents_by_user(self):
-        user_id = self.user_service.get_logged_in_user_id()
+    def get_documents_by_user(self, user_id):
         documents = self.__document_repository.get_documents_by_user(user_id)
         if not documents:
             raise NotFound("No documents found")
@@ -76,13 +75,7 @@ class DocumentService:
         ]
         return {"documents": document_list}
 
-    def upload_document(self, project_id, file_name, file_content):
-
-        user_id = self.user_service.get_logged_in_user_id()
-
-        # Validate that the user has access to the project
-        self.user_service.check_user_project_accessible(user_id, project_id)
-
+    def upload_document(self, user_id, project_id, file_name, file_content):
         # Validate file content
         if not file_name or not file_content.strip():
             raise ValueError("Invalid file content or file name.")
@@ -115,8 +108,6 @@ class DocumentService:
         )
 
     def soft_delete_document(self, document_id: int):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_accessible(user_id, document_id)
         if not isinstance(document_id, int) or document_id <= 0:
             raise BadRequest("Invalid document ID. Must be a positive integer.")
 

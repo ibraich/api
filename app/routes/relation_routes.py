@@ -1,6 +1,5 @@
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.services.relation_services import relation_service
-from werkzeug.exceptions import BadRequest
+from app.services.relation_services import relation_service, RelationService
 from flask_restx import Namespace
 from app.dtos import (
     relation_output_list_dto,
@@ -14,7 +13,7 @@ ns = Namespace("relations", description="Relation related operations")
 
 
 class RelationBaseRoute(AuthorizedBaseRoute):
-    service = relation_service
+    service: RelationService = relation_service
 
 
 @ns.route("/<int:document_edit_id>")
@@ -26,8 +25,8 @@ class RelationQueryResource(RelationBaseRoute):
     @ns.doc(description="Get Relations of document annotation")
     @ns.marshal_with(relation_output_list_dto)
     def get(self, document_edit_id):
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 
         response = self.service.get_relations_by_document_edit(document_edit_id)
         return response
@@ -41,6 +40,9 @@ class RelationDeleteResource(RelationBaseRoute):
 
     @ns.doc(description="Delete a Relation by ID")
     def delete(self, relation_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_relation_accessible(user_id, relation_id)
+
         response = self.service.delete_relation_by_id(relation_id)
         return response
 
@@ -53,6 +55,10 @@ class RelationDeleteResource(RelationBaseRoute):
         mention_head_id = data.get("mention_head_id")
         mention_tail_id = data.get("mention_tail_id")
         is_directed = data.get("isDirected")
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_relation_accessible(user_id, relation_id)
+
         response = self.service.update_relation(
             relation_id,
             schema_relation_id,
@@ -72,7 +78,20 @@ class RelationCreationResource(RelationBaseRoute):
     @ns.marshal_with(relation_output_dto)
     @ns.expect(relation_input_dto)
     def post(self):
-        response = self.service.create_relation(request.json)
+        data = request.json
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, data["document_edit_id"]
+        )
+
+        response = self.service.create_relation(
+            data.get("schema_relation_id"),
+            data.get("document_edit_id"),
+            data.get("mention_head_id"),
+            data.get("mention_tail_id"),
+            data.get("isDirected"),
+        )
         return response
 
 
@@ -87,6 +106,8 @@ class RelationAcceptResource(RelationBaseRoute):
         """
         Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
         """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_relation_accessible(user_id, relation_id)
 
         return self.service.accept_relation(relation_id)
 
@@ -101,5 +122,7 @@ class RelationRejectResource(RelationBaseRoute):
         """
         Reject a relation by setting isShownRecommendation to False.
         """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_relation_accessible(user_id, relation_id)
 
         return self.service.reject_relation(relation_id)

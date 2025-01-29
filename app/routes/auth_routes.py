@@ -1,7 +1,7 @@
 from flask import request
 from flask_restx import Namespace
 from app.routes.base_routes import AuthorizedBaseRoute, UnauthorizedBaseRoute
-from app.services.user_service import user_service
+from app.services.user_service import user_service, UserService
 from app.dtos import (
     signup_input_dto,
     signup_output_dto,
@@ -10,17 +10,16 @@ from app.dtos import (
     user_output_dto,
     user_update_input_dto,
 )
-from werkzeug.exceptions import Unauthorized
 
 ns = Namespace("auth", description="User Authentication related operations")
 
 
 class AuthBaseRoute(UnauthorizedBaseRoute):
-    service = user_service
+    service: UserService = user_service
 
 
 class UserBaseRoute(AuthorizedBaseRoute):
-    service = user_service
+    service: UserService = user_service
 
 
 @ns.route("/signup")
@@ -44,7 +43,6 @@ class SignupRoute(AuthBaseRoute):
 @ns.route("/login")
 @ns.response(401, "Unauthorized")
 class LoginRoute(AuthBaseRoute):
-    service = user_service
 
     @ns.doc(description="Log in an existing user")
     @ns.marshal_with(login_output_dto)
@@ -77,7 +75,10 @@ class UpdateProfileRoute(UserBaseRoute):
         """
         data = request.get_json()
 
+        user_id = self.user_service.get_logged_in_user_id()
+
         updated_user = self.service.update_user_data(
+            user_id,
             username=data.get("username"),
             email=data.get("email"),
             password=data.get("password"),

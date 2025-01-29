@@ -1,9 +1,8 @@
 from flask import request
-from werkzeug.exceptions import BadRequest
 from flask_restx import Namespace
 
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.services.mention_services import mention_service
+from app.services.mention_services import mention_service, MentionService
 from app.dtos import (
     mention_output_dto,
     mention_output_list_dto,
@@ -15,7 +14,7 @@ ns = Namespace("mentions", description="Mention related operations")
 
 
 class MentionBaseRoute(AuthorizedBaseRoute):
-    service = mention_service
+    service: MentionService = mention_service
 
 
 @ns.route("")
@@ -26,8 +25,16 @@ class MentionResource(MentionBaseRoute):
     @ns.expect(mention_input_dto)
     @ns.marshal_with(mention_output_dto)
     def post(self):
+        data = request.json
 
-        return self.service.create_mentions(request.json)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(
+            user_id, data["document_edit_id"]
+        )
+
+        return self.service.create_mentions(
+            data["document_edit_id"], data["schema_mention_id"], data["token_ids"]
+        )
 
 
 @ns.route("/<int:document_edit_id>")
@@ -39,8 +46,8 @@ class MentionQueryResource(MentionBaseRoute):
     @ns.doc(description="Get Mentions of document annotation")
     @ns.marshal_with(mention_output_list_dto)
     def get(self, document_edit_id):
-        if not document_edit_id:
-            raise BadRequest("Document Edit ID is required.")
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 
         response = self.service.get_mentions_by_document_edit(document_edit_id)
         return response
@@ -51,11 +58,13 @@ class MentionQueryResource(MentionBaseRoute):
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
 class MentionDeletionResource(MentionBaseRoute):
-    service = mention_service
 
     @ns.doc(description="Delete a mention and its related relations")
     def delete(self, mention_id):
-        response = self.service.delete_mention(mention_id)
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_mention_accessible(user_id, mention_id)
+
+        response = self.service.delete_mention(user_id, mention_id)
         return response
 
     @ns.expect(mention_update_input_dto)
@@ -65,6 +74,10 @@ class MentionDeletionResource(MentionBaseRoute):
         schema_mention_id = data.get("schema_mention_id")
         token_ids = data.get("token_ids")
         entity_id = data.get("entity_id")
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_mention_accessible(user_id, mention_id)
+
         response = self.service.update_mention(
             mention_id, schema_mention_id, token_ids, entity_id
         )
@@ -83,6 +96,8 @@ class MentionAcceptResource(MentionBaseRoute):
         """
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
         """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_mention_accessible(user_id, mention_id)
 
         return self.service.accept_mention(mention_id)
 
@@ -98,5 +113,7 @@ class MentionRejectResource(MentionBaseRoute):
         """
         Reject a mention by setting isShownRecommendation to False.
         """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_mention_accessible(user_id, mention_id)
 
         return self.service.reject_mention(mention_id)

@@ -59,7 +59,7 @@ class UserService:
         document_edit_user_id = self.get_user_by_document_edit_id(document_edit_id)
 
         if int(user_id) != int(document_edit_user_id):
-            raise NotFound("The logged in user does not belong to this document.")
+            raise Forbidden("You cannot access this document edit")
 
     def check_user_schema_accessible(self, user_id, schema_id):
         if (
@@ -75,6 +75,27 @@ class UserService:
         ):
             raise Forbidden("You cannot access this project")
 
+    def check_user_entity_accessible(self, user_id, entity_id):
+        if (
+            self.__user_repository.check_user_entity_accessible(user_id, entity_id)
+            is None
+        ):
+            raise Forbidden("You cannot access this entity")
+
+    def check_user_relation_accessible(self, user_id, relation_id):
+        if (
+            self.__user_repository.check_user_relation_accessible(user_id, relation_id)
+            is None
+        ):
+            raise Forbidden("You cannot access this relation")
+
+    def check_user_mention_accessible(self, user_id, mention_id):
+        if (
+            self.__user_repository.check_user_mention_accessible(user_id, mention_id)
+            is None
+        ):
+            raise Forbidden("You cannot access this mention")
+
     def login(self, email, password):
         user = self.get_user_by_email(email)
         if not user:
@@ -87,10 +108,11 @@ class UserService:
         token = create_access_token(identity=user_id_str, expires_delta=expires_delta)
         return {"token": token}
 
-    def update_user_data(self, username=None, email=None, password=None):
+    def update_user_data(self, user_id, username=None, email=None, password=None):
         """
         Update user information by calling the repository.
 
+        :param user_id_ ID of the user
         :param username: New username (optional).
         :param email: New email (optional).
         :param password: New password (optional).
@@ -100,8 +122,6 @@ class UserService:
         """
         if not any([username, email, password]):
             raise BadRequest("No fields to update provided.")
-
-        user_id = self.get_logged_in_user_id()
 
         if username and self.get_user_by_username(username):
             raise BadRequest("Username already exists")

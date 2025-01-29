@@ -36,9 +36,6 @@ class RelationService:
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        user_id = user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
-
         mentions_data = self.mention_service.get_mentions_by_document_edit(
             document_edit_id
         )
@@ -103,51 +100,42 @@ class RelationService:
     def delete_relation_by_id(self, relation_id):
         self.relation_mention_service.delete_relation_by_id(relation_id)
 
-    def create_relation(self, data):
-        # check if user is allowed to access this document edit
-        logged_in_user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            logged_in_user_id, data["document_edit_id"]
-        )
+    def create_relation(
+        self,
+        schema_relation_id,
+        document_edit_id,
+        mention_head_id,
+        mention_tail_id,
+        isDirected,
+    ):
+        self.verify_mention_in_document_edit(mention_head_id, document_edit_id)
+        self.verify_mention_in_document_edit(mention_tail_id, document_edit_id)
 
-        self.verify_mention_in_document_edit(
-            data["mention_head_id"], data["document_edit_id"]
-        )
-        self.verify_mention_in_document_edit(
-            data["mention_tail_id"], data["document_edit_id"]
-        )
+        self.check_mentions_not_equal(mention_head_id, mention_tail_id)
 
-        self.check_mentions_not_equal(data["mention_head_id"], data["mention_tail_id"])
-
-        self.check_duplicate_relations(data["mention_head_id"], data["mention_tail_id"])
+        self.check_duplicate_relations(mention_head_id, mention_tail_id)
 
         # Check constraints for relation creation
-        schema = self.schema_service.get_schema_by_document_edit(
-            data["document_edit_id"]
-        )
+        schema = self.schema_service.get_schema_by_document_edit(document_edit_id)
         schema_extended = self.schema_service.get_schema_by_id(schema.id)
         self.schema_service.verify_constraint(
             schema_extended,
-            data["schema_relation_id"],
-            self.mention_service.get_mention_by_id(
-                data["mention_head_id"]
-            ).schema_mention_id,
-            self.mention_service.get_mention_by_id(
-                data["mention_tail_id"]
-            ).schema_mention_id,
-            data["isDirected"],
+            schema_relation_id,
+            self.mention_service.get_mention_by_id(mention_head_id).schema_mention_id,
+            self.mention_service.get_mention_by_id(mention_tail_id).schema_mention_id,
+            isDirected,
         )
 
         # save relation
         relation = self.__relation_repository.create_relation(
-            data["schema_relation_id"],
-            data["document_edit_id"],
-            data["isDirected"],
-            data["mention_head_id"],
-            data["mention_tail_id"],
+            schema_relation_id,
+            document_edit_id,
+            isDirected,
+            mention_head_id,
+            mention_tail_id,
         )
         schema_relation = self.schema_service.get_schema_relation_by_id(
-            data["schema_relation_id"]
+            schema_relation_id
         )
         relation.schema_relation = schema_relation
         return relation
@@ -166,11 +154,6 @@ class RelationService:
 
         if relation.document_recommendation_id is not None:
             raise BadRequest("You cannot update a recommendation")
-
-        logged_in_user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            logged_in_user_id, relation.document_edit_id
-        )
 
         if mention_head_id:
             mention_head = self.verify_mention_in_document_edit(
@@ -259,10 +242,6 @@ class RelationService:
         Accept a relation by copying it to the document edit and setting isShownRecommendation to False.
         """
         relation = self.__relation_repository.get_relation_by_id(relation_id)
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, relation.document_edit_id
-        )
 
         if not relation or relation.document_recommendation_id is None:
             raise BadRequest("Invalid relation.")
@@ -289,10 +268,6 @@ class RelationService:
         Reject a relation by setting isShownRecommendation to False.
         """
         relation = self.__relation_repository.get_relation_by_id(relation_id)
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, relation.document_edit_id
-        )
 
         if not relation or relation.document_recommendation_id is None:
             raise BadRequest("Invalid relation.")

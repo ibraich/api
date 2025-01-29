@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict, Unauthorized
+from werkzeug.exceptions import BadRequest, NotFound, Conflict
 
 from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
@@ -51,12 +51,6 @@ class MentionService:
         if not isinstance(document_edit_id, int) or document_edit_id <= 0:
             raise BadRequest("Invalid document edit ID. It must be a positive integer.")
 
-        user_id = user_service.get_user_by_document_edit_id(document_edit_id)
-        current_user_id = self.user_service.get_logged_in_user_id()
-
-        if current_user_id != user_id:
-            raise Unauthorized("You are not authorized to perform this action.")
-
         results = self.__mention_repository.get_mentions_with_tokens_by_document_edit(
             document_edit_id
         )
@@ -93,46 +87,35 @@ class MentionService:
                 )
         return {"mentions": list(mentions_dict.values())}
 
-    def create_mentions(self, data):
-        # check if user is allowed to access this document edit
-        logged_in_user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            logged_in_user_id, data["document_edit_id"]
-        )
+    def create_mentions(self, document_edit_id, schema_mention_id, token_ids):
 
         # Check that tokens belong to this document
-        self.token_service.check_tokens_in_document_edit(
-            data["token_ids"], data["document_edit_id"]
-        )
+        self.token_service.check_tokens_in_document_edit(token_ids, document_edit_id)
 
         # check duplicates
         duplicate_token_mention = self.check_token_in_mention(
-            data["document_edit_id"], data["token_ids"]
+            document_edit_id, token_ids
         )
         if len(duplicate_token_mention) > 0:
             raise Conflict("Token mention already exists.")
 
         # Check Tag is allowed
-        schema = self.schema_service.get_schema_by_document_edit(
-            data["document_edit_id"]
-        )
-        schema_mention = self.schema_service.get_schema_mention_by_id(
-            data["schema_mention_id"]
-        )
+        schema = self.schema_service.get_schema_by_document_edit(document_edit_id)
+        schema_mention = self.schema_service.get_schema_mention_by_id(schema_mention_id)
         if schema_mention.schema_id != schema.id:
             raise BadRequest("Mention Tag not allowed")
 
         # save mention
         mention = self.__mention_repository.create_mention(
-            document_edit_id=data["document_edit_id"],
-            schema_mention_id=data["schema_mention_id"],
+            document_edit_id=document_edit_id,
+            schema_mention_id=schema_mention_id,
         )
 
         # save token mention
-        for token_id in data["token_ids"]:
+        for token_id in token_ids:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
-        mention.tokens = data["token_ids"]
+        mention.tokens = token_ids
         mention.tag = schema_mention.tag
         mention.schema_mention = schema_mention
         return mention
@@ -161,7 +144,7 @@ class MentionService:
                     is_shown_recommendation=True,
                 )
 
-    def delete_mention(self, mention_id):
+    def delete_mention(self, user_id, mention_id):
         if not isinstance(mention_id, int) or mention_id <= 0:
             raise BadRequest("Invalid mention ID. It must be a positive integer.")
 
@@ -174,7 +157,6 @@ class MentionService:
                 "Cannot delete a mention without a valid document_edit_id."
             )
 
-        user_id = user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(
             user_id, mention.document_edit_id
         )
@@ -216,12 +198,6 @@ class MentionService:
 
         schema = self.schema_service.get_schema_by_document_edit(
             mention.document_edit_id
-        )
-
-        # Check that user owns this document edit
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, mention.document_edit_id
         )
 
         # Check for valid tag
@@ -314,10 +290,6 @@ class MentionService:
         Accept a mention by copying it to the document edit and setting isShownRecommendation to False.
         """
         mention = self.__mention_repository.get_mention_by_id(mention_id)
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, mention.document_edit_id
-        )
         if not mention or mention.document_recommendation_id is None:
             raise BadRequest("Invalid mention")
         if not mention.isShownRecommendation:
@@ -357,10 +329,6 @@ class MentionService:
         Reject a mention by setting isShownRecommendation to False.
         """
         mention = self.__mention_repository.get_mention_by_id(mention_id)
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, mention.document_edit_id
-        )
         if not mention or mention.document_recommendation_id is None:
             raise BadRequest("Invalid mention")
         if not mention.isShownRecommendation:
