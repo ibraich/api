@@ -117,8 +117,6 @@ class DocumentService:
                 document_id
             )
         )
-        if not document_edits:
-            raise NotFound(f"No DocumentEdits found for document ID #{document_id}")
 
         processed_edits = [
             {
