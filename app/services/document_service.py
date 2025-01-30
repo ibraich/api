@@ -30,6 +30,7 @@ class DocumentService:
         self.team_service = team_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
+        self.repository = DocumentRepository()
 
     def get_documents_by_project(self, user_id, project_id):
         response = self.get_documents_by_user(user_id)
@@ -168,6 +169,17 @@ class DocumentService:
 
         return processed_edits
 
+    def calculate_jaccard_index(self, payload):
+        document_tokens = {token["text"] for token in payload.get("document", {}).get("tokens", [])}
+        edit_tokens = [{token["text"] for token in edit.get("tokens", [])} for edit in payload.get("document_edits", [])]
+
+        def calculate_jaccard(set1, set2):
+            intersection = len(set1.intersection(set2))
+            union = len(set1.union(set2))
+            return intersection / union if union != 0 else 0
+
+        jaccard_indices = [calculate_jaccard(document_tokens, edit) for edit in edit_tokens]
+        return jaccard_indices
 
 document_service = DocumentService(
     DocumentRepository(),

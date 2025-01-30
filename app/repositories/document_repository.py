@@ -171,3 +171,11 @@ class DocumentRepository(BaseRepository):
             .filter(DocumentEdit.active == True)
             .all()
         )
+
+
+    def get_document_by_id(self, document_id):
+        return Document.query.filter_by(id=document_id).first()
+
+    def get_document_edits(self, document_id):
+        document = Document.query.filter_by(id=document_id).first()
+        return document.edits if document else []

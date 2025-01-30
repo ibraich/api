@@ -1,8 +1,8 @@
 import requests
-from flask_restx import Namespace
-from werkzeug.exceptions import NotFound, InternalServerError
+from flask_restx import Namespace, Resource
+from werkzeug.exceptions import BadRequest,NotFound, InternalServerError
 from app.routes.base_routes import AuthorizedBaseRoute
-from flask import request, current_app
+from flask import request, current_app, jsonify
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
     document_create_output_dto,
@@ -143,3 +143,30 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             },
             "document_edits": document_edits,
         }
+
+
+@ns.route("/")
+class JaccardIndexResource(Resource):
+    @ns.doc(description="Calculate Jaccard Index for multiple document edits")
+    @ns.response(200, "Success")
+    @ns.response(400, "Invalid input")
+    @ns.response(500, "Internal Server Error")
+    def post(self):
+        """
+        Calculate the Jaccard Index for a given document and its edits.
+        """
+        try:
+            payload = request.get_json()
+            if not payload:
+                raise BadRequest("Invalid request: No data provided.")
+            
+            result = DocumentService().calculate_jaccard_index(payload)
+            return jsonify({
+                "document": payload.get("document"),
+                "document_edits": payload.get("document_edits"),
+                "jaccard_index": result
+            }), 200
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            return jsonify({"error": "Internal Server Error"}), 500
