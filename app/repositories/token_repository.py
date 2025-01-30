@@ -1,4 +1,4 @@
-from app.models import Token, DocumentEdit
+from app.models import Token, DocumentEdit, TokenMention
 from app.repositories.base_repository import BaseRepository
 
 
@@ -18,6 +18,15 @@ class TokenRepository(BaseRepository):
             self.get_session()
             .query(Token)
             .filter(Token.document_id == document_id)
+            .all()
+        )
+
+    def get_tokens_by_mention(self, mention_id):
+        return (
+            self.get_session()
+            .query(Token)
+            .join(TokenMention, Token.id == TokenMention.token_id)
+            .filter(TokenMention.mention_id == mention_id)
             .all()
         )
 

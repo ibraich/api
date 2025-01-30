@@ -3,7 +3,7 @@ from app.services.relation_services import relation_service, RelationService
 from flask_restx import Namespace
 from app.dtos import (
     relation_output_list_dto,
-    relation_output_dto,
+    relation_output_model,
     relation_input_dto,
     relation_update_input_dto,
 )
@@ -47,7 +47,7 @@ class RelationDeleteResource(RelationBaseRoute):
         return response
 
     @ns.expect(relation_update_input_dto)
-    @ns.marshal_with(relation_output_dto)
+    @ns.marshal_with(relation_output_model)
     @ns.doc(description="Update a Relation by ID")
     def patch(self, relation_id):
         data = request.get_json()
@@ -75,7 +75,7 @@ class RelationDeleteResource(RelationBaseRoute):
 class RelationCreationResource(RelationBaseRoute):
 
     @ns.doc(description="Create a new relation")
-    @ns.marshal_with(relation_output_dto)
+    @ns.marshal_with(relation_output_model)
     @ns.expect(relation_input_dto)
     def post(self):
         data = request.json
@@ -90,7 +90,6 @@ class RelationCreationResource(RelationBaseRoute):
             data.get("document_edit_id"),
             data.get("mention_head_id"),
             data.get("mention_tail_id"),
-            data.get("isDirected"),
         )
         return response
 
@@ -100,7 +99,7 @@ class RelationCreationResource(RelationBaseRoute):
 @ns.response(404, "Relation not found")
 class RelationAcceptResource(RelationBaseRoute):
 
-    @ns.marshal_with(relation_output_dto)
+    @ns.marshal_with(relation_output_model)
     @ns.doc(description="Accept a relation by copying it and marking it as processed")
     def post(self, relation_id):
         """

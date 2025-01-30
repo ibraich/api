@@ -46,34 +46,7 @@ class DocumentService:
         documents = self.__document_repository.get_documents_by_user(user_id)
         if not documents:
             raise NotFound("No documents found")
-        document_list = [
-            {
-                "id": doc.id,
-                "content": doc.content,
-                "name": doc.name,
-                "state": {
-                    "id": doc.document_state_id,
-                    "type": doc.document_state_type,
-                },
-                "project": {
-                    "id": doc.project_id,
-                    "name": doc.project_name,
-                },
-                "schema": {
-                    "id": doc.schema_id,
-                    "name": doc.schema_name,
-                },
-                "team": {
-                    "id": doc.team_id,
-                    "name": doc.team_name,
-                },
-                "document_edit": {
-                    "id": doc.document_edit_id,
-                    "state": doc.document_edit_state,
-                },
-            }
-            for doc in documents
-        ]
+        document_list = [self.__map_document_to_output_dto(doc) for doc in documents]
         return {"documents": document_list}
 
     def upload_document(self, user_id, project_id, file_name, file_content):
@@ -88,18 +61,11 @@ class DocumentService:
 
         # Tokenize document
         self.token_service.tokenize_document(document.id, document.content)
-
-        return {
-            "id": document.id,
-            "name": document.name,
-            "project_id": document.project_id,
-            "content": document.content,
-            "state_id": document.state_id,
-            "creator": self.user_service.get_user_by_id(document.creator_id),
-        }
+        document_output = self.get_document_by_id(document.id)
+        return self.__map_document_to_output_dto(document_output)
 
     def get_document_by_id(self, document_id):
-        return self.__document_repository.get_document_by_id(document_id)
+        return self.__document_repository.get_document_by_id_without_edit(document_id)
 
     def save_document(
         self, name: str, content: str, project_id: int, creator_id: int, state_id: int
@@ -169,17 +135,40 @@ class DocumentService:
 
         return processed_edits
 
-    def calculate_jaccard_index(self, payload):
-        document_tokens = {token["text"] for token in payload.get("document", {}).get("tokens", [])}
-        edit_tokens = [{token["text"] for token in edit.get("tokens", [])} for edit in payload.get("document_edits", [])]
 
-        def calculate_jaccard(set1, set2):
-            intersection = len(set1.intersection(set2))
-            union = len(set1.union(set2))
-            return intersection / union if union != 0 else 0
+    def __map_document_to_output_dto(self, doc):
+        return {
+            "id": doc.id,
+            "content": doc.content,
+            "name": doc.name,
+            "state": {
+                "id": doc.document_state_id,
+                "type": doc.document_state_type,
+            },
+            "project": {
+                "id": doc.project_id,
+                "name": doc.project_name,
+            },
+            "schema": {
+                "id": doc.schema_id,
+                "name": doc.schema_name,
+            },
+            "team": {
+                "id": doc.team_id,
+                "name": doc.team_name,
+            },
+            "document_edit": {
+                "id": doc.document_edit_id,
+                "state": doc.document_edit_state,
+            },
+            "creator": {
+                "id": doc.creator_id,
+                "username": doc.username,
+                "email": doc.email,
+            },
+        }
 
-        jaccard_indices = [calculate_jaccard(document_tokens, edit) for edit in edit_tokens]
-        return jaccard_indices
+
 
 document_service = DocumentService(
     DocumentRepository(),

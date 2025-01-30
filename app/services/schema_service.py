@@ -4,7 +4,7 @@ import typing
 
 from werkzeug.exceptions import NotFound, BadRequest, Conflict
 
-from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint, Mention
+from app.models import Schema, SchemaMention, SchemaRelation, SchemaConstraint
 from app.repositories.schema_repository import SchemaRepository
 from app.services.user_service import UserService, user_service
 
@@ -146,12 +146,7 @@ class SchemaService:
         )
 
     def verify_constraint(
-        self,
-        schema,
-        schema_relation_id,
-        head_schema_mention_id,
-        tail_schema_mention_id,
-        is_directed=False,
+        self, schema, schema_relation_id, head_schema_mention_id, tail_schema_mention_id
     ) -> any:
         constraint = next(
             (
@@ -164,7 +159,6 @@ class SchemaService:
                         == head_schema_mention_id
                         and constraint["schema_mention_tail"]["id"]
                         == tail_schema_mention_id
-                        and constraint["is_directed"] == is_directed
                     )
                     or (
                         constraint["schema_mention_tail"]["id"]
@@ -172,7 +166,6 @@ class SchemaService:
                         and constraint["schema_mention_head"]["id"]
                         == tail_schema_mention_id
                         and constraint["is_directed"] == False
-                        and is_directed == False
                     )
                 )
             ),

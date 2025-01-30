@@ -33,18 +33,6 @@ class DocumentRecommendationService:
             document_id, document_edit_id
         )
 
-    def copy_document_recommendations(
-        self,
-        document_recommendation_id_source,
-        document_edit_id_target,
-        document_recommendation_id_target,
-    ):
-        self.mention_service.copy_mention_recommendations_to_document_edit(
-            document_recommendation_id_source,
-            document_edit_id_target,
-            document_recommendation_id_target,
-        )
-
     def get_mention_recommendation(self, document_id, schema_id, content, params):
         # get schema_mention
         schema_mentions = self.schema_service.get_schema_mentions_by_schema(schema_id)

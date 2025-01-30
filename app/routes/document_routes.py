@@ -5,9 +5,9 @@ from app.routes.base_routes import AuthorizedBaseRoute
 from flask import request, current_app, jsonify
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
-    document_create_output_dto,
-    document_create_dto,
     document_output_dto,
+    document_create_dto,
+    document_list_dto,
     document_delete_output_dto,
     heatmap_output_list_dto,
 )
@@ -25,7 +25,7 @@ class DocumentBaseRoute(AuthorizedBaseRoute):
 class DocumentRoutes(DocumentBaseRoute):
 
     @ns.doc(description="Get all documents current user has access to")
-    @ns.marshal_with(document_output_dto, as_list=True)
+    @ns.marshal_with(document_list_dto)
     def get(self):
         user_id = self.user_service.get_logged_in_user_id()
 
@@ -36,7 +36,7 @@ class DocumentRoutes(DocumentBaseRoute):
     @ns.expect(document_create_dto)
     @ns.response(404, "Data not found.")
     @ns.marshal_with(
-        document_create_output_dto,
+        document_output_dto,
         description="Document uploaded successfully.",
     )
     def post(self):
@@ -69,7 +69,7 @@ class DocumentRoutes(DocumentBaseRoute):
 class DocumentProjectRoutes(DocumentBaseRoute):
 
     @ns.doc(description="Get all documents of project")
-    @ns.marshal_with(document_output_dto)
+    @ns.marshal_with(document_list_dto)
     def get(self, project_id):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_project_accessible(user_id, project_id)
