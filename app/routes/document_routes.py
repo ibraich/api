@@ -1,13 +1,15 @@
+import requests
 from flask_restx import Namespace
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import NotFound, InternalServerError
 from app.routes.base_routes import AuthorizedBaseRoute
+from flask import request, current_app
 from app.services.document_service import document_service, DocumentService
-from flask import request
 from app.dtos import (
     document_create_output_dto,
     document_create_dto,
     document_output_dto,
     document_delete_output_dto,
+    heatmap_output_list_dto,
 )
 
 ns = Namespace("documents", description="Document related operations")
@@ -90,3 +92,54 @@ class DocumentDeletionResource(DocumentBaseRoute):
 
         response = self.service.soft_delete_document(document_id)
         return response
+
+
+@ns.route("/<int:document_id>/heatmap")
+@ns.doc(params={"document_id": "A Document ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditsSenderResource(DocumentBaseRoute):
+
+    @ns.marshal_with(heatmap_output_list_dto)
+    @ns.doc(
+        description="Send all DocumentEdit data for a specific Document ID to an external service"
+    )
+    def get(self, document_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
+
+        document_edits = self.service.get_all_document_edits_with_user_by_document(
+            document_id
+        )
+        if not document_edits:
+            raise NotFound(f"No DocumentEdits found for Document ID {document_id}")
+
+        document = self.service.get_document_by_id(document_id)
+        if not document:
+            raise NotFound(f"Document with ID {document_id} not found")
+
+        transformed_edits = self.service.get_all_structured_document_edits_by_document(
+            document_id
+        )
+
+        external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/heatmap"
+
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            external_endpoint, json=transformed_edits, headers=headers
+        )
+
+        if response.status_code != 200:
+            raise InternalServerError("Heatmap calculation failed: " + response.text)
+
+        return {
+            "items": response.json(),
+            "document": {
+                "id": document_id,
+                "name": document.name,
+            },
+            "document_edits": document_edits,
+        }

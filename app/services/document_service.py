@@ -131,6 +131,43 @@ class DocumentService:
                 document_ids
             )
 
+    def get_all_structured_document_edits_by_document(self, document_id):
+        document_edits = self.__document_repository.get_all_document_edits_by_document(
+            document_id
+        )
+        if not document_edits:
+            raise NotFound("No DocumentEdits found for document ID")
+
+        transformed_edits = [
+            self.document_edit_service.get_document_edit_by_id(document_edit.id)
+            for document_edit in document_edits
+        ]
+
+        return transformed_edits
+
+    def get_all_document_edits_with_user_by_document(self, document_id):
+        document_edits = (
+            self.__document_repository.get_all_document_edits_with_user_by_document(
+                document_id
+            )
+        )
+        if not document_edits:
+            raise NotFound("No DocumentEdits found for document ID")
+
+        processed_edits = [
+            {
+                "id": document_id,
+                "user": {
+                    "id": edit.user_id,
+                    "email": edit.user_email,
+                    "username": edit.user_username,
+                },
+            }
+            for edit in document_edits
+        ]
+
+        return processed_edits
+
 
 document_service = DocumentService(
     DocumentRepository(),

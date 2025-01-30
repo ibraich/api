@@ -151,8 +151,26 @@ class DocumentRepository(BaseRepository):
 
         return doc_ids
 
-    def get_ids_by_project_ids(self, project_ids: list):
-        return [d.id for d in self.db_session.query(Document).filter(Document.project_id.in_(project_ids), Document.active == True).all()]
+    def get_all_document_edits_by_document(self, document_id):
+        return (
+            self.get_session()
+            .query(DocumentEdit)
+            .filter(DocumentEdit.document_id == document_id)
+            .filter(DocumentEdit.active == True)
+            .all()
+        )
 
-    def mark_inactive_bulk(self, document_ids: list):
-        self.db_session.query(Document).filter(Document.id.in_(document_ids)).update({"active": False}, synchronize_session="fetch")
+    def get_all_document_edits_with_user_by_document(self, document_id):
+        return (
+            self.get_session()
+            .query(
+                DocumentEdit.id.label("edit_id"),
+                User.id.label("user_id"),
+                User.email.label("user_email"),
+                User.username.label("user_username"),
+            )
+            .join(User, User.id == DocumentEdit.user_id)
+            .filter(DocumentEdit.document_id == document_id)
+            .filter(DocumentEdit.active == True)
+            .all()
+        )
