@@ -66,6 +66,23 @@ class TokenService:
             ]
         }
 
+    def get_tokens_by_mention(self, mention_id):
+        tokens = self.__token_repository.get_tokens_by_mention(mention_id)
+        if tokens is None:
+            return {"tokens": []}
+        return {
+            "tokens": [
+                {
+                    "id": token.id,
+                    "text": token.text,
+                    "document_index": token.document_index,
+                    "sentence_index": token.sentence_index,
+                    "pos_tag": token.pos_tag,
+                }
+                for token in tokens
+            ]
+        }
+
     def check_tokens_in_document_edit(self, token_ids, document_edit_id):
         document_tokens = self.__token_repository.get_tokens_by_document_edit(
             document_edit_id

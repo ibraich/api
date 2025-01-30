@@ -82,6 +82,27 @@ class RelationRepository(BaseRepository):
     def get_relation_by_id(self, relation_id):
         return self.get_session().query(Relation).filter_by(id=relation_id).first()
 
+    def get_relation_with_schema_by_id(self, relation_id):
+        return (
+            self.get_session()
+            .query(
+                Relation.id.label("relation_id"),
+                Relation.isShownRecommendation,
+                Relation.document_edit_id,
+                Relation.document_recommendation_id,
+                Relation.mention_head_id,
+                Relation.mention_tail_id,
+                Relation.isDirected,
+                SchemaRelation.id.label("schema_relation_id"),
+                SchemaRelation.tag,
+                SchemaRelation.description,
+                SchemaRelation.schema_id,
+            )
+            .join(SchemaRelation, Relation.schema_relation_id == SchemaRelation.id)
+            .filter(Relation.id == relation_id)
+            .first()
+        )
+
     def get_relations_by_mention(self, mention_id):
         return (
             self.get_session()

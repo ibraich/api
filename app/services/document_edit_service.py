@@ -242,12 +242,12 @@ class DocumentEditService:
                 "mention_head": {
                     "tag": relation["head_mention"]["tag"],
                     "tokens": relation["head_mention"]["tokens"],
-                    "entity": {"id": relation["head_mention"]["entity"]},
+                    "entity": {"id": relation["head_mention"]["entity_id"]},
                 },
                 "mention_tail": {
                     "tag": relation["tail_mention"]["tag"],
                     "tokens": relation["tail_mention"]["tokens"],
-                    "entity": {"id": relation["tail_mention"]["entity"]},
+                    "entity": {"id": relation["tail_mention"]["entity_id"]},
                 },
             }
             for relation in relations_data.get("relations", [])
@@ -257,6 +257,7 @@ class DocumentEditService:
                 "id": document_edit.document_id,
                 "tokens": tokens,
             },
+            "schema_id": document_edit.schema_id,
             "mentions": transformed_mentions,
             "relations": transformed_relations,
         }

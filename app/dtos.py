@@ -82,7 +82,7 @@ document_edit_dto = api.model(
     },
 )
 
-document_list_dto = api.model(
+document_output_dto = api.model(
     "DocumentList",
     {
         "id": fields.Integer,
@@ -101,13 +101,14 @@ document_list_dto = api.model(
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
+        "creator": fields.Nested(user_output_dto),
     },
 )
 
-document_output_dto = api.model(
+document_list_dto = api.model(
     "DocumentOutput",
     {
-        "documents": fields.List(fields.Nested(document_list_dto)),
+        "documents": fields.List(fields.Nested(document_output_dto)),
     },
 )
 
@@ -133,22 +134,8 @@ relation_input_dto = api.model(
     {
         "schema_relation_id": fields.Integer(required=True, min=1),
         "document_edit_id": fields.Integer(required=True, min=1),
-        "isDirected": fields.Boolean(default=True),
         "mention_head_id": fields.Integer(required=True, min=1),
         "mention_tail_id": fields.Integer(required=True, min=1),
-    },
-)
-
-relation_output_dto = api.model(
-    "RelationOutput",
-    {
-        "id": fields.Integer,
-        "tag": fields.String,
-        "isShownRecommendation": fields.Boolean,
-        "isDirected": fields.Boolean,
-        "mention_head_id": fields.Integer,
-        "mention_tail_id": fields.Integer,
-        "schema_relation": fields.Nested(schema_relation_output_dto),
     },
 )
 
@@ -539,6 +526,7 @@ finished_document_edit_output_dto = api.model(
             fields.Nested(relation_model),
             description="List of relations in the document edit",
         ),
+        "schema_id": fields.Integer(description="Schema ID"),
     },
 )
 
@@ -605,17 +593,6 @@ schema_relation_model = api.model(
     },
 )
 
-mention_relation_model = api.model(
-    "MentionRelation",
-    {
-        "tag": fields.String(description="Mention tag"),
-        "tokens": fields.List(
-            fields.Nested(token_model), description="List of tokens in the mention"
-        ),
-        "entity": fields.Integer(description="Entity ID associated with the mention"),
-    },
-)
-
 relation_output_model = api.model(
     "RelationOutput",
     {
@@ -633,10 +610,10 @@ relation_output_model = api.model(
         ),
         "tag": fields.String(description="Relation tag"),
         "head_mention": fields.Nested(
-            mention_relation_model, description="Head mention of the relation"
+            mention_output_dto, description="Head mention of the relation"
         ),
         "tail_mention": fields.Nested(
-            mention_relation_model, description="Tail mention of the relation"
+            mention_output_dto, description="Tail mention of the relation"
         ),
     },
 )
