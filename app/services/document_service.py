@@ -118,15 +118,19 @@ class DocumentService:
             )
         )
         if not document_edits:
-            raise NotFound("No DocumentEdits found for document ID")
+            raise NotFound(f"No DocumentEdits found for document ID #{document_id}")
 
         processed_edits = [
             {
-                "id": document_id,
+                "id": edit.edit_id,
                 "user": {
                     "id": edit.user_id,
                     "email": edit.user_email,
                     "username": edit.user_username,
+                },
+                "state": {
+                    "id": edit.state_id,
+                    "type": edit.state_type,
                 },
             }
             for edit in document_edits
@@ -159,6 +163,7 @@ class DocumentService:
                 "id": doc.document_edit_id,
                 "state": doc.document_edit_state,
             },
+            "document_edits": self.get_all_document_edits_with_user_by_document(doc.id),
             "creator": {
                 "id": doc.creator_id,
                 "username": doc.username,
