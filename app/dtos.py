@@ -102,6 +102,26 @@ document_output_dto = api.model(
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
         "creator": fields.Nested(user_output_dto),
+        "document_edits": fields.List(
+            fields.Nested(
+                api.model(
+                    "DocumentEdits",
+                    {
+                        "id": fields.Integer,
+                        "user": fields.Nested(user_output_dto),
+                        "state": fields.Nested(
+                            api.model(
+                                "DocumentEditState",
+                                {
+                                    "id": fields.Integer,
+                                    "type": fields.String,
+                                },
+                            )
+                        ),
+                    },
+                )
+            )
+        ),
     },
 )
 
@@ -755,6 +775,12 @@ model_type_with_settings = api.model(
     "ModelTypeWithSettings",
     {
         "model_type": fields.String(required=True),
+        "name": fields.String(
+            description="Name of trained model (in human understandable format)"
+        ),
+        "id": fields.Integer(
+            description="Id of the related RecommendationModel in the database that is connected to the given schema"
+        ),
         "settings": fields.Raw(
             required=False,
             description="""

@@ -171,8 +171,11 @@ class DocumentRepository(BaseRepository):
                 User.id.label("user_id"),
                 User.email.label("user_email"),
                 User.username.label("user_username"),
+                DocumentEditState.id.label("state_id"),
+                DocumentEditState.type.label("state_type"),
             )
             .join(User, User.id == DocumentEdit.user_id)
+            .join(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.active == True)
             .all()
