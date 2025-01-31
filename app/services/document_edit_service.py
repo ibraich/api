@@ -219,6 +219,33 @@ class DocumentEditService:
         mentions_data = self.mention_service.get_mentions_by_document_edit(
             document_edit_id
         )
+        relations_data = self.relation_service.get_relations_by_document_edit(
+            document_edit_id
+        )
+        return {
+            "document": {
+                "id": document_edit.document_id,
+                "tokens": tokens,
+            },
+            "schema_id": document_edit.schema_id,
+            "mentions": mentions_data["mentions"],
+            "relations": relations_data["relations"],
+        }
+
+    def get_document_edit_by_id_for_difference_calc(self, document_edit_id):
+        document_edit = self.__document_edit_repository.get_document_edit_by_id(
+            document_edit_id
+        )
+        if document_edit is None:
+            raise BadRequest("Document Edit doesnt exist")
+
+        tokens_data = self.token_service.get_tokens_by_document(
+            document_edit.document_id
+        )
+        tokens = tokens_data.get("tokens", [])
+        mentions_data = self.mention_service.get_mentions_by_document_edit(
+            document_edit_id
+        )
 
         transformed_mentions = [
             {

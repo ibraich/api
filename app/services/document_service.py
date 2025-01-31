@@ -105,7 +105,9 @@ class DocumentService:
             raise NotFound("No DocumentEdits found for document ID")
 
         transformed_edits = [
-            self.document_edit_service.get_document_edit_by_id(document_edit.id)
+            self.document_edit_service.get_document_edit_by_id_for_difference_calc(
+                document_edit.id
+            )
             for document_edit in document_edits
         ]
 
