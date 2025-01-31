@@ -82,7 +82,7 @@ document_edit_dto = api.model(
     },
 )
 
-document_list_dto = api.model(
+document_output_dto = api.model(
     "DocumentList",
     {
         "id": fields.Integer,
@@ -101,13 +101,34 @@ document_list_dto = api.model(
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
+        "creator": fields.Nested(user_output_dto),
+        "document_edits": fields.List(
+            fields.Nested(
+                api.model(
+                    "DocumentEdits",
+                    {
+                        "id": fields.Integer,
+                        "user": fields.Nested(user_output_dto),
+                        "state": fields.Nested(
+                            api.model(
+                                "DocumentEditState",
+                                {
+                                    "id": fields.Integer,
+                                    "type": fields.String,
+                                },
+                            )
+                        ),
+                    },
+                )
+            )
+        ),
     },
 )
 
-document_output_dto = api.model(
+document_list_dto = api.model(
     "DocumentOutput",
     {
-        "documents": fields.List(fields.Nested(document_list_dto)),
+        "documents": fields.List(fields.Nested(document_output_dto)),
     },
 )
 
@@ -133,22 +154,8 @@ relation_input_dto = api.model(
     {
         "schema_relation_id": fields.Integer(required=True, min=1),
         "document_edit_id": fields.Integer(required=True, min=1),
-        "isDirected": fields.Boolean(default=True),
         "mention_head_id": fields.Integer(required=True, min=1),
         "mention_tail_id": fields.Integer(required=True, min=1),
-    },
-)
-
-relation_output_dto = api.model(
-    "RelationOutput",
-    {
-        "id": fields.Integer,
-        "tag": fields.String,
-        "isShownRecommendation": fields.Boolean,
-        "isDirected": fields.Boolean,
-        "mention_head_id": fields.Integer,
-        "mention_tail_id": fields.Integer,
-        "schema_relation": fields.Nested(schema_relation_output_dto),
     },
 )
 
@@ -479,65 +486,12 @@ token_output_list_dto = api.model(
     },
 )
 
-entity_model = api.model(
-    "Entity",
-    {
-        "id": fields.Integer(description="Entity ID"),
-    },
-)
-
-mention_model = api.model(
-    "Mention",
-    {
-        "tag": fields.String(description="Mention tag"),
-        "tokens": fields.List(
-            fields.Nested(token_model),
-            description="List of tokens associated with the mention",
-        ),
-        "entity": fields.Nested(
-            entity_model, description="Entity associated with the mention"
-        ),
-    },
-)
-
-
-head_mention_model = mention_model
-tail_mention_model = mention_model
-
-relation_model = api.model(
-    "Relation",
-    {
-        "tag": fields.String(description="Relation tag"),
-        "mention_head": fields.Nested(
-            head_mention_model, description="Head mention in the relation"
-        ),
-        "mention_tail": fields.Nested(
-            tail_mention_model, description="Tail mention in the relation"
-        ),
-    },
-)
-
 document_model = api.model(
     "Document",
     {
         "id": fields.Integer(description="Document ID"),
         "tokens": fields.List(
             fields.Nested(token_model), description="List of tokens in the document"
-        ),
-    },
-)
-
-finished_document_edit_output_dto = api.model(
-    "FinishedDocumentEditOutput",
-    {
-        "document": fields.Nested(document_model, description="Document details"),
-        "mentions": fields.List(
-            fields.Nested(mention_model),
-            description="List of mentions in the document edit",
-        ),
-        "relations": fields.List(
-            fields.Nested(relation_model),
-            description="List of relations in the document edit",
         ),
     },
 )
@@ -605,17 +559,6 @@ schema_relation_model = api.model(
     },
 )
 
-mention_relation_model = api.model(
-    "MentionRelation",
-    {
-        "tag": fields.String(description="Mention tag"),
-        "tokens": fields.List(
-            fields.Nested(token_model), description="List of tokens in the mention"
-        ),
-        "entity": fields.Integer(description="Entity ID associated with the mention"),
-    },
-)
-
 relation_output_model = api.model(
     "RelationOutput",
     {
@@ -633,10 +576,10 @@ relation_output_model = api.model(
         ),
         "tag": fields.String(description="Relation tag"),
         "head_mention": fields.Nested(
-            mention_relation_model, description="Head mention of the relation"
+            mention_output_dto, description="Head mention of the relation"
         ),
         "tail_mention": fields.Nested(
-            mention_relation_model, description="Tail mention of the relation"
+            mention_output_dto, description="Tail mention of the relation"
         ),
     },
 )
@@ -647,6 +590,23 @@ relation_output_list_dto = api.model(
         "relations": fields.List(
             fields.Nested(relation_output_model), description="List of relations"
         ),
+    },
+)
+
+
+finished_document_edit_output_dto = api.model(
+    "FinishedDocumentEditOutput",
+    {
+        "document": fields.Nested(document_model, description="Document details"),
+        "mentions": fields.List(
+            fields.Nested(mention_output_dto),
+            description="List of mentions in the document edit",
+        ),
+        "relations": fields.List(
+            fields.Nested(relation_output_model),
+            description="List of relations in the document edit",
+        ),
+        "schema_id": fields.Integer(description="Schema ID"),
     },
 )
 
@@ -666,12 +626,50 @@ heatmap_output_dto = api.model(
     },
 )
 
+heat_user_dto = api.model(
+    "User",
+    {
+        "id": fields.Integer(description="User ID"),
+        "email": fields.String(description="User email"),
+        "username": fields.String(description="User username"),
+    },
+)
+
+
+# Define a DocumentEdit DTO
+heat_document_edit_dto = api.model(
+    "DocumentEdit",
+    {
+        "id": fields.Integer(description="DocumentEdit ID"),
+        "user": fields.Nested(
+            heat_user_dto, description="Details of the user who edited the document"
+        ),
+    },
+)
+
+# Define a Document DTO
+heat_document_dto = api.model(
+    "Document",
+    {
+        "id": fields.Integer(description="Document ID"),
+        "name": fields.String(description="Document name"),
+    },
+)
+
+# Extend HeatmapOutputList DTO to include document and document_edits
 heatmap_output_list_dto = api.model(
     "HeatmapOutputList",
     {
         "items": fields.List(
             fields.Nested(heatmap_output_dto),
             description="List of heatmap token objects",
+        ),
+        "document": fields.Nested(
+            heat_document_dto, description="Details of the document"
+        ),
+        "document_edits": fields.List(
+            fields.Nested(heat_document_edit_dto),
+            description="List of document edits with user details",
         ),
     },
 )
@@ -740,6 +738,12 @@ model_type_with_settings = api.model(
     "ModelTypeWithSettings",
     {
         "model_type": fields.String(required=True),
+        "name": fields.String(
+            description="Name of trained model (in human understandable format)"
+        ),
+        "id": fields.Integer(
+            description="Id of the related RecommendationModel in the database that is connected to the given schema"
+        ),
         "settings": fields.Raw(
             required=False,
             description="""

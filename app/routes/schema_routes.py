@@ -1,6 +1,7 @@
-from flask import request
-
+import requests
+from flask import request, current_app
 from flask_restx import Namespace
+from werkzeug.exceptions import BadRequest
 
 from app.dtos import (
     schema_output_dto,
@@ -8,6 +9,7 @@ from app.dtos import (
     model_train_input,
     model_train_output_list_dto,
     schema_input_dto,
+    get_recommendation_models_output_dto,
 )
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.schema_service import schema_service, SchemaService
@@ -68,6 +70,57 @@ class SchemaQueryResource(SchemaBaseRoute):
         self.user_service.check_user_schema_accessible(user_id, schema_id)
 
         response = self.service.get_schema_by_id(schema_id)
+        return response
+
+
+@ns.route("/<int:schema_id>/recommendation")
+class ModelRoutes(SchemaBaseRoute):
+
+    @ns.doc(
+        description="Fetch possible model types of schema for recommendation generation from pipeline microservice"
+    )
+    @ns.marshal_with(get_recommendation_models_output_dto)
+    def get(self, schema_id):
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+
+        models = schema_service.get_models_by_schema(schema_id)
+
+        steps = ["mention", "entity", "relation"]
+        response = {}
+
+        for index, step in enumerate(steps):
+
+            url = current_app.config.get("PIPELINE_URL") + "/steps/" + step
+            headers = {"Content-Type": "application/json"}
+
+            step_response = requests.get(url=url, headers=headers)
+            if step_response.status_code != 200:
+                raise BadRequest(step_response.text)
+
+            step_models = []
+            response_json = step_response.json()
+
+            for pipeline_model in response_json:
+
+                # Add model from pipeline only if it is a possible model for this schema
+                existing_recommendation_model = next(
+                    (
+                        model
+                        for model in models
+                        if model["type"] == pipeline_model["model_type"]
+                        and model["step"]["id"] == index + 1
+                    ),
+                    None,
+                )
+                if existing_recommendation_model is not None:
+                    pipeline_model["name"] = existing_recommendation_model["name"]
+                    pipeline_model["id"] = existing_recommendation_model["id"]
+                    step_models.append(pipeline_model)
+
+            response[step] = step_models
+
         return response
 
 

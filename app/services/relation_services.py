@@ -40,12 +40,7 @@ class RelationService:
             document_edit_id
         )
         mentions_dict = {
-            mention["id"]: {
-                "tag": mention["tag"],
-                "tokens": mention["tokens"],
-                "entity": mention["entity_id"],
-            }
-            for mention in mentions_data["mentions"]
+            mention["id"]: mention for mention in mentions_data["mentions"]
         }
 
         relations = self.__relation_repository.get_relations_by_document_edit(
@@ -106,7 +101,6 @@ class RelationService:
         document_edit_id,
         mention_head_id,
         mention_tail_id,
-        isDirected,
     ):
         self.verify_mention_in_document_edit(mention_head_id, document_edit_id)
         self.verify_mention_in_document_edit(mention_tail_id, document_edit_id)
@@ -118,27 +112,22 @@ class RelationService:
         # Check constraints for relation creation
         schema = self.schema_service.get_schema_by_document_edit(document_edit_id)
         schema_extended = self.schema_service.get_schema_by_id(schema.id)
-        self.schema_service.verify_constraint(
+        constraint = self.schema_service.verify_constraint(
             schema_extended,
             schema_relation_id,
             self.mention_service.get_mention_by_id(mention_head_id).schema_mention_id,
             self.mention_service.get_mention_by_id(mention_tail_id).schema_mention_id,
-            isDirected,
         )
 
         # save relation
         relation = self.__relation_repository.create_relation(
             schema_relation_id,
             document_edit_id,
-            isDirected,
+            constraint["is_directed"],
             mention_head_id,
             mention_tail_id,
         )
-        schema_relation = self.schema_service.get_schema_relation_by_id(
-            schema_relation_id
-        )
-        relation.schema_relation = schema_relation
-        return relation
+        return self.get_relation_dto_by_id(relation.id)
 
     def update_relation(
         self,
@@ -160,14 +149,18 @@ class RelationService:
                 mention_head_id, relation.document_edit_id
             )
         else:
-            mention_head = self.mention_service.get_mention_by_id(mention_head_id)
+            mention_head = self.mention_service.get_mention_by_id(
+                relation.mention_head_id
+            )
 
         if mention_tail_id:
             mention_tail = self.verify_mention_in_document_edit(
                 mention_tail_id, relation.document_edit_id
             )
         else:
-            mention_tail = self.mention_service.get_mention_by_id(mention_tail_id)
+            mention_tail = self.mention_service.get_mention_by_id(
+                relation.mention_tail_id
+            )
 
         self.check_mentions_not_equal(mention_head.id, mention_tail.id)
 
@@ -206,7 +199,6 @@ class RelationService:
             schema_relation.id,
             mention_head.schema_mention_id,
             mention_tail.schema_mention_id,
-            is_directed if is_directed is not None else relation.isDirected,
         )
 
         # update relation
@@ -217,17 +209,25 @@ class RelationService:
             mention_tail_id,
             is_directed,
         )
-        relation.schema_relation = schema_relation
-        return relation
+        return self.get_relation_dto_by_id(relation.id)
 
-    def map_to_relation_output_dto(self, relation):
+    def get_relation_dto_by_id(self, relation_id):
+        relation = self.__relation_repository.get_relation_with_schema_by_id(
+            relation_id
+        )
         response = {
-            "id": relation.id,
+            "id": relation.relation_id,
             "tag": relation.tag,
             "isShownRecommendation": relation.isShownRecommendation,
             "isDirected": relation.isDirected,
-            "mention_head_id": relation.mention_head_id,
-            "mention_tail_id": relation.mention_tail_id,
+            "document_edit_id": relation.document_edit_id,
+            "document_recommendation_id": relation.document_recommendation_id,
+            "head_mention": self.mention_service.get_mention_dto_by_id(
+                relation.mention_head_id
+            ),
+            "tail_mention": self.mention_service.get_mention_dto_by_id(
+                relation.mention_tail_id
+            ),
             "schema_relation": {
                 "id": relation.schema_relation_id,
                 "tag": relation.tag,
@@ -261,7 +261,7 @@ class RelationService:
 
         # Update relation recommendation
         self.__relation_repository.update_is_shown_recommendation(relation_id, False)
-        return new_relation
+        return self.get_relation_dto_by_id(new_relation.id)
 
     def reject_relation(self, relation_id):
         """

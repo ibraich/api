@@ -87,6 +87,26 @@ class MentionService:
                 )
         return {"mentions": list(mentions_dict.values())}
 
+    def get_mention_dto_by_id(self, mention_id):
+        mention = self.__mention_repository.get_mention_with_schema_by_id(mention_id)
+        tokens = self.token_service.get_tokens_by_mention(mention_id)
+        return {
+            "id": mention.mention_id,
+            "tag": mention.tag,
+            "is_shown_recommendation": mention.isShownRecommendation,
+            "document_edit_id": mention.document_edit_id,
+            "document_recommendation_id": mention.document_recommendation_id,
+            "entity_id": mention.entity_id,
+            "tokens": tokens["tokens"],
+            "schema_mention": {
+                "id": mention.schema_mention_id,
+                "tag": mention.tag,
+                "description": mention.description,
+                "color": mention.color,
+                "entityPossible": mention.entityPossible,
+            },
+        }
+
     def create_mentions(self, document_edit_id, schema_mention_id, token_ids):
 
         # Check that tokens belong to this document
@@ -122,27 +142,6 @@ class MentionService:
 
     def add_to_entity(self, entity_id: int, mention_id: int):
         self.__mention_repository.add_to_entity(entity_id, mention_id)
-
-    def copy_mention_recommendations_to_document_edit(
-        self,
-        document_recommendation_id_source,
-        document_edit_id_target,
-        document_recommendation_id_target,
-    ):
-        if document_recommendation_id_source is None:
-            return
-
-        mentions = self.__mention_repository.get_mentions_by_document_recommendation(
-            document_recommendation_id_source
-        )
-        if mentions:
-            for mention in mentions:
-                self.__mention_repository.create_mention(
-                    mention.schema_mention_id,
-                    document_edit_id=document_edit_id_target,
-                    document_recommendation_id=document_recommendation_id_target,
-                    is_shown_recommendation=True,
-                )
 
     def delete_mention(self, user_id, mention_id):
         if not isinstance(mention_id, int) or mention_id <= 0:
@@ -248,25 +247,7 @@ class MentionService:
         if mention.entity_id and entity_id != mention.entity_id:
             self.delete_entity_if_empty(mention.entity_id)
 
-        token_mentions = self.token_mention_service.get_token_mentions_by_mention_id(
-            mention_id
-        )
-        return {
-            "id": updated_mention.id,
-            "tag": schema_mention.tag,
-            "is_shown_recommendation": updated_mention.isShownRecommendation,
-            "document_edit_id": updated_mention.document_edit_id,
-            "document_recommendation_id": updated_mention.document_recommendation_id,
-            "entity_id": updated_mention.entity_id,
-            "tokens": [token_mention.token_id for token_mention in token_mentions],
-            "schema_mention": {
-                "id": schema_mention.id,
-                "tag": schema_mention.tag,
-                "description": schema_mention.description,
-                "color": schema_mention.color,
-                "entityPossible": schema_mention.entityPossible,
-            },
-        }
+        return self.get_mention_dto_by_id(updated_mention.id)
 
     def check_token_in_mention(self, document_edit_id, token_ids):
         # check duplicates
@@ -301,28 +282,21 @@ class MentionService:
             document_edit_id=mention.document_edit_id,
             document_recommendation_id=None,
             is_shown_recommendation=False,
+            entity_id=mention.entity_id,
         )
 
         # Add tokens to mention
         token_mentions = self.token_mention_service.get_token_mentions_by_mention_id(
             mention_id
         )
-        tokens = []
         for token_mention in token_mentions:
             self.token_mention_service.create_token_mention(
                 token_mention.token_id, new_mention.id
             )
-            tokens.append(token_mention.token_id)
 
         # Update mention recommendation
         self.__mention_repository.update_is_shown_recommendation(mention_id, False)
-        schema_mention = self.schema_service.get_schema_mention_by_id(
-            mention.schema_mention_id
-        )
-        new_mention.tokens = tokens
-        new_mention.schema_mention = schema_mention
-        new_mention.tag = schema_mention.tag
-        return new_mention
+        return self.get_mention_dto_by_id(new_mention.id)
 
     def reject_mention(self, mention_id):
         """
