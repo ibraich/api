@@ -1,8 +1,10 @@
 from werkzeug.exceptions import BadRequest, Conflict, NotFound
 
+from app.repositories import document_repository, project_repository
 from app.repositories.team_repository import TeamRepository
+from app.services import document_service, project_service
 from app.services.user_service import UserService, user_service
-
+from app.services import document_service
 
 class TeamService:
     __team_repository: TeamRepository
@@ -11,6 +13,11 @@ class TeamService:
     def __init__(self, team_repository, user_service):
         self.__team_repository = team_repository
         self.user_service = user_service
+        self.project_service = project_service
+        self.document_service = document_service
+        document_service = document_service.DocumentService(document_repository)
+        project_service = project_service.ProjectService(project_repository)
+        team_service = TeamService(team_repository, project_service, document_service)
 
     def get_teams_by_user(self, user_id):
         teams = self.__team_repository.get_teams_by_user(user_id)
@@ -101,5 +108,29 @@ class TeamService:
             raise NotFound(f"Team with ID {team_id} not found.")
         return self.get_team_by_id(team_id)
 
+    def soft_delete_team(self, team_id):
+        # Validate input
+        if not isinstance(team_id, int) or team_id <= 0:
+            raise BadRequest("Invalid team ID. Must be a positive integer.")
+
+        # Mark the team as inactive
+        success = self.team_repository.soft_delete_team(team_id)
+        if not success:
+            raise NotFound("Team not found or already inactive.")
+
+        # Fetch all projects associated with the team
+        project_ids = self.project_service.get_project_ids_by_team_id(team_id)
+        if not project_ids:
+            return {"message": "Team set to inactive successfully. No projects to deactivate."}
+
+        # Mark all projects as inactive
+        for project_id in project_ids:
+            self.project_service.soft_delete_project(project_id)
+
+        # Ensure all related documents and edits are marked inactive via document service
+        for project_id in project_ids:
+            self.document_service.bulk_soft_delete_documents_by_project_id(project_id)
+
+        return {"message": "Team and all related records set to inactive successfully."}
 
 team_service = TeamService(TeamRepository(), user_service)

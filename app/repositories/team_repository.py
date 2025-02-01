@@ -86,3 +86,16 @@ class TeamRepository(BaseRepository):
             .filter(Team.active == True)
             .first()
         )
+    
+    def __init__(self, db_session):
+        self.db_session = db_session
+
+    def soft_delete_team(self, team_id):
+        # Perform a bulk update to mark the team as inactive
+        team = self.db_session.query(Team).filter_by(id=team_id, active=True).first()
+        if not team:
+            return False
+
+        team.active = False
+        self.db_session.commit()
+        return True

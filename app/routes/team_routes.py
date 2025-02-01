@@ -1,6 +1,6 @@
-from flask_restx import Namespace
-from flask import request
-
+from flask_restx import Namespace, Resource
+from flask import request, jsonify
+from werkzeug.exceptions import BadRequest, Conflict, NotFound
 
 from app.dtos import (
     team_input_dto,
@@ -97,3 +97,48 @@ class TeamUpdateResource(TeamBaseRoute):
 
         team = self.service.update_team_name(team_id, data["name"])
         return team
+
+
+@ns.route("")
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class TeamRoutes(Resource):
+
+    @ns.doc(description="Fetch all teams of current logged-in user")
+    @ns.marshal_with(team_user_output_list_dto)
+    def get(self):
+        user_id = self.user_service.get_logged_in_user_id()
+
+        response = self.service.get_teams_by_user(user_id)
+        return response
+
+    @ns.doc(description="Create a new team")
+    @ns.expect(team_input_dto)
+    @ns.marshal_with(team_user_output_dto)
+    def post(self):
+        request_data = request.get_json()
+
+        user_id = self.user_service.get_logged_in_user_id()
+
+        response = self.service.create_team(
+            user_id,
+            request_data["name"],
+        )
+        return response
+
+    @ns.doc(description="Delete a team by marking it as inactive")
+    @ns.response(200, "Team deleted successfully")
+    @ns.response(400, "Invalid team ID")
+    def delete(self):
+        team_id = request.args.get("team_id", type=int)
+
+        if not team_id:
+            raise BadRequest("Missing team_id parameter")
+
+        try:
+            result = self.service.soft_delete_team(team_id)
+            return jsonify(result), 200
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400
+        except NotFound as e:
+            return jsonify({"error": str(e)}), 404
