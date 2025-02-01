@@ -366,5 +366,21 @@ class SchemaService:
     def get_schema_by_document(self, document_id):
         return self.__schema_repository.get_schema_by_document(document_id)
 
+    def get_schema_relations_by_schema(self, schema_id):
+        schema_relations = self.__schema_repository.get_schema_relations_by_schema(
+            schema_id
+        )
+        if schema_relations is None:
+            raise BadRequest("No Schema Mentions Found")
+        return schema_relations
+
+    def get_schema_constraints_by_schema(self, schema_id):
+        schema_constraints = self.__schema_repository.get_schema_constraints_by_schema(
+            schema_id
+        )
+        if schema_constraints is None:
+            raise BadRequest("No Schema Mentions Found")
+        return schema_constraints
+
 
 schema_service = SchemaService(SchemaRepository(), user_service)

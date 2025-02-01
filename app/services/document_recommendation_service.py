@@ -119,6 +119,33 @@ class DocumentRecommendationService:
             for schema_mention in schema_mentions
         ]
 
+    def get_schema_relations_recommendation_input_dto(self, schema_relations):
+        return [
+            {
+                "id": schema_relation.id,
+                "tag": schema_relation.tag,
+                "description": schema_relation.description,
+            }
+            for schema_relation in schema_relations
+        ]
+
+    def get_schema_constraints_recommendation_input_dto(self, schema_constraints):
+        return [
+            {
+                "schema_relation": self.get_schema_relation_dto(
+                    schema_constraint.schema_relation_id
+                ),
+                "schema_mention_head": self.get_schema_mention_dto(
+                    schema_constraint.schema_mention_head
+                ),
+                "schema_mention_tail": self.get_schema_mention_dto(
+                    schema_constraint.schema_mention_tail
+                ),
+                "is_directed": schema_constraint.is_directed,
+            }
+            for schema_constraint in schema_constraints
+        ]
+
     def no_overlapping_or_duplicate_tokens(self, tokens):
 
         # Sort tokens by their start index
@@ -169,6 +196,109 @@ class DocumentRecommendationService:
             )
 
         return result
+
+    def get_relation_recommendation(self, schema_id, content, document_edit_id, params):
+        schema_mentions = self.schema_service.get_schema_mentions_by_schema(schema_id)
+        if schema_mentions is None:
+            raise BadRequest("Schema mentions not found")
+
+        schema_relations = self.schema_service.get_schema_relations_by_schema(schema_id)
+        if schema_relations is None:
+            raise BadRequest("Schema relations not found")
+
+        schema_constraints = self.schema_service.get_schema_constraints_by_schema(
+            schema_id
+        )
+        if schema_constraints is None:
+            raise BadRequest("Schema constraints not found")
+
+        relation_recommendation_input = self.get_relation_recommendation_input_dto(
+            schema_id, schema_mentions, content, schema_relations, document_edit_id
+        )
+
+        relations_recommendations = (
+            self.get_relation_recommendation_from_pipeline_service(
+                relation_recommendation_input, params
+            )
+        )
+
+    def get_relation_recommendation_from_pipeline_service(
+        self, relation_recommendation_input, params
+    ):
+        url = current_app.config.get("PIPELINE_URL") + "/steps/relation"
+
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            url, params=params, json=relation_recommendation_input, headers=headers
+        )
+        if response.status_code != 200:
+            raise BadRequest(
+                "Failed to fetch relation recommendations: " + response.text
+            )
+        relation_recommendations = response.json()
+        return relation_recommendations
+
+    def get_relation_recommendation_input_dto(
+        self,
+        schema_id,
+        schema_mentions,
+        schema_relations,
+        content,
+        document_edit_id,
+    ):
+        schema_mention_recommendation_input = (
+            self.get_schema_mention_recommendation_input_dto(schema_mentions)
+        )
+        schema_relation_recommendation_input = (
+            self.get_schema_relations_recommendation_input_dto(schema_relations)
+        )
+        schema_constraints_recommendation_input = (
+            self.get_schema_constraints_recommendation_input_dto(schema_relations)
+        )
+        mentions_recommendation_input = self.get_mention_recommendation_dto(
+            document_edit_id
+        )
+
+        return {
+            "schema": {
+                "id": schema_id,
+                "schema_mentions": schema_mention_recommendation_input,
+                "schema_relations": schema_relation_recommendation_input,
+                "schema_constraints": schema_constraints_recommendation_input,
+            },
+            "content": content,
+            "mentions": mentions_recommendation_input,
+        }
+
+    def get_schema_relation_dto(self, schema_relation_id):
+        schema_relation = self.schema_service.get_schema_relation_by_id(
+            schema_relation_id
+        )
+        return {
+            "id": schema_relation.id,
+            "tag": schema_relation.tag,
+            "description": schema_relation.description,
+        }
+
+    def get_schema_mention_dto(self, schema_mention_id):
+        schema_mention = self.schema_service.get_schema_mention_by_id(schema_mention_id)
+
+        return {
+            "id": schema_mention.id,
+            "tag": schema_mention.tag,
+            "description": schema_mention.description,
+        }
+
+    def get_mention_recommendation_dto(self, document_edit_id):
+        mentions = self.mention_service.get_mentions_by_document_edit(document_edit_id)
+        return {
+            "id": mentions.id,
+            "tag": mentions.tag,
+            "tokens": mentions.tokens,
+        }
 
 
 document_recommendation_service = DocumentRecommendationService(
