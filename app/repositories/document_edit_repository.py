@@ -10,9 +10,6 @@ from app.repositories.base_repository import BaseRepository
 
 class DocumentEditRepository(BaseRepository):
 
-    def __init__(self, db_session):
-        self.db_session = db_session
-
     def create_document_edit(
         self,
         document_id,
@@ -153,9 +150,3 @@ class DocumentEditRepository(BaseRepository):
             .filter(DocumentEdit.id == document_edit_id)
             .all()
         )
-
-    def get_ids_by_document_ids(self, document_ids: list):
-        return [de.id for de in self.db_session.query(DocumentEdit).filter(DocumentEdit.document_id.in_(document_ids), DocumentEdit.active == True).all()]
-
-    def mark_inactive_bulk(self, document_edit_ids: list):
-        self.db_session.query(DocumentEdit).filter(DocumentEdit.id.in_(document_edit_ids)).update({"active": False}, synchronize_session="fetch")

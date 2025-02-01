@@ -3,9 +3,6 @@ from app.repositories.base_repository import BaseRepository
 
 
 class TeamRepository(BaseRepository):
-    
-    def __init__(self, db_session):
-        self.db_session = db_session
 
     def get_teams_by_user(self, user_id):
         return (

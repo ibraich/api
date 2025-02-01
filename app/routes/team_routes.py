@@ -1,6 +1,6 @@
 from flask_restx import Namespace
-from flask import request, jsonify, Flask
-from app.db import get_db_sessio
+from flask import request
+
 
 from app.dtos import (
     team_input_dto,
@@ -12,7 +12,7 @@ from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.team_service import team_service, TeamService
 
 ns = Namespace("teams", description="Team related operations")
-app = Flask(__name__)
+
 
 class TeamBaseRoute(AuthorizedBaseRoute):
     service: TeamService = team_service
@@ -97,18 +97,3 @@ class TeamUpdateResource(TeamBaseRoute):
 
         team = self.service.update_team_name(team_id, data["name"])
         return team
-
-@app.route('/teams/<int:team_id>/delete', methods=['POST'])
-def delete_team(team_id):
-    """
-    Delete a team logically, along with its associated projects, documents, and document edits.
-
-    ---
-    """
-    session = get_db_sessio()
-    team_service = TeamService(session)
-    try:
-        team_service.delete_team_logically(team_id)
-        return jsonify({"message": "Team deleted successfully."}), 200
-    except NotFound as e:
-        return jsonify({"error": str(e)}), 404

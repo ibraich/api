@@ -17,9 +17,6 @@ from sqlalchemy import and_
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
 
-    def __init__(self, db_session):
-        self.db_session = db_session
-
     def get_documents_by_user(self, user_id):
         return (
             self.get_session()

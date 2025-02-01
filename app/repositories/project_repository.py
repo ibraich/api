@@ -4,9 +4,6 @@ from app.repositories.base_repository import BaseRepository
 
 class ProjectRepository(BaseRepository):
 
-    def __init__(self, db_session):
-        self.db_session = db_session
-
     def create_project(self, name, creator_id, team_id, schema_id):
         project = Project(
             name=name,
@@ -100,4 +97,3 @@ class ProjectRepository(BaseRepository):
             .filter(Project.active == True)
             .first()
         )
-
