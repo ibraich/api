@@ -2,15 +2,18 @@ from werkzeug.exceptions import BadRequest, Conflict, NotFound
 
 from app.repositories.team_repository import TeamRepository
 from app.services.user_service import UserService, user_service
+from app.services.project_service import project_service, ProjectService
 
 
 class TeamService:
     __team_repository: TeamRepository
     user_service: UserService
+    project_service: ProjectService
 
-    def __init__(self, team_repository, user_service):
+    def __init__(self, team_repository, user_service, project_service):
         self.__team_repository = team_repository
         self.user_service = user_service
+        self.project_service = project_service
 
     def get_teams_by_user(self, user_id):
         teams = self.__team_repository.get_teams_by_user(user_id)
@@ -101,5 +104,14 @@ class TeamService:
             raise NotFound(f"Team with ID {team_id} not found.")
         return self.get_team_by_id(team_id)
 
+    def delete_team(self, team_id):
+        success = self.__team_repository.delete_team(team_id)
+        if not success:
+            raise NotFound(f"Team with ID {team_id} not found.")
+        projects = self.project_service.get_projects_by_team(team_id)
+        for project in projects:
+            self.project_service.soft_delete_project(project.id)
+        return {"message": "Team set to inactive successfully."}
 
-team_service = TeamService(TeamRepository(), user_service)
+
+team_service = TeamService(TeamRepository(), user_service, project_service)

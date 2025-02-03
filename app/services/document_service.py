@@ -7,13 +7,11 @@ from app.services.document_edit_service import (
 )
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
-from app.services.team_service import TeamService, team_service
 
 
 class DocumentService:
     __document_repository: DocumentRepository
     user_service: UserService
-    team_service: TeamService
     token_service: TokenService
     document_edit_service: DocumentEditService
 
@@ -21,13 +19,11 @@ class DocumentService:
         self,
         document_repository,
         user_service,
-        team_service,
         token_service,
         document_edit_service,
     ):
         self.__document_repository = document_repository
         self.user_service = user_service
-        self.team_service = team_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
 
@@ -175,7 +171,6 @@ class DocumentService:
 document_service = DocumentService(
     DocumentRepository(),
     user_service,
-    team_service,
     token_service,
     document_edit_service,
 )

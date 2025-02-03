@@ -6,7 +6,6 @@ from app.services.user_service import (
     user_service,
 )
 from app.repositories.project_repository import ProjectRepository
-from app.services.team_service import TeamService, team_service
 from app.services.document_service import DocumentService, document_service
 
 
@@ -14,7 +13,6 @@ class ProjectService:
     __project_repository: ProjectRepository
     user_service: UserService
     schema_service: SchemaService
-    team_service: TeamService
     document_service: DocumentService
 
     def __init__(
@@ -22,13 +20,11 @@ class ProjectService:
         project_repository,
         user_service,
         schema_service,
-        team_service,
         document_service,
     ):
         self.__project_repository = project_repository
         self.user_service = user_service
         self.schema_service = schema_service
-        self.team_service = team_service
         self.document_service = document_service
 
     def create_project(self, user_id, team_id, schema_id, projectname):
@@ -89,7 +85,11 @@ class ProjectService:
 
         return {"message": "Project set to inactive successfully."}
 
+    def get_projects_by_team(self, team_id):
+        projects = self.__project_repository.get_projects_by_team(team_id)
+        return projects
+
 
 project_service = ProjectService(
-    ProjectRepository(), user_service, schema_service, team_service, document_service
+    ProjectRepository(), user_service, schema_service, document_service
 )
