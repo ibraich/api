@@ -291,11 +291,22 @@ class DocumentEditService:
                 )
         return {"models": list(model_dict.values())}
 
-    def save_relation_recommendation(
-        self, document_edit_id, schema_id, content, document_id, params
-    ):
+    def save_relation_recommendation(self, document_edit_id):
+        doc_edit = self.get_document_edit_with_document_by_id(document_edit_id)
+        params = {}
+        models = self.get_document_edit_model(document_edit_id)["models"]
+        for model in models:
+            if model["step"]["id"] == 1:  # MENTIONS
+                params["model_type"] = model["type"]
+                params["name"] = model["name"]
+                for setting in model["settings"]:
+                    params[setting["key"]] = setting["value"]
         self.document_recommendation_service.get_relation_recommendation(
-            document_edit_id, schema_id, content, document_id, params
+            document_edit_id,
+            doc_edit.schema_id,
+            doc_edit.content,
+            doc_edit.document_id,
+            params,
         )
 
 
