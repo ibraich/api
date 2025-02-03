@@ -291,6 +291,13 @@ class DocumentEditService:
                 )
         return {"models": list(model_dict.values())}
 
+    def save_relation_recommendation(
+        self, document_edit_id, schema_id, content, document_id, params
+    ):
+        self.document_recommendation_service.get_relation_recommendation(
+            document_edit_id, schema_id, content, document_id, params
+        )
+
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),

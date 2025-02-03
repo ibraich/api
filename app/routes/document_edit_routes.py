@@ -116,3 +116,31 @@ class DocumentEditResource(DocumentEditBaseRoute):
 
         response = self.service.get_document_edit_model(document_edit_id)
         return response
+
+
+@ns.route("/<int:document_edit_id>/relation")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditResource(DocumentEditBaseRoute):
+
+    @ns.doc(
+        description="Fetch details of the models used in Recommendations for DocumentEdit"
+    )
+    def post(self, document_edit_id):
+        params = {}
+        models = self.service.get_document_edit_model(document_edit_id)["models"]
+        for model in models:
+            if model["step"]["id"] == 2:
+                params["model_type"] = model["type"]
+                params["name"] = model["name"]
+                for setting in model["settings"]:
+                    params[setting["key"]] = setting["value"]
+
+        self.service.save_relation_recommendation(
+            document_edit_id,
+            4,
+            "The Police Report related to the car accident is searched within the Police Report database and put in a file together with the Claim Documentation . This file serves as input to a claims handler who calculates an initial claim estimate . Then , the claims handler creates an Action Plan based on an Action Plan Checklist available in the Document Management system . Based on the Action Plan , a claims manager tries to negotiate a settlement on the claim estimate . The claimant is informed of the outcome , which ends the process .",
+            8,
+            params=params,
+        )

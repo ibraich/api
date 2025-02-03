@@ -1,5 +1,6 @@
 from sqlalchemy.orm import aliased
 from werkzeug.exceptions import BadRequest
+import logging
 
 from app.models import (
     Schema,
@@ -57,12 +58,18 @@ class SchemaRepository(BaseRepository):
         )
 
     def get_schema_relations_by_schema(self, schema_id):
-        return (
+
+        schema_relations = (
             self.get_session()
             .query(SchemaRelation)
             .filter(SchemaRelation.schema_id == schema_id)
             .all()
         )
+
+        logging.debug(f"Schema Relations Retrieved: {schema_relations}")
+        logging.debug(f"Type of Retrieved Schema Relations: {type(schema_relations)}")
+
+        return schema_relations
 
     def get_by_project(self, project_id):
         return (
