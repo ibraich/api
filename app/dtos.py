@@ -548,7 +548,6 @@ entity_output_list_dto = api.model(
     },
 )
 
-
 schema_relation_model = api.model(
     "SchemaRelation",
     {
@@ -593,7 +592,6 @@ relation_output_list_dto = api.model(
     },
 )
 
-
 finished_document_edit_output_dto = api.model(
     "FinishedDocumentEditOutput",
     {
@@ -634,7 +632,6 @@ heat_user_dto = api.model(
         "username": fields.String(description="User username"),
     },
 )
-
 
 # Define a DocumentEdit DTO
 heat_document_edit_dto = api.model(
@@ -767,5 +764,20 @@ get_recommendation_models_output_dto = api.model(
         "mention": fields.Nested(model_type_with_settings),
         "entity": fields.Nested(model_type_with_settings),
         "relation": fields.Nested(model_type_with_settings),
+    },
+)
+
+f1_score_dto = api.model(
+    "F1Score",
+    {
+        "mention_score": fields.Integer(description="Mention Score"),
+        "considered_entity_quote": fields.Integer(
+            description="Considered Entity Quote"
+        ),
+        "entity_score": fields.Integer(description="Entity Score"),
+        "considered_relation_quote": fields.Integer(
+            description="Considered Relation Quote"
+        ),
+        "relation_score": fields.Integer(description="Relation Score"),
     },
 )
