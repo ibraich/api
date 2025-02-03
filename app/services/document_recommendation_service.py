@@ -10,6 +10,7 @@ from app.services.mention_services import MentionService, mention_service
 from app.services.schema_service import schema_service, SchemaService
 from app.services.token_service import token_service, TokenService
 from app.services.relation_services import relation_service, RelationService
+from app.services.entity_service import entity_service, EntityService
 
 
 class DocumentRecommendationService:
@@ -18,6 +19,7 @@ class DocumentRecommendationService:
     token_service: TokenService
     schema_service: SchemaService
     relation_service: RelationService
+    entity_service: EntityService
 
     def __init__(
         self,
@@ -26,12 +28,14 @@ class DocumentRecommendationService:
         token_service,
         schema_service,
         relation_service,
+        entity_service,
     ):
         self.__document_recommendation_repository = document_recommendation_repository
         self.mention_service = mention_service
         self.token_service = token_service
         self.schema_service = schema_service
         self.relation_service = relation_service
+        self.entity_service = entity_service
 
     def create_document_recommendation(self, document_id=None, document_edit_id=None):
         return self.__document_recommendation_repository.create_document_recommendation(
@@ -283,6 +287,72 @@ class DocumentRecommendationService:
             "mentions": mentions,
         }
 
+    def get_entity_recommendation(
+        self, document_edit_id, schema_id, content, document_id, params
+    ):
+        schema = self.schema_service.get_schema_by_id(schema_id)
+        mentions_data = self.mention_service.get_mentions_by_document_edit(
+            document_edit_id
+        )
+
+        entity_recommendation_input = self.get_entity_recommendation_input_dto(
+            content,
+            mentions_data["mentions"],
+            document_id,
+            schema,
+        )
+
+        entity_recommendations = self.get_entity_recommendation_from_pipeline_service(
+            entity_recommendation_input, params
+        )
+
+        document_recommendation = self.__document_recommendation_repository.get_document_recommendation_by_document_edit(
+            document_edit_id
+        )
+
+        for mention_group in entity_recommendations:
+            mention_list = mention_group.get("mentions", [])
+            self.entity_service.save_entity_in_edit(
+                document_edit_id, mention_list, document_recommendation.id
+            )
+
+    def get_entity_recommendation_input_dto(
+        self,
+        content,
+        mentions,
+        document_id,
+        schema,
+    ):
+
+        return {
+            "document_id": str(document_id),
+            "schema": {
+                "id": schema["id"],
+                "schema_mentions": schema["schema_mentions"],
+            },
+            "content": content,
+            "mentions": mentions,
+        }
+
+    def get_entity_recommendation_from_pipeline_service(
+        self, entity_recommendation_input, params
+    ):
+
+        url = current_app.config.get("PIPELINE_URL") + "/steps/entity"
+
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            url, params=params, json=entity_recommendation_input, headers=headers
+        )
+
+        if response.status_code != 200:
+            raise BadRequest("Failed to fetch entity recommendations: " + response.text)
+        entity_recommendations = response.json()
+        return entity_recommendations
+
 
 document_recommendation_service = DocumentRecommendationService(
     DocumentRecommendationRepository(),
@@ -290,4 +360,5 @@ document_recommendation_service = DocumentRecommendationService(
     token_service,
     schema_service,
     relation_service,
+    entity_service,
 )

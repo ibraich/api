@@ -140,3 +140,19 @@ class DocumentEditResource(DocumentEditBaseRoute):
         self.service.save_relation_recommendation(
             document_edit_id,
         )
+
+
+@ns.route("/<int:document_edit_id>/entity")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditResource(DocumentEditBaseRoute):
+
+    @ns.doc(
+        description="Fetch details of the models used in Recommendations for DocumentEdit"
+    )
+    def post(self, document_edit_id):
+
+        self.service.save_entity_recommendation(
+            document_edit_id,
+        )
