@@ -2,21 +2,20 @@ from flask import current_app
 from werkzeug.exceptions import NotFound, BadRequest
 import requests
 
-from app.services.document_edit_service import DocumentEditService
-from app.services.document_service import DocumentService
+from app.services.document_edit_service import (
+    DocumentEditService,
+    document_edit_service,
+)
 
 
 class F1ScoreService:
     document_edit_service: DocumentEditService
-    document_service: DocumentService
 
     def __init__(
         self,
         document_edit_service: DocumentEditService,
-        document_service: DocumentService,
     ):
         self.document_edit_service = document_edit_service
-        self.document_service = document_service
 
     def get_f1_score(self, actual_document_edit_id, predicted_document_edit_id):
         f1_score_request_dto = self.__get_f1_score_request_dto(
@@ -124,3 +123,6 @@ class F1ScoreService:
             "mention_head": self.__map_mention(relation["head_mention"]),
             "mention_tail": self.__map_mention(relation["tail_mention"]),
         }
+
+
+f1_score_service = F1ScoreService(document_edit_service)
