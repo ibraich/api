@@ -157,11 +157,12 @@ class SchemaUpdateResource(SchemaBaseRoute):
             "schema_id": {
                 "type": "integer",
                 "required": True,
-                "description": "ID of the schema to be updated."
+                "description": "ID of the schema to be updated.",
             },
         }
     )
     @ns.expect(schema_input_dto)
+    @ns.marshal_with(schema_output_dto)
     def put(self, schema_id):
         """
         Update the schema by adding or removing mentions, relations, and constraints.
@@ -170,14 +171,5 @@ class SchemaUpdateResource(SchemaBaseRoute):
             raise BadRequest("Schema ID is required.")
 
         data = request.get_json()
-        mentions = data.get("mentions", [])
-        relations = data.get("relations", [])
-        constraints = data.get("constraints", [])
-
-        try:
-            response = self.service.update_schema(schema_id, mentions, relations, constraints)
-            return jsonify({"message": "Schema updated successfully.", "data": response}), 200
-        except BadRequest as e:
-            return jsonify({"error": str(e)}), 400
-        except Exception as e:
-            return jsonify({"error": "An unexpected error occurred."}), 500
+        response = self.service.update_schema(data, schema_id)
+        return response

@@ -19,9 +19,6 @@ from app.repositories.base_repository import BaseRepository
 from flask import request, jsonify
 
 
-
-
-
 class SchemaRepository(BaseRepository):
     def get_schema_by_id(self, schema_id):
         return (
@@ -290,30 +287,34 @@ class SchemaRepository(BaseRepository):
             .one()
         )
 
-    def get_schema_by_id(self, schema_id):
-        return (
+    def delete_all_constraints(self, schema_id):
+        constraints = (
             self.get_session()
-            .query(Schema.id, Schema.isFixed, Schema.mentions, Schema.relations, Schema.constraints)
-            .filter(Schema.id == schema_id)
-            .first()
+            .query(SchemaConstraint)
+            .join(
+                SchemaRelation, SchemaRelation.id == SchemaConstraint.schema_relation_id
+            )
+            .filter(SchemaRelation.schema_id == schema_id)
+            .all()
         )
-
-    def add_schema_elements(self, schema_id, mentions, relations, constraints):
-        session = self.get_session()
-        for mention in mentions:
-            session.add(SchemaMention(schema_id=schema_id, **mention))
-        for relation in relations:
-            session.add(SchemaRelation(schema_id=schema_id, **relation))
         for constraint in constraints:
-            session.add(SchemaConstraint(schema_id=schema_id, **constraint))
-        session.commit()
+            self.get_session().delete(constraint)
+        self.get_session().flush()
 
-    def remove_schema_elements(self, schema_id, element_ids, element_type):
-        session = self.get_session()
-        if element_type == "mention":
-            session.query(SchemaMention).filter(SchemaMention.id.in_(element_ids)).delete(synchronize_session=False)
-        elif element_type == "relation":
-            session.query(SchemaRelation).filter(SchemaRelation.id.in_(element_ids)).delete(synchronize_session=False)
-        elif element_type == "constraint":
-            session.query(SchemaConstraint).filter(SchemaConstraint.id.in_(element_ids)).delete(synchronize_session=False)
-        session.commit()
+    def delete_all_relations(self, schema_id):
+        self.get_session().query(SchemaRelation).filter(
+            SchemaRelation.schema_id == schema_id
+        ).delete(synchronize_session=False)
+        self.get_session().flush()
+
+    def delete_all_mentions(self, schema_id):
+        self.get_session().query(SchemaMention).filter(
+            SchemaMention.schema_id == schema_id
+        ).delete(synchronize_session=False)
+        self.get_session().flush()
+
+    def update_schema(self, schema_id, modelling_language_id, name):
+        self.get_session().query(Schema).filter(Schema.id == schema_id).update(
+            {Schema.modellingLanguage_id: modelling_language_id, Schema.name: name}
+        )
+        self.get_session().flush()
