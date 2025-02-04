@@ -144,6 +144,7 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             "document_edits": document_edits,
         }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 
 @ns.route("/")
@@ -206,5 +207,7 @@ class JaccardIndexResource(Resource):
             return jsonify({"error": str(e)}), 404
         except Exception as e:
             return jsonify({"error": "Internal Server Error"}), 500
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

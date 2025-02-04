@@ -181,6 +181,7 @@ class DocumentRepository(BaseRepository):
             .all()
         )
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 
     def get_document_by_id(self, document_id):
@@ -195,5 +196,7 @@ class DocumentRepository(BaseRepository):
 
     def fetch_document_edits(self, document_id):
         return self.get_session().query(DocumentEdit).filter_by(document_id=document_id).all()
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes

@@ -27,8 +27,11 @@ class DocumentService:
         self.token_service = token_service
         self.document_edit_service = document_edit_service
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         self.repository = DocumentRepository()
         self.document_repository = document_repository
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 
@@ -177,11 +180,14 @@ class DocumentService:
             raise NotFound("Document not found")
         return document
 
+<<<<<<< Updated upstream
     def get_all_document_edits_by_document(self, document_id):
         edits = self.document_repository.fetch_document_edits(document_id)
         if not edits:
             raise NotFound("No DocumentEdits found")
         return [{"id": edit.id, "content": edit.content} for edit in edits]
+=======
+>>>>>>> Stashed changes
 
 document_service = DocumentService(
     DocumentRepository(),
