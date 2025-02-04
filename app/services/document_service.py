@@ -26,14 +26,6 @@ class DocumentService:
         self.user_service = user_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        self.repository = DocumentRepository()
-        self.document_repository = document_repository
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
     def get_documents_by_project(self, user_id, project_id):
         response = self.get_documents_by_user(user_id)
@@ -174,20 +166,7 @@ class DocumentService:
                 "email": doc.email,
             },
         }
-    def get_document_by_id(self, document_id):
-        document = self.document_repository.fetch_document_by_id(document_id)
-        if not document:
-            raise NotFound("Document not found")
-        return document
 
-<<<<<<< Updated upstream
-    def get_all_document_edits_by_document(self, document_id):
-        edits = self.document_repository.fetch_document_edits(document_id)
-        if not edits:
-            raise NotFound("No DocumentEdits found")
-        return [{"id": edit.id, "content": edit.content} for edit in edits]
-=======
->>>>>>> Stashed changes
 
 document_service = DocumentService(
     DocumentRepository(),
