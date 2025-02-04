@@ -4,7 +4,8 @@ from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from flask import request
+import json
+from flask import request, Response
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
@@ -116,3 +117,26 @@ class DocumentEditResource(DocumentEditBaseRoute):
 
         response = self.service.get_document_edit_model(document_edit_id)
         return response
+
+
+@ns.route("/<int:document_edit_id>/download")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditResource(DocumentEditBaseRoute):
+
+    @ns.doc(description="Download a DocumentEdit by its ID")
+    def get(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
+        response_data = self.service.get_document_edit_by_id_for_difference_calc(
+            document_edit_id
+        )
+        json_data = json.dumps(response_data, indent=4)
+
+        return Response(
+            json_data,
+            mimetype="application/json",
+            headers={"Content-Disposition": "attachment; filename=document_edit.json"},
+        )
