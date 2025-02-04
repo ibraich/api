@@ -10,6 +10,7 @@ from app.dtos import (
     model_train_output_list_dto,
     schema_input_dto,
     get_recommendation_models_output_dto,
+    get_train_models_output_dto,
 )
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.schema_service import schema_service, SchemaService
@@ -97,7 +98,7 @@ class ModelRoutes(SchemaBaseRoute):
 
             step_response = requests.get(url=url, headers=headers)
             if step_response.status_code != 200:
-                raise BadRequest(step_response.text)
+                raise BadRequest("Failed to fetch models: " + step_response.text)
 
             step_models = []
             response_json = step_response.json()
@@ -142,6 +143,28 @@ class SchemaTrainResource(SchemaBaseRoute):
         response = self.service.train_model_for_schema(
             schema_id, data["model_name"], data["model_type"], data["model_steps"]
         )
+        return response
+
+    @ns.doc(
+        description="Fetch possible models for training models from pipeline microservice"
+    )
+    @ns.marshal_with(get_train_models_output_dto)
+    def get(self, schema_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+
+        steps = ["mention", "entity", "relation"]
+        response = {}
+
+        for index, step in enumerate(steps):
+            url = current_app.config.get("PIPELINE_URL") + "/train/" + step
+            headers = {"Content-Type": "application/json"}
+
+            train_response = requests.get(url=url, headers=headers)
+            if train_response.status_code != 200:
+                raise BadRequest("Failed to fetch models: " + train_response.text)
+
+            response[step] = train_response.json()
         return response
 
 
