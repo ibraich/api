@@ -54,7 +54,7 @@ class RelationRepository(BaseRepository):
             .all()
         )
 
-    def get_relations_by_user_by_document_edit(self, document_edit_id):
+    def get_actual_relations_by_document_edit(self, document_edit_id):
         return (
             self.get_session()
             .query(
@@ -73,7 +73,7 @@ class RelationRepository(BaseRepository):
             .all()
         )
 
-    def get_recommended_relations_by_document_edit(self, document_edit_id):
+    def get_predicted_recommended_relations_by_document_edit(self, document_edit_id):
         return (
             self.get_session()
             .query(

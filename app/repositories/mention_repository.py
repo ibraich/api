@@ -38,7 +38,7 @@ class MentionRepository(BaseRepository):
         )
         return results
 
-    def get_mentions_by_user_with_tokens_by_document_edit(self, document_edit_id):
+    def get_actual_mentions_with_tokens_by_document_edit(self, document_edit_id):
         results = (
             self.get_session()
             .query(
@@ -62,7 +62,7 @@ class MentionRepository(BaseRepository):
         )
         return results
 
-    def get_recommended_mentions_with_tokens_by_document_edit(self, document_edit_id):
+    def get_predicted_mentions_with_tokens_by_document_edit(self, document_edit_id):
         results = (
             self.get_session()
             .query(
