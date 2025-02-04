@@ -776,3 +776,49 @@ get_recommendation_models_output_dto = api.model(
         "relation": fields.Nested(model_type_with_settings),
     },
 )
+
+jaccard_index_response = api.model(
+    "jaccard index response",
+    {
+        "combined_index": fields.Float(
+            required=True,
+            description="An approximation of the overall Jaccard index, where relations and entities are weighted less than mentions.",
+        ),
+        "mention_index": fields.Float(required=True),
+        "relation_index": fields.Float(required=True),
+        "considered_relation_index": fields.Float(required=True),
+        "entity_index": fields.Float(required=True),
+        "considered_entities_index": fields.Float(required=True),
+    },
+)
+
+jaccard_response = api.model(
+    "jaccard index response",
+    {
+        "average": fields.Nested(
+            jaccard_index_response,
+            description="The average jaccard index where the index for all pairs of documents is calculated and the average is returned, e.g. ((A∩B/A∪B)+(A∩C/A∪C)+(B∩C/B∪C))/3",
+        ),
+        "combined": fields.Nested(
+            jaccard_index_response,
+            description="The combined jaccard index where one index for all documents in calculated at once, e.g. (A∩B∩C/A∪B∪C)",
+        ),
+    },
+)
+
+jaccard_output_dto = api.model(
+    "JaccardOutput",
+    {
+        "result": fields.List(
+            fields.Nested(jaccard_response),
+            description="Result of Jaccard calculation",
+        ),
+        "document": fields.Nested(
+            heat_document_dto, description="Details of the document"
+        ),
+        "document_edits": fields.List(
+            fields.Nested(heat_document_edit_dto),
+            description="List of document edits with user details",
+        ),
+    },
+)

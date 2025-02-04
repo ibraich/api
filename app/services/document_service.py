@@ -168,17 +168,7 @@ class DocumentService:
             },
         }
 
-    def get_document_by_id(self, document_id):
-        document = self.document_repository.fetch_document_by_id(document_id)
-        if not document:
-            raise NotFound("Document not found")
-        return document
 
-    def get_all_document_edits_by_document(self, document_id):
-        edits = self.document_repository.fetch_document_edits(document_id)
-        if not edits:
-            raise NotFound("No DocumentEdits found")
-        return [{"id": edit.id, "content": edit.content} for edit in edits]
 document_service = DocumentService(
     DocumentRepository(),
     user_service,

@@ -1,8 +1,8 @@
 import requests
-from flask_restx import Namespace, Resource
-from werkzeug.exceptions import NotFound, InternalServerError,BadRequest
+from flask_restx import Namespace
+from werkzeug.exceptions import NotFound, InternalServerError
 from app.routes.base_routes import AuthorizedBaseRoute
-from flask import jsonify, request, current_app
+from flask import request, current_app
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
     document_output_dto,
@@ -10,6 +10,7 @@ from app.dtos import (
     document_list_dto,
     document_delete_output_dto,
     heatmap_output_list_dto,
+    jaccard_output_dto,
 )
 
 ns = Namespace("documents", description="Document related operations")
@@ -144,37 +145,53 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             "document_edits": document_edits,
         }
 
+
 @ns.route("/<int:document_id>/jaccard-index")
 @ns.doc(params={"document_id": "A Document ID"})
 @ns.response(400, "Invalid input")
 @ns.response(404, "Document not found")
-class JaccardIndexResource(Resource):
-    def post(self, document_id):
-        try:
-            document = document_service.get_document_by_id(document_id)
-            if not document:
-                raise NotFound("Document not found")
+class JaccardIndexResource(DocumentBaseRoute):
 
-            document_edits = document_service.get_all_document_edits_by_document(document_id)
-            if not document_edits:
-                raise NotFound("No edits found for document")
+    @ns.marshal_with(jaccard_output_dto)
+    @ns.doc(
+        description="Send all DocumentEdit data for a specific Document ID to an external service"
+    )
+    def get(self, document_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
 
-            payload = {"document": document_id, "document_edits": document_edits}
-            external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/jaccard"
-            headers = {"accept": "application/json", "Content-Type": "application/json"}
+        document = self.service.get_document_by_id(document_id)
+        if not document:
+            raise NotFound(f"Document with ID {document_id} not found")
 
-            response = requests.post(external_endpoint, json=payload, headers=headers)
-            if response.status_code != 200:
-                raise InternalServerError("Jaccard Index calculation failed: " + response.text)
+        document_edits = self.service.get_all_document_edits_with_user_by_document(
+            document_id
+        )
+        if not document_edits:
+            raise NotFound(f"No DocumentEdits found for Document ID {document_id}")
 
-            return jsonify({
-                "document": document_id,
-                "document_edits": document_edits,
-                "jaccard_index": response.json()["jaccard_index"]
-            })
-        except BadRequest as e:
-            return jsonify({"error": str(e)}), 400
-        except NotFound as e:
-            return jsonify({"error": str(e)}), 404
-        except Exception as e:
-            return jsonify({"error": "Internal Server Error"}), 500
+        transformed_edits = self.service.get_all_structured_document_edits_by_document(
+            document_id
+        )
+
+        external_endpoint = (
+            current_app.config.get("DIFFERENCE_CALC_URL") + "/jaccard-index"
+        )
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+
+        response = requests.post(
+            external_endpoint, json=transformed_edits, headers=headers
+        )
+        if response.status_code != 200:
+            raise InternalServerError(
+                "Jaccard Index calculation failed: " + response.text
+            )
+
+        return {
+            "document": {
+                "id": document_id,
+                "name": document.name,
+            },
+            "document_edits": document_edits,
+            "result": response.json(),
+        }

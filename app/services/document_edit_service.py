@@ -262,12 +262,21 @@ class DocumentEditService:
                 "mention_head": {
                     "tag": relation["head_mention"]["tag"],
                     "tokens": relation["head_mention"]["tokens"],
+                    **(
+                        {"entity": {"id": relation["head_mention"]["entity_id"]}}
+                        if relation["head_mention"].get("entity_id")
+                        else {}
+                    ),  # Only add entity object if entity_id exists
                     "entity": {"id": relation["head_mention"]["entity_id"]},
                 },
                 "mention_tail": {
                     "tag": relation["tail_mention"]["tag"],
                     "tokens": relation["tail_mention"]["tokens"],
-                    "entity": {"id": relation["tail_mention"]["entity_id"]},
+                    **(
+                        {"entity": {"id": relation["tail_mention"]["entity_id"]}}
+                        if relation["tail_mention"].get("entity_id")
+                        else {}
+                    ),  # Only add entity object if entity_id exists
                 },
             }
             for relation in relations_data.get("relations", [])
