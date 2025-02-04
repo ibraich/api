@@ -1,8 +1,8 @@
 import requests
-from flask_restx import Namespace
-from werkzeug.exceptions import NotFound, InternalServerError
+from flask_restx import Namespace, Resource
+from werkzeug.exceptions import NotFound, InternalServerError,BadRequest
 from app.routes.base_routes import AuthorizedBaseRoute
-from flask import request, current_app
+from flask import jsonify, request, current_app
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
     document_output_dto,
@@ -143,3 +143,38 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             },
             "document_edits": document_edits,
         }
+
+@ns.route("/<int:document_id>/jaccard-index")
+@ns.doc(params={"document_id": "A Document ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Document not found")
+class JaccardIndexResource(Resource):
+    def post(self, document_id):
+        try:
+            document = document_service.get_document_by_id(document_id)
+            if not document:
+                raise NotFound("Document not found")
+
+            document_edits = document_service.get_all_document_edits_by_document(document_id)
+            if not document_edits:
+                raise NotFound("No edits found for document")
+
+            payload = {"document": document_id, "document_edits": document_edits}
+            external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/jaccard"
+            headers = {"accept": "application/json", "Content-Type": "application/json"}
+
+            response = requests.post(external_endpoint, json=payload, headers=headers)
+            if response.status_code != 200:
+                raise InternalServerError("Jaccard Index calculation failed: " + response.text)
+
+            return jsonify({
+                "document": document_id,
+                "document_edits": document_edits,
+                "jaccard_index": response.json()["jaccard_index"]
+            })
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400
+        except NotFound as e:
+            return jsonify({"error": str(e)}), 404
+        except Exception as e:
+            return jsonify({"error": "Internal Server Error"}), 500
