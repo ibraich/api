@@ -83,6 +83,8 @@ class RelationService:
         mention_head_id: int,
         mention_tail_id: int,
         document_edit_id: int,
+        document_recommendation_id=None,
+        is_shown_recommendation=False,
     ) -> Relation:
         return self.__relation_repository.save_relation_in_edit(
             schema_relation_id,
@@ -90,6 +92,8 @@ class RelationService:
             mention_head_id,
             mention_tail_id,
             document_edit_id,
+            document_recommendation_id,
+            is_shown_recommendation,
         )
 
     def delete_relation_by_id(self, relation_id):
