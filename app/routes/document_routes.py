@@ -1,8 +1,8 @@
 import requests
-from flask_restx import Namespace, Resource
-from werkzeug.exceptions import BadRequest,NotFound, InternalServerError
+from flask_restx import Namespace
+from werkzeug.exceptions import NotFound, InternalServerError
 from app.routes.base_routes import AuthorizedBaseRoute
-from flask import request, current_app, jsonify
+from flask import request, current_app
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
     document_output_dto,
@@ -143,6 +143,7 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             },
             "document_edits": document_edits,
         }
+<<<<<<< Updated upstream
 
 
 @ns.route("/")
@@ -205,3 +206,5 @@ class JaccardIndexResource(Resource):
             return jsonify({"error": str(e)}), 404
         except Exception as e:
             return jsonify({"error": "Internal Server Error"}), 500
+=======
+>>>>>>> Stashed changes

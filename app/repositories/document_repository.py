@@ -171,12 +171,16 @@ class DocumentRepository(BaseRepository):
                 User.id.label("user_id"),
                 User.email.label("user_email"),
                 User.username.label("user_username"),
+                DocumentEditState.id.label("state_id"),
+                DocumentEditState.type.label("state_type"),
             )
             .join(User, User.id == DocumentEdit.user_id)
+            .join(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.active == True)
             .all()
         )
+<<<<<<< Updated upstream
 
 
     def get_document_by_id(self, document_id):
@@ -191,3 +195,5 @@ class DocumentRepository(BaseRepository):
 
     def fetch_document_edits(self, document_id):
         return self.get_session().query(DocumentEdit).filter_by(document_id=document_id).all()
+=======
+>>>>>>> Stashed changes

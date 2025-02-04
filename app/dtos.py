@@ -102,6 +102,26 @@ document_output_dto = api.model(
         "team": fields.Nested(team_dto),
         "document_edit": fields.Nested(document_edit_dto),
         "creator": fields.Nested(user_output_dto),
+        "document_edits": fields.List(
+            fields.Nested(
+                api.model(
+                    "DocumentEdits",
+                    {
+                        "id": fields.Integer,
+                        "user": fields.Nested(user_output_dto),
+                        "state": fields.Nested(
+                            api.model(
+                                "DocumentEditState",
+                                {
+                                    "id": fields.Integer,
+                                    "type": fields.String,
+                                },
+                            )
+                        ),
+                    },
+                )
+            )
+        ),
     },
 )
 
@@ -434,6 +454,13 @@ project_delete_output_model = api.model(
     },
 )
 
+team_delete_output_model = api.model(
+    "DeleteTeamOutput",
+    {
+        "message": fields.String,
+    },
+)
+
 relation_update_input_dto = api.model(
     "UpdateRelationInput",
     {
@@ -466,44 +493,6 @@ token_output_list_dto = api.model(
     },
 )
 
-entity_model = api.model(
-    "Entity",
-    {
-        "id": fields.Integer(description="Entity ID"),
-    },
-)
-
-mention_model = api.model(
-    "Mention",
-    {
-        "tag": fields.String(description="Mention tag"),
-        "tokens": fields.List(
-            fields.Nested(token_model),
-            description="List of tokens associated with the mention",
-        ),
-        "entity": fields.Nested(
-            entity_model, description="Entity associated with the mention"
-        ),
-    },
-)
-
-
-head_mention_model = mention_model
-tail_mention_model = mention_model
-
-relation_model = api.model(
-    "Relation",
-    {
-        "tag": fields.String(description="Relation tag"),
-        "mention_head": fields.Nested(
-            head_mention_model, description="Head mention in the relation"
-        ),
-        "mention_tail": fields.Nested(
-            tail_mention_model, description="Tail mention in the relation"
-        ),
-    },
-)
-
 document_model = api.model(
     "Document",
     {
@@ -511,22 +500,6 @@ document_model = api.model(
         "tokens": fields.List(
             fields.Nested(token_model), description="List of tokens in the document"
         ),
-    },
-)
-
-finished_document_edit_output_dto = api.model(
-    "FinishedDocumentEditOutput",
-    {
-        "document": fields.Nested(document_model, description="Document details"),
-        "mentions": fields.List(
-            fields.Nested(mention_model),
-            description="List of mentions in the document edit",
-        ),
-        "relations": fields.List(
-            fields.Nested(relation_model),
-            description="List of relations in the document edit",
-        ),
-        "schema_id": fields.Integer(description="Schema ID"),
     },
 )
 
@@ -624,6 +597,23 @@ relation_output_list_dto = api.model(
         "relations": fields.List(
             fields.Nested(relation_output_model), description="List of relations"
         ),
+    },
+)
+
+
+finished_document_edit_output_dto = api.model(
+    "FinishedDocumentEditOutput",
+    {
+        "document": fields.Nested(document_model, description="Document details"),
+        "mentions": fields.List(
+            fields.Nested(mention_output_dto),
+            description="List of mentions in the document edit",
+        ),
+        "relations": fields.List(
+            fields.Nested(relation_output_model),
+            description="List of relations in the document edit",
+        ),
+        "schema_id": fields.Integer(description="Schema ID"),
     },
 )
 
@@ -755,6 +745,12 @@ model_type_with_settings = api.model(
     "ModelTypeWithSettings",
     {
         "model_type": fields.String(required=True),
+        "name": fields.String(
+            description="Name of trained model (in human understandable format)"
+        ),
+        "id": fields.Integer(
+            description="Id of the related RecommendationModel in the database that is connected to the given schema"
+        ),
         "settings": fields.Raw(
             required=False,
             description="""

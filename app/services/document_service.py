@@ -7,13 +7,11 @@ from app.services.document_edit_service import (
 )
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
-from app.services.team_service import TeamService, team_service
 
 
 class DocumentService:
     __document_repository: DocumentRepository
     user_service: UserService
-    team_service: TeamService
     token_service: TokenService
     document_edit_service: DocumentEditService
 
@@ -21,17 +19,18 @@ class DocumentService:
         self,
         document_repository,
         user_service,
-        team_service,
         token_service,
         document_edit_service,
     ):
         self.__document_repository = document_repository
         self.user_service = user_service
-        self.team_service = team_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
+<<<<<<< Updated upstream
         self.repository = DocumentRepository()
         self.document_repository = document_repository
+=======
+>>>>>>> Stashed changes
 
     def get_documents_by_project(self, user_id, project_id):
         response = self.get_documents_by_user(user_id)
@@ -107,7 +106,9 @@ class DocumentService:
             raise NotFound("No DocumentEdits found for document ID")
 
         transformed_edits = [
-            self.document_edit_service.get_document_edit_by_id(document_edit.id)
+            self.document_edit_service.get_document_edit_by_id_for_difference_calc(
+                document_edit.id
+            )
             for document_edit in document_edits
         ]
 
@@ -119,23 +120,24 @@ class DocumentService:
                 document_id
             )
         )
-        if not document_edits:
-            raise NotFound("No DocumentEdits found for document ID")
 
         processed_edits = [
             {
-                "id": document_id,
+                "id": edit.edit_id,
                 "user": {
                     "id": edit.user_id,
                     "email": edit.user_email,
                     "username": edit.user_username,
+                },
+                "state": {
+                    "id": edit.state_id,
+                    "type": edit.state_type,
                 },
             }
             for edit in document_edits
         ]
 
         return processed_edits
-
 
     def __map_document_to_output_dto(self, doc):
         return {
@@ -162,6 +164,7 @@ class DocumentService:
                 "id": doc.document_edit_id,
                 "state": doc.document_edit_state,
             },
+            "document_edits": self.get_all_document_edits_with_user_by_document(doc.id),
             "creator": {
                 "id": doc.creator_id,
                 "username": doc.username,
@@ -180,11 +183,9 @@ class DocumentService:
             raise NotFound("No DocumentEdits found")
         return [{"id": edit.id, "content": edit.content} for edit in edits]
 
-
 document_service = DocumentService(
     DocumentRepository(),
     user_service,
-    team_service,
     token_service,
     document_edit_service,
 )
