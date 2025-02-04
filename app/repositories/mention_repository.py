@@ -138,3 +138,12 @@ class MentionRepository(BaseRepository):
         if mention:
             mention.isShownRecommendation = value
         return mention
+
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return (
+            self.get_session()
+            .query(Mention)
+            .filter(Mention.document_edit_id == document_edit_id)
+            .filter(Mention.isShownRecommendation == True)
+            .all()
+        )

@@ -4,6 +4,7 @@ from app.models import (
     RecommendationModel,
     ModelStep,
     Document,
+    DocumentEditState,
 )
 from app.repositories.base_repository import BaseRepository
 
@@ -23,7 +24,7 @@ class DocumentEditRepository(BaseRepository):
             document_id=document_id,
             user_id=user_id,
             schema_id=schema_id,
-            state_id=1,
+            state_id=5,
             active=True,
             mention_model_id=model_mention,
             entity_model_id=model_entities,
@@ -94,11 +95,21 @@ class DocumentEditRepository(BaseRepository):
     def get_document_edit_by_id(self, document_edit_id):
         return (
             self.get_session()
-            .query(DocumentEdit)
+            .query(
+                DocumentEdit.id,
+                DocumentEdit.document_id,
+                DocumentEdit.schema_id,
+                DocumentEdit.user_id,
+                DocumentEdit.state_id,
+                DocumentEditState.type.label("state_name"),
+                DocumentEdit.mention_model_id,
+                DocumentEdit.entity_model_id,
+                DocumentEdit.relation_model_id,
+            )
             .filter(DocumentEdit.id == document_edit_id)
             .filter(DocumentEdit.active == True)
-            .first()
-        )
+            .join(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
+        ).first()
 
     def store_model_settings(self, document_edit_id, model_id, model_settings):
         if model_settings is None or model_id is None:
@@ -150,3 +161,23 @@ class DocumentEditRepository(BaseRepository):
             .filter(DocumentEdit.id == document_edit_id)
             .all()
         )
+
+    def get_state_by_name(self, state):
+        return (
+            self.get_session()
+            .query(DocumentEditState)
+            .filter(DocumentEditState.type == state)
+            .first()
+        )
+
+    def update_state(self, document_edit_id, state_id):
+        document_edit = (
+            self.get_session()
+            .query(DocumentEdit)
+            .filter(DocumentEdit.id == document_edit_id)
+            .filter(DocumentEdit.active == True)
+            .first()
+        )
+        document_edit.state_id = state_id
+        self.store_object(document_edit)
+        return document_edit
