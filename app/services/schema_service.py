@@ -226,6 +226,13 @@ class SchemaService:
         if modelling_language is None:
             raise BadRequest("Modelling Language not allowed")
 
+        created_schema = self.create_schema(
+            modelling_language.id, team_id, schema["name"]
+        )
+        self.create_schema_components(schema, created_schema.id)
+        return self.get_schema_by_id(created_schema.id)
+
+    def create_schema_components(self, schema, schema_id):
         if self.__has_duplicates(schema["schema_mentions"], key="tag"):
             raise Conflict("Duplicate tags found in schema mentions.")
         if self.__has_duplicates(schema["schema_relations"], key="tag"):
@@ -240,14 +247,10 @@ class SchemaService:
         ):
             raise Conflict("Duplicate constraints found in schema.")
 
-        created_schema = self.create_schema(
-            modelling_language.id, team_id, schema["name"]
-        )
-
         schema_mentions_by_tag = {}
         for schema_mention in schema["schema_mentions"]:
             created_mention = self.create_schema_mention(
-                created_schema.id,
+                schema_id,
                 schema_mention.get("tag"),
                 schema_mention.get("description"),
                 schema_mention.get("entity_possible"),
@@ -258,21 +261,21 @@ class SchemaService:
         schema_relations_by_tag = {}
         for schema_relation in schema["schema_relations"]:
             created_relation = self.create_schema_relation(
-                created_schema.id,
+                schema_id,
                 schema_relation.get("tag"),
                 schema_relation.get("description"),
             )
             schema_relations_by_tag[schema_relation["tag"]] = created_relation
-
-        for constraint in schema["schema_constraints"]:
-            self.create_schema_constraint(
-                schema_relations_by_tag[constraint.get("relation_tag")].id,
-                schema_mentions_by_tag[constraint.get("mention_head_tag")].id,
-                schema_mentions_by_tag[constraint.get("mention_tail_tag")].id,
-                constraint.get("is_directed"),
-            )
-
-        return self.get_schema_by_id(created_schema.id)
+        try:
+            for constraint in schema["schema_constraints"]:
+                self.create_schema_constraint(
+                    schema_relations_by_tag[constraint.get("relation_tag")].id,
+                    schema_mentions_by_tag[constraint.get("mention_head_tag")].id,
+                    schema_mentions_by_tag[constraint.get("mention_tail_tag")].id,
+                    constraint.get("is_directed"),
+                )
+        except KeyError as e:
+            raise BadRequest("Constraint not allowed: " + str(e))
 
     def __has_duplicates(self, items, key):
         seen = set()
@@ -365,6 +368,30 @@ class SchemaService:
 
     def get_schema_by_document(self, document_id):
         return self.__schema_repository.get_schema_by_document(document_id)
+
+    def update_schema(self, schema, schema_id):
+        old_schema = self.__schema_repository.get_schema_by_id(schema_id)
+        if old_schema.isFixed:
+            raise BadRequest("Schema is fixed and cannot be modified.")
+
+        modelling_language = self.__schema_repository.get_modelling_laguage_by_name(
+            schema["modelling_language"]
+        )
+        if modelling_language is None:
+            raise BadRequest("Modelling Language not allowed")
+
+        self.__schema_repository.update_schema(
+            schema_id, modelling_language.id, schema["name"]
+        )
+
+        self.delete_schema_components(schema_id)
+        self.create_schema_components(schema, schema_id)
+        return self.get_schema_by_id(schema_id)
+
+    def delete_schema_components(self, schema_id):
+        self.__schema_repository.delete_all_constraints(schema_id)
+        self.__schema_repository.delete_all_relations(schema_id)
+        self.__schema_repository.delete_all_mentions(schema_id)
 
     def get_schema_relations_by_schema(self, schema_id):
         schema_relations = self.__schema_repository.get_schema_relations_by_schema(

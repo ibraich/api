@@ -143,3 +143,33 @@ class SchemaTrainResource(SchemaBaseRoute):
             schema_id, data["model_name"], data["model_type"], data["model_steps"]
         )
         return response
+
+
+@ns.route("/<int:schema_id>")
+@ns.doc(params={"schema_id": "A Schema ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class SchemaUpdateResource(SchemaBaseRoute):
+
+    @ns.doc(description="Update schema by schema ID")
+    @ns.doc(
+        params={
+            "schema_id": {
+                "type": "integer",
+                "required": True,
+                "description": "ID of the schema to be updated.",
+            },
+        }
+    )
+    @ns.expect(schema_input_dto)
+    @ns.marshal_with(schema_output_dto)
+    def put(self, schema_id):
+        """
+        Update the schema by adding or removing mentions, relations, and constraints.
+        """
+        if not schema_id:
+            raise BadRequest("Schema ID is required.")
+
+        data = request.get_json()
+        response = self.service.update_schema(data, schema_id)
+        return response
