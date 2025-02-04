@@ -170,12 +170,13 @@ class DocumentRecommendationService:
             ]
 
             # Append the result with the type and filtered tokens
-            result.append(
-                {
-                    "mention_schema_id": schema_mention_dict[type_],
-                    "token_ids": filtered_token_ids,
-                }
-            )
+            if len(filtered_token_ids) > 0:
+                result.append(
+                    {
+                        "mention_schema_id": schema_mention_dict[type_],
+                        "token_ids": filtered_token_ids,
+                    }
+                )
 
         return result
 
@@ -294,6 +295,7 @@ class DocumentRecommendationService:
         mentions_data = self.mention_service.get_mentions_by_document_edit(
             document_edit_id
         )
+        mention_ids = [mention["id"] for mention in mentions_data["mentions"]]
 
         entity_recommendation_input = self.get_entity_recommendation_input_dto(
             content,
@@ -312,9 +314,13 @@ class DocumentRecommendationService:
 
         for mention_group in entity_recommendations:
             mention_list = mention_group.get("mentions", [])
-            self.entity_service.save_entity_in_edit(
-                document_edit_id, mention_list, document_recommendation.id
-            )
+            for mention in mention_list:
+                if mention["id"] not in mention_ids:
+                    mention_list.remove(mention)
+            if len(mention_list) > 0:
+                self.entity_service.save_entity_in_edit(
+                    document_edit_id, mention_list, document_recommendation.id
+                )
 
     def get_entity_recommendation_input_dto(
         self,
