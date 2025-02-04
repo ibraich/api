@@ -135,10 +135,7 @@ class MentionService:
         for token_id in token_ids:
             self.token_mention_service.create_token_mention(token_id, mention.id)
 
-        mention.tokens = token_ids
-        mention.tag = schema_mention.tag
-        mention.schema_mention = schema_mention
-        return mention
+        return self.get_mention_dto_by_id(mention.id)
 
     def add_to_entity(self, entity_id: int, mention_id: int):
         self.__mention_repository.add_to_entity(entity_id, mention_id)
