@@ -38,6 +38,54 @@ class MentionRepository(BaseRepository):
         )
         return results
 
+    def get_mentions_by_user_with_tokens_by_document_edit(self, document_edit_id):
+        results = (
+            self.get_session()
+            .query(
+                Mention.id.label("mention_id"),
+                Mention.document_edit_id,
+                Mention.document_recommendation_id,
+                Mention.entity_id,
+                Token.id.label("token_id"),
+                Token.text,
+                Token.document_index,
+                Token.sentence_index,
+                Token.pos_tag,
+            )
+            .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
+            .outerjoin(Token, TokenMention.token_id == Token.id)  # Join tokens
+            .filter(
+                (Mention.document_edit_id == document_edit_id)
+                & (Mention.document_recommendation_id.is_(None))
+            )
+            .all()
+        )
+        return results
+
+    def get_recommended_mentions_with_tokens_by_document_edit(self, document_edit_id):
+        results = (
+            self.get_session()
+            .query(
+                Mention.id.label("mention_id"),
+                Mention.document_edit_id,
+                Mention.document_recommendation_id,
+                Mention.entity_id,
+                Token.id.label("token_id"),
+                Token.text,
+                Token.document_index,
+                Token.sentence_index,
+                Token.pos_tag,
+            )
+            .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
+            .outerjoin(Token, TokenMention.token_id == Token.id)  # Join tokens
+            .filter(
+                (Mention.document_edit_id == document_edit_id)
+                & (Mention.document_recommendation_id.is_not(None))
+            )
+            .all()
+        )
+        return results
+
     def get_mention_with_schema_by_id(self, mention_id):
         return (
             self.get_session()
