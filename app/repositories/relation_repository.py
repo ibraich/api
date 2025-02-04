@@ -163,3 +163,12 @@ class RelationRepository(BaseRepository):
         if relation:
             relation.isShownRecommendation = value
         return relation
+
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return (
+            self.get_session()
+            .query(Relation)
+            .filter(Relation.document_edit_id == document_edit_id)
+            .filter(Relation.isShownRecommendation == True)
+            .all()
+        )

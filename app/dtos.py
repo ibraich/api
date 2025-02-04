@@ -74,8 +74,8 @@ project_dto = api.model(
     },
 )
 
-document_edit_dto = api.model(
-    "DocumentEdit",
+document_edit_state_dto = api.model(
+    "DocumentEditState",
     {
         "id": fields.Integer,
         "state": fields.String,
@@ -100,7 +100,7 @@ document_output_dto = api.model(
         "project": fields.Nested(project_dto),
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
-        "document_edit": fields.Nested(document_edit_dto),
+        "document_edit": fields.Nested(document_edit_state_dto),
         "creator": fields.Nested(user_output_dto),
         "document_edits": fields.List(
             fields.Nested(
@@ -355,6 +355,7 @@ document_edit_output_dto = api.model(
         "mention_model_id": fields.Integer,
         "entity_model_id": fields.Integer,
         "relation_model_id": fields.Integer,
+        "state": fields.Nested(document_edit_state_dto),
     },
 )
 
@@ -820,5 +821,12 @@ jaccard_output_dto = api.model(
             fields.Nested(heat_document_edit_dto),
             description="List of document edits with user details",
         ),
+    },
+)
+
+document_edit_state_input_dto = api.model(
+    "DocumentEditStateOutput",
+    {
+        "state": fields.String(required=True, description="State of the document edit"),
     },
 )
