@@ -328,6 +328,11 @@ class MentionService:
             for token_id in mention_recommendation["token_ids"]:
                 self.token_mention_service.create_token_mention(token_id, mention.id)
 
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return self.__mention_repository.get_recommendations_by_document_edit(
+            document_edit_id
+        )
+
 
 mention_service = MentionService(
     MentionRepository(),
