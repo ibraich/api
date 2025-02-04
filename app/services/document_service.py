@@ -26,7 +26,6 @@ class DocumentService:
         self.user_service = user_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
-        self.document_repository = document_repository
 
     def get_documents_by_project(self, user_id, project_id):
         response = self.get_documents_by_user(user_id)

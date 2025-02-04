@@ -180,9 +180,3 @@ class DocumentRepository(BaseRepository):
             .filter(DocumentEdit.active == True)
             .all()
         )
-
-    def fetch_document_by_id(self, document_id):
-        return self.get_session().query(Document).filter_by(id=document_id).first()
-
-    def fetch_document_edits(self, document_id):
-        return self.get_session().query(DocumentEdit).filter_by(document_id=document_id).all()
