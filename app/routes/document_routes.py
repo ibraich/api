@@ -10,6 +10,7 @@ from app.dtos import (
     document_list_dto,
     document_delete_output_dto,
     heatmap_output_list_dto,
+    jaccard_output_dto,
 )
 
 ns = Namespace("documents", description="Document related operations")
@@ -142,4 +143,55 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
                 "name": document.name,
             },
             "document_edits": document_edits,
+        }
+
+
+@ns.route("/<int:document_id>/jaccard-index")
+@ns.doc(params={"document_id": "A Document ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Document not found")
+class JaccardIndexResource(DocumentBaseRoute):
+
+    @ns.marshal_with(jaccard_output_dto)
+    @ns.doc(
+        description="Send all DocumentEdit data for a specific Document ID to an external service"
+    )
+    def get(self, document_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
+
+        document = self.service.get_document_by_id(document_id)
+        if not document:
+            raise NotFound(f"Document with ID {document_id} not found")
+
+        document_edits = self.service.get_all_document_edits_with_user_by_document(
+            document_id
+        )
+        if not document_edits:
+            raise NotFound(f"No DocumentEdits found for Document ID {document_id}")
+
+        transformed_edits = self.service.get_all_structured_document_edits_by_document(
+            document_id
+        )
+
+        external_endpoint = (
+            current_app.config.get("DIFFERENCE_CALC_URL") + "/jaccard-index"
+        )
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+
+        response = requests.post(
+            external_endpoint, json=transformed_edits, headers=headers
+        )
+        if response.status_code != 200:
+            raise InternalServerError(
+                "Jaccard Index calculation failed: " + response.text
+            )
+
+        return {
+            "document": {
+                "id": document_id,
+                "name": document.name,
+            },
+            "document_edits": document_edits,
+            "result": response.json(),
         }

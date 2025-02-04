@@ -119,6 +119,7 @@ class DocumentEditResource(DocumentEditBaseRoute):
         response = self.service.get_document_edit_model(document_edit_id)
         return response
 
+
 @ns.route("/<int:document_edit_id>/step")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
 @ns.response(403, "Authorization required")
@@ -136,6 +137,7 @@ class DocumentEditStateResource(DocumentEditBaseRoute):
 
         response = self.service.set_edit_state(document_edit_id, request_data["state"])
         return response
+
 
 @ns.route("/<int:document_edit_id>/download")
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
