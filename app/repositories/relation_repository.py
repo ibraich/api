@@ -61,6 +61,8 @@ class RelationRepository(BaseRepository):
         mention_head_id,
         mention_tail_id,
         document_edit_id,
+        document_recommendation_id,
+        is_shown_recommendation,
     ) -> Relation:
         return super().store_object(
             Relation(
@@ -69,6 +71,8 @@ class RelationRepository(BaseRepository):
                 mention_head_id=mention_head_id,
                 mention_tail_id=mention_tail_id,
                 document_edit_id=document_edit_id,
+                document_recommendation_id=document_recommendation_id,
+                isShownRecommendation=is_shown_recommendation,
             )
         )
 

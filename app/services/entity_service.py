@@ -133,6 +133,17 @@ class EntityService:
             mention["entity_id"] = entity.id
         return mentions_without_entity
 
+    def save_entity_in_edit(
+        self, document_edit_id, mentions, document_recommendation_id
+    ):
+        entity = self.__entity_repository.create_entity(
+            document_edit_id,
+            document_recommendation_id=document_recommendation_id,
+            is_shown_recommendation=True,
+        )
+        for mention in mentions:
+            mention_service.add_to_entity(entity.id, mention["id"])
+
 
 entity_service = EntityService(
     EntityRepository(),

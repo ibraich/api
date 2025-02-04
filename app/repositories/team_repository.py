@@ -86,3 +86,17 @@ class TeamRepository(BaseRepository):
             .filter(Team.active == True)
             .first()
         )
+
+    def delete_team(self, team_id):
+        team = (
+            self.get_session()
+            .query(Team)
+            .filter(Team.id == team_id)
+            .filter(Team.active == True)
+            .first()
+        )
+        if not team:
+            return False
+
+        team.active = False
+        return True

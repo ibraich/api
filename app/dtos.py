@@ -454,6 +454,13 @@ project_delete_output_model = api.model(
     },
 )
 
+team_delete_output_model = api.model(
+    "DeleteTeamOutput",
+    {
+        "message": fields.String,
+    },
+)
+
 relation_update_input_dto = api.model(
     "UpdateRelationInput",
     {

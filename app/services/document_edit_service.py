@@ -113,14 +113,7 @@ class DocumentEditService:
         )
 
         # Create mention recommendation
-        params = {}
-        models = self.get_document_edit_model(document_edit.id)["models"]
-        for model in models:
-            if model["step"]["id"] == 1:  # MENTIONS
-                params["model_type"] = model["type"]
-                params["name"] = model["name"]
-                for setting in model["settings"]:
-                    params[setting["key"]] = setting["value"]
+        params = self.get_recommendation_params(document_edit.id, 1)  # MENTIONS
 
         mention_recommendations = (
             self.document_recommendation_service.get_mention_recommendation(
@@ -317,6 +310,39 @@ class DocumentEditService:
                     }
                 )
         return {"models": list(model_dict.values())}
+
+    def save_relation_recommendation(self, document_edit_id):
+        doc_edit = self.get_document_edit_with_document_by_id(document_edit_id)
+        params = self.get_recommendation_params(document_edit_id, 2)  # RELATIONS
+        self.document_recommendation_service.get_relation_recommendation(
+            document_edit_id,
+            doc_edit.schema_id,
+            doc_edit.content,
+            doc_edit.document_id,
+            params,
+        )
+
+    def save_entity_recommendation(self, document_edit_id):
+        doc_edit = self.get_document_edit_with_document_by_id(document_edit_id)
+        params = self.get_recommendation_params(document_edit_id, 3)  # ENTITIES
+        self.document_recommendation_service.get_entity_recommendation(
+            document_edit_id,
+            doc_edit.schema_id,
+            doc_edit.content,
+            doc_edit.document_id,
+            params,
+        )
+
+    def get_recommendation_params(self, document_edit_id, step_id):
+        params = {}
+        models = self.get_document_edit_model(document_edit_id)["models"]
+        for model in models:
+            if model["step"]["id"] == step_id:
+                params["model_type"] = model["type"]
+                params["name"] = model["name"]
+                for setting in model["settings"]:
+                    params[setting["key"]] = setting["value"]
+        return params
 
 
 document_edit_service = DocumentEditService(

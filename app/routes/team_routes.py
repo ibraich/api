@@ -7,6 +7,7 @@ from app.dtos import (
     team_member_input_dto,
     team_user_output_list_dto,
     team_user_output_dto,
+    team_delete_output_model,
 )
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.team_service import team_service, TeamService
@@ -97,3 +98,20 @@ class TeamUpdateResource(TeamBaseRoute):
 
         team = self.service.update_team_name(team_id, data["name"])
         return team
+
+
+@ns.route("/<int:team_id>")
+@ns.doc(params={"team_id": "Team ID to soft-delete"})
+@ns.response(404, "Team not found")
+class TeamDeletionResource(TeamBaseRoute):
+
+    @ns.marshal_with(
+        team_delete_output_model, description="Team set to inactive successfully"
+    )
+    @ns.doc(description="Soft-delete a Team by setting 'active' to False")
+    def delete(self, team_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_in_team(user_id, team_id)
+
+        response = self.service.delete_team(team_id)
+        return response
