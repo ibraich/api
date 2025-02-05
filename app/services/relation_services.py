@@ -341,6 +341,12 @@ class RelationService:
                 raise Conflict("Relation already exists.")
 
     def get_recommendations_by_document_edit(self, document_edit_id):
+        """
+        Fetches all unreviewed relation recommendations for a document edit
+
+        :param document_edit_id: Document Edit ID to query
+        :return: List of relation database entries
+        """
         return self.__relation_repository.get_recommendations_by_document_edit(
             document_edit_id
         )

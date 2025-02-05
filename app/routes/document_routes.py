@@ -164,7 +164,7 @@ class JaccardIndexResource(DocumentBaseRoute):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_accessible(user_id, document_id)
 
-        document = self.service.get_document_by_id(document_id)
+        document = self.service.get_document_by_id(document_id, user_id)
         if not document:
             raise NotFound(f"Document with ID {document_id} not found")
 
@@ -194,7 +194,7 @@ class JaccardIndexResource(DocumentBaseRoute):
         return {
             "document": {
                 "id": document_id,
-                "name": document.name,
+                "name": document["name"],
             },
             "document_edits": document_edits,
             "result": response.json(),

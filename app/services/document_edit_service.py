@@ -424,6 +424,19 @@ class DocumentEditService:
         return params
 
     def set_edit_state(self, document_edit_id, state_name):
+        """
+        Set Edit State of a document edit to another step.
+        Possible is only the directly following step.
+
+        When proceeding to a suggestion step, new recommendations will be generated.
+        If unreviewed recommendations exist, it is forbidden to leave the suggestion step.
+
+        :param document_edit_id: DocumentEdit ID
+        :param state_name: New state of the document edit
+        :return: document_edit_output_dto
+        :raises NotFound: If document edit does not exist
+        :raises BadRequest: If it is not allowed to proceed to specified step.
+        """
         state = self.__document_edit_repository.get_state_by_name(state_name)
         if state is None:
             raise BadRequest("Invalid state")
@@ -431,7 +444,7 @@ class DocumentEditService:
             document_edit_id
         )
         if document_edit is None:
-            raise BadRequest("Document edit does not exist")
+            raise NotFound("Document edit does not exist")
 
         if document_edit.state_name == "MENTION_SUGGESTION":
             if state_name != "MENTIONS":

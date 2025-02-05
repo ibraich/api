@@ -407,6 +407,12 @@ class MentionService:
             raise BadRequest("Mentions are equal")
 
     def get_recommendations_by_document_edit(self, document_edit_id):
+        """
+        Fetches all unreviewed mention recommendations for a document edit
+
+        :param document_edit_id: Document Edit ID to query
+        :return: List of mention database entries
+        """
         return self.__mention_repository.get_recommendations_by_document_edit(
             document_edit_id
         )

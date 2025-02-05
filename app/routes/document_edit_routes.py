@@ -127,8 +127,14 @@ class DocumentEditStateResource(DocumentEditBaseRoute):
 
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_edit_state_input_dto, validate=True)
-    @ns.doc(description="Set state to the following state")
     def post(self, document_edit_id):
+        """
+        Set Edit State of a document edit to another step.
+        Possible is only the directly following step.
+
+        When proceeding to a suggestion step, new recommendations will be generated.
+        If unreviewed recommendations exist, it is forbidden to leave the suggestion step.
+        """
         request_data = request.get_json()
 
         user_id = self.user_service.get_logged_in_user_id()
