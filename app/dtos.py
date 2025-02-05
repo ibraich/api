@@ -603,6 +603,7 @@ finished_document_edit_output_dto = api.model(
             description="List of relations in the document edit",
         ),
         "schema_id": fields.Integer(description="Schema ID"),
+        "state": fields.Nested(document_edit_state_dto),
     },
 )
 
@@ -757,12 +758,42 @@ _Values_ are of type object containing the following keys:
     },
 )
 
+train_models_with_settings = api.model(
+    "TrainModelsWithSettings",
+    {
+        "model_type": fields.String(required=True),
+        "settings": fields.Raw(
+            required=False,
+            description="""
+Dictionary of key value pairs, that can be added as query param to the _model_type_.
+_Keys_ are always of type string.
+_Values_ are of type object containing the following keys:
+- **values** => possible values for the key
+    - if the value is an array, all values of the array are valid (enum like behavior)
+    - if the value is an string, the possible type is the value of the string
+        - _"string"_ => any string can be an input
+        - _"integer"_ => any integer can be an input
+- **default** => the default value for the key. _Null_ if there is no default value      
+                        """,
+        ),
+    },
+)
+
 get_recommendation_models_output_dto = api.model(
     "GetRecommendationModelsOutput",
     {
-        "mention": fields.Nested(model_type_with_settings),
-        "entity": fields.Nested(model_type_with_settings),
-        "relation": fields.Nested(model_type_with_settings),
+        "mention": fields.List(fields.Nested(model_type_with_settings)),
+        "entity": fields.List(fields.Nested(model_type_with_settings)),
+        "relation": fields.List(fields.Nested(model_type_with_settings)),
+    },
+)
+
+get_train_models_output_dto = api.model(
+    "GetTrainModelsOutput",
+    {
+        "mention": fields.List(fields.Nested(train_models_with_settings)),
+        "entity": fields.List(fields.Nested(train_models_with_settings)),
+        "relation": fields.List(fields.Nested(train_models_with_settings)),
     },
 )
 

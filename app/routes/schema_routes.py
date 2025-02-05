@@ -10,6 +10,7 @@ from app.dtos import (
     model_train_output_list_dto,
     schema_input_dto,
     get_recommendation_models_output_dto,
+    get_train_models_output_dto,
 )
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.schema_service import schema_service, SchemaService
@@ -95,37 +96,35 @@ class ModelRoutes(SchemaBaseRoute):
 
         steps = ["mention", "entity", "relation"]
         response = {}
+        for step in steps:
+            response[step] = []
+        headers = {"Content-Type": "application/json"}
 
-        for index, step in enumerate(steps):
-
+        pipeline_response = {}
+        for step in steps:
             url = current_app.config.get("PIPELINE_URL") + "/steps/" + step
-            headers = {"Content-Type": "application/json"}
-
             step_response = requests.get(url=url, headers=headers)
             if step_response.status_code != 200:
-                raise BadRequest(step_response.text)
+                raise BadRequest("Failed to fetch models: " + step_response.text)
+            pipeline_response[step] = step_response.json()
 
-            step_models = []
-            response_json = step_response.json()
+        for model in models:
+            model_response = {}
+            step = None
+            if model["step"]["id"] == 1:
+                step = "mention"
+            elif model["step"]["id"] == 2:
+                step = "entity"
+            elif model["step"]["id"] == 3:
+                step = "relation"
 
-            for pipeline_model in response_json:
-
-                # Add model from pipeline only if it is a possible model for this schema
-                existing_recommendation_model = next(
-                    (
-                        model
-                        for model in models
-                        if model["type"] == pipeline_model["model_type"]
-                        and model["step"]["id"] == index + 1
-                    ),
-                    None,
-                )
-                if existing_recommendation_model is not None:
-                    pipeline_model["name"] = existing_recommendation_model["name"]
-                    pipeline_model["id"] = existing_recommendation_model["id"]
-                    step_models.append(pipeline_model)
-
-            response[step] = step_models
+            for pipeline_model in pipeline_response[step]:
+                if model["type"] == pipeline_model["model_type"]:
+                    model_response["model_type"] = pipeline_model["model_type"]
+                    model_response["settings"] = pipeline_model["settings"]
+                    model_response["name"] = model["name"]
+                    model_response["id"] = model["id"]
+                    response[step].append(model_response)
 
         return response
 
@@ -150,6 +149,28 @@ class SchemaTrainResource(SchemaBaseRoute):
         response = self.service.train_model_for_schema(
             schema_id, data["model_name"], data["model_type"], data["model_steps"]
         )
+        return response
+
+    @ns.marshal_with(get_train_models_output_dto)
+    def get(self, schema_id):
+        """
+        Fetch possible models for training models from pipeline microservice
+        """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+
+        steps = ["mention", "entity", "relation"]
+        response = {}
+
+        for index, step in enumerate(steps):
+            url = current_app.config.get("PIPELINE_URL") + "/train/" + step
+            headers = {"Content-Type": "application/json"}
+
+            train_response = requests.get(url=url, headers=headers)
+            if train_response.status_code != 200:
+                raise BadRequest("Failed to fetch models: " + train_response.text)
+
+            response[step] = train_response.json()
         return response
 
 
