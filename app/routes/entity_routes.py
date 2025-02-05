@@ -21,9 +21,11 @@ class EntityBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class EntityQueryResource(EntityBaseRoute):
 
-    @ns.doc(description="Get Entities of document annotation")
     @ns.marshal_with(entity_output_list_dto)
     def get(self, document_edit_id):
+        """
+        Fetch all entities of a document annotation by its ID.
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 

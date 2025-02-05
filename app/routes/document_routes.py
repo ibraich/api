@@ -25,9 +25,12 @@ class DocumentBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class DocumentRoutes(DocumentBaseRoute):
 
-    @ns.doc(description="Get all documents current user has access to")
     @ns.marshal_with(document_list_dto)
     def get(self):
+        """
+        Fetch all documents the user has access to.
+        Documents also contain list of users which have annotated this document.
+        """
         user_id = self.user_service.get_logged_in_user_id()
 
         response = self.service.get_documents_by_user(user_id)
@@ -69,9 +72,12 @@ class DocumentRoutes(DocumentBaseRoute):
 @ns.response(404, "Data not found")
 class DocumentProjectRoutes(DocumentBaseRoute):
 
-    @ns.doc(description="Get all documents of project")
     @ns.marshal_with(document_list_dto)
     def get(self, project_id):
+        """
+        Fetch all documents of a project the user has access to.
+        Documents also contain list of users which have annotated this document.
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_project_accessible(user_id, project_id)
 
@@ -115,9 +121,7 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
         if not document_edits:
             raise NotFound(f"No DocumentEdits found for Document ID {document_id}")
 
-        document = self.service.get_document_by_id(document_id)
-        if not document:
-            raise NotFound(f"Document with ID {document_id} not found")
+        document = self.service.get_document_by_id(document_id, user_id)
 
         transformed_edits = self.service.get_all_structured_document_edits_by_document(
             document_id
@@ -140,7 +144,7 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             "items": response.json(),
             "document": {
                 "id": document_id,
-                "name": document.name,
+                "name": document["name"],
             },
             "document_edits": document_edits,
         }
@@ -160,7 +164,7 @@ class JaccardIndexResource(DocumentBaseRoute):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_accessible(user_id, document_id)
 
-        document = self.service.get_document_by_id(document_id)
+        document = self.service.get_document_by_id(document_id, user_id)
         if not document:
             raise NotFound(f"Document with ID {document_id} not found")
 
@@ -190,7 +194,7 @@ class JaccardIndexResource(DocumentBaseRoute):
         return {
             "document": {
                 "id": document_id,
-                "name": document.name,
+                "name": document["name"],
             },
             "document_edits": document_edits,
             "result": response.json(),

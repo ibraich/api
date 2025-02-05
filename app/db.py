@@ -2,6 +2,7 @@ from flask import Flask, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from werkzeug.exceptions import HTTPException, InternalServerError
 
 from app.config import Config
 
@@ -31,7 +32,10 @@ def add_transaction_wrapper(app: Flask):
                 g.db_session.rollback()
         except Exception as e:
             g.db_session.rollback()
-            raise e
+            if isinstance(e, HTTPException):
+                raise e
+            else:
+                raise InternalServerError(str(e))
         finally:
             Session.remove()  # Remove the session after request
 

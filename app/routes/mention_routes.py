@@ -43,9 +43,11 @@ class MentionResource(MentionBaseRoute):
 @ns.response(404, "Data not found")
 class MentionQueryResource(MentionBaseRoute):
 
-    @ns.doc(description="Get Mentions of document annotation")
     @ns.marshal_with(mention_output_list_dto)
     def get(self, document_edit_id):
+        """
+        Fetch all mentions of a document annotation by its ID.
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 
@@ -70,6 +72,11 @@ class MentionDeletionResource(MentionBaseRoute):
     @ns.expect(mention_update_input_dto)
     @ns.marshal_with(mention_output_dto)
     def patch(self, mention_id):
+        """
+        Update a mention by its ID.
+
+        To remove entity ID from the mention, pass entity ID = 0.
+        """
         data = request.get_json()
         schema_mention_id = data.get("schema_mention_id")
         token_ids = data.get("token_ids")

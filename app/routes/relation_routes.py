@@ -22,9 +22,11 @@ class RelationBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class RelationQueryResource(RelationBaseRoute):
 
-    @ns.doc(description="Get Relations of document annotation")
     @ns.marshal_with(relation_output_list_dto)
     def get(self, document_edit_id):
+        """
+        Fetch all relations of document annotation.
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 
@@ -54,7 +56,6 @@ class RelationDeleteResource(RelationBaseRoute):
         schema_relation_id = data.get("schema_relation_id")
         mention_head_id = data.get("mention_head_id")
         mention_tail_id = data.get("mention_tail_id")
-        is_directed = data.get("isDirected")
 
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_relation_accessible(user_id, relation_id)
@@ -64,7 +65,6 @@ class RelationDeleteResource(RelationBaseRoute):
             schema_relation_id,
             mention_head_id,
             mention_tail_id,
-            is_directed,
         )
         return response
 

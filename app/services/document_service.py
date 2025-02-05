@@ -5,29 +5,33 @@ from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
 
 
 class DocumentService:
     __document_repository: DocumentRepository
-    user_service: UserService
     token_service: TokenService
     document_edit_service: DocumentEditService
 
     def __init__(
         self,
         document_repository,
-        user_service,
         token_service,
         document_edit_service,
     ):
         self.__document_repository = document_repository
-        self.user_service = user_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
 
     def get_documents_by_project(self, user_id, project_id):
+        """
+        Fetch all documents of a project the user has access to.
+        Documents also contain list of users which have annotated this document.
+
+        :param user_id: User ID with access to the project.
+        :param project_id: Project ID to query documents
+        :return: document_list_dto
+        """
         response = self.get_documents_by_user(user_id)
         documents = response["documents"]
         filtered_documents = [
@@ -38,9 +42,14 @@ class DocumentService:
         return {"documents": filtered_documents}
 
     def get_documents_by_user(self, user_id):
+        """
+        Fetch all documents the user has access to.
+        Documents also contain list of users which have annotated this document.
+
+        :param user_id: User ID to query documents for.
+        :return: document_list_dto
+        """
         documents = self.__document_repository.get_documents_by_user(user_id)
-        if not documents:
-            raise NotFound("No documents found")
         document_list = [self.__map_document_to_output_dto(doc) for doc in documents]
         return {"documents": document_list}
 
@@ -56,15 +65,37 @@ class DocumentService:
 
         # Tokenize document
         self.token_service.tokenize_document(document.id, document.content)
-        document_output = self.get_document_by_id(document.id)
-        return self.__map_document_to_output_dto(document_output)
+        return self.get_document_by_id(document.id, user_id)
 
-    def get_document_by_id(self, document_id):
-        return self.__document_repository.get_document_by_id_without_edit(document_id)
+    def get_document_by_id(self, document_id, user_id):
+        """
+        Fetch a document by its ID.
+        Document also contains list of users which have annotated this document.
+
+        :param user_id: User ID to query the document for.
+        :param document_id: Document ID to query.
+        :return: document_output_dto
+        :raises NotFound: If the document does not exist.
+        """
+        document = self.__document_repository.get_document_by_id(document_id, user_id)
+        if not document:
+            raise NotFound("Document not found")
+        return self.__map_document_to_output_dto(document)
 
     def save_document(
         self, name: str, content: str, project_id: int, creator_id: int, state_id: int
     ):
+        """
+        Save a document in the database.
+        Does not check for valid inputs.
+
+        :param name: Name of the document.
+        :param content: Content of the document.
+        :param project_id: Project ID of the document.
+        :param creator_id: Creator ID of the document.
+        :param state_id: State ID of the document.
+        :return: Newly created document.
+        """
         return self.__document_repository.save(
             name, content, project_id, creator_id, state_id
         )
@@ -135,6 +166,12 @@ class DocumentService:
         return processed_edits
 
     def __map_document_to_output_dto(self, doc):
+        """
+        Maps input document to output dto.
+
+        :param doc: Document to map.
+        :return: document_output_dto
+        """
         return {
             "id": doc.id,
             "content": doc.content,
@@ -170,7 +207,6 @@ class DocumentService:
 
 document_service = DocumentService(
     DocumentRepository(),
-    user_service,
     token_service,
     document_edit_service,
 )

@@ -27,6 +27,9 @@ class __BaseRoute(Resource):
 
 @api.response(401, "Authorization required")
 class AuthorizedBaseRoute(__BaseRoute):
+    """
+    Enforcing jwt-authorization on all route calls of subclasses.
+    """
 
     user_service: UserService = user_service
 
