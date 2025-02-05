@@ -17,6 +17,7 @@ from app.models import (
     Document,
 )
 from app.repositories.base_repository import BaseRepository
+from flask import request, jsonify
 
 
 class SchemaRepository(BaseRepository):
@@ -292,3 +293,35 @@ class SchemaRepository(BaseRepository):
             .filter(Document.id == document_id)
             .one()
         )
+
+    def delete_all_constraints(self, schema_id):
+        constraints = (
+            self.get_session()
+            .query(SchemaConstraint)
+            .join(
+                SchemaRelation, SchemaRelation.id == SchemaConstraint.schema_relation_id
+            )
+            .filter(SchemaRelation.schema_id == schema_id)
+            .all()
+        )
+        for constraint in constraints:
+            self.get_session().delete(constraint)
+        self.get_session().flush()
+
+    def delete_all_relations(self, schema_id):
+        self.get_session().query(SchemaRelation).filter(
+            SchemaRelation.schema_id == schema_id
+        ).delete(synchronize_session=False)
+        self.get_session().flush()
+
+    def delete_all_mentions(self, schema_id):
+        self.get_session().query(SchemaMention).filter(
+            SchemaMention.schema_id == schema_id
+        ).delete(synchronize_session=False)
+        self.get_session().flush()
+
+    def update_schema(self, schema_id, modelling_language_id, name):
+        self.get_session().query(Schema).filter(Schema.id == schema_id).update(
+            {Schema.modellingLanguage_id: modelling_language_id, Schema.name: name}
+        )
+        self.get_session().flush()

@@ -294,7 +294,11 @@ class DocumentRecommendationService:
         mentions_data = self.mention_service.get_mentions_by_document_edit(
             document_edit_id
         )
-        mention_ids = [mention["id"] for mention in mentions_data["mentions"]]
+        entity_possible_dict = {}
+        for mention in mentions_data["mentions"]:
+            entity_possible_dict[mention["id"]] = mention["schema_mention"][
+                "entityPossible"
+            ]
 
         entity_recommendation_input = self.get_entity_recommendation_input_dto(
             content,
@@ -314,7 +318,10 @@ class DocumentRecommendationService:
         for mention_group in entity_recommendations:
             mention_list = mention_group.get("mentions", [])
             for mention in mention_list:
-                if mention["id"] not in mention_ids:
+                if (
+                    mention["id"] not in entity_possible_dict.keys()
+                    or entity_possible_dict[mention["id"]] == False
+                ):
                     mention_list.remove(mention)
             if len(mention_list) > 0:
                 self.entity_service.save_entity_in_edit(

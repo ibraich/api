@@ -4,7 +4,8 @@ from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from flask import request
+import json
+from flask import request, Response
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
@@ -12,6 +13,7 @@ from app.dtos import (
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
     document_edit_model_output_list_dto,
+    document_edit_state_input_dto,
 )
 
 ns = Namespace("annotations", description="Document-Annotation related operations")
@@ -115,3 +117,45 @@ class DocumentEditModelResource(DocumentEditBaseRoute):
 
         response = self.service.get_document_edit_model(document_edit_id)
         return response
+
+
+@ns.route("/<int:document_edit_id>/step")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditStateResource(DocumentEditBaseRoute):
+
+    @ns.marshal_with(document_edit_output_dto)
+    @ns.expect(document_edit_state_input_dto, validate=True)
+    @ns.doc(description="Set state to the following state")
+    def post(self, document_edit_id):
+        request_data = request.get_json()
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
+        response = self.service.set_edit_state(document_edit_id, request_data["state"])
+        return response
+
+
+@ns.route("/<int:document_edit_id>/download")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditResource(DocumentEditBaseRoute):
+
+    @ns.doc(description="Download a DocumentEdit by its ID")
+    def get(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
+        response_data = self.service.get_document_edit_by_id_for_difference_calc(
+            document_edit_id
+        )
+        json_data = json.dumps(response_data, indent=4)
+
+        return Response(
+            json_data,
+            mimetype="application/json",
+            headers={"Content-Disposition": "attachment; filename=document_edit.json"},
+        )

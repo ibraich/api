@@ -340,6 +340,11 @@ class RelationService:
             if len(duplicate_relations) > 0:
                 raise Conflict("Relation already exists.")
 
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return self.__relation_repository.get_recommendations_by_document_edit(
+            document_edit_id
+        )
+
 
 relation_service = RelationService(
     RelationRepository(),

@@ -5,6 +5,7 @@ from app.services.document_recommendation_service import (
     DocumentRecommendationService,
     document_recommendation_service,
 )
+from app.services.entity_service import EntityService, entity_service
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 from app.services.mention_services import MentionService, mention_service
@@ -18,6 +19,7 @@ class DocumentEditService:
     mention_service: MentionService
     relation_service: RelationService
     schema_service: SchemaService
+    entity_service: EntityService
 
     def __init__(
         self,
@@ -27,6 +29,7 @@ class DocumentEditService:
         mention_service,
         relation_service,
         schema_service,
+        entity_service,
     ):
         self.__document_edit_repository = document_edit_repository
         self.document_recommendation_service = document_recommendation_service
@@ -34,6 +37,7 @@ class DocumentEditService:
         self.mention_service = mention_service
         self.relation_service = relation_service
         self.schema_service = schema_service
+        self.entity_service = entity_service
 
     def create_document_edit(
         self,
@@ -147,6 +151,7 @@ class DocumentEditService:
             "mention_model_id": document_edit.mention_model_id,
             "entity_model_id": document_edit.entity_model_id,
             "relation_model_id": document_edit.relation_model_id,
+            "state": {"id": 5, "state": "MENTION_SUGGESTION"},
         }
 
     def __get_document_edit_by_document(self, document_id, user_id):
@@ -204,6 +209,10 @@ class DocumentEditService:
             "mention_model_id": document_edit.mention_model_id,
             "entity_model_id": document_edit.entity_model_id,
             "relation_model_id": document_edit.relation_model_id,
+            "state": {
+                "id": document_edit.state_id,
+                "state": document_edit.state_name,
+            },
         }
 
     def soft_delete_document_edit(self, document_edit_id):
@@ -298,12 +307,21 @@ class DocumentEditService:
                 "mention_head": {
                     "tag": relation["head_mention"]["tag"],
                     "tokens": relation["head_mention"]["tokens"],
+                    **(
+                        {"entity": {"id": relation["head_mention"]["entity_id"]}}
+                        if relation["head_mention"].get("entity_id")
+                        else {}
+                    ),  # Only add entity object if entity_id exists
                     "entity": {"id": relation["head_mention"]["entity_id"]},
                 },
                 "mention_tail": {
                     "tag": relation["tail_mention"]["tag"],
                     "tokens": relation["tail_mention"]["tokens"],
-                    "entity": {"id": relation["tail_mention"]["entity_id"]},
+                    **(
+                        {"entity": {"id": relation["tail_mention"]["entity_id"]}}
+                        if relation["tail_mention"].get("entity_id")
+                        else {}
+                    ),  # Only add entity object if entity_id exists
                 },
             }
             for relation in relations_data.get("relations", [])
@@ -405,6 +423,68 @@ class DocumentEditService:
                     params[setting["key"]] = setting["value"]
         return params
 
+    def set_edit_state(self, document_edit_id, state_name):
+        state = self.__document_edit_repository.get_state_by_name(state_name)
+        if state is None:
+            raise BadRequest("Invalid state")
+        document_edit = self.__document_edit_repository.get_document_edit_by_id(
+            document_edit_id
+        )
+        if document_edit is None:
+            raise BadRequest("Document edit does not exist")
+
+        if document_edit.state_name == "MENTION_SUGGESTION":
+            if state_name != "MENTIONS":
+                raise BadRequest("Not allowed to proceed to this step")
+            recs = self.mention_service.get_recommendations_by_document_edit(
+                document_edit_id
+            )
+            if len(recs) != 0:
+                raise BadRequest("Unreviewed recommendations left")
+        elif document_edit.state_name == "MENTIONS":
+            if state_name != "ENTITIES":
+                raise BadRequest("Not allowed to proceed to this step")
+
+            self.save_entity_recommendation(document_edit_id)
+            self.entity_service.create_entity_for_mentions(document_edit_id)
+
+        elif document_edit.state_name == "ENTITIES":
+            if state_name != "RELATION_SUGGESTION":
+                raise BadRequest("Not allowed to proceed to this step")
+
+            self.save_relation_recommendation(document_edit_id)
+
+        elif document_edit.state_name == "RELATION_SUGGESTION":
+            if state_name != "RELATIONS":
+                raise BadRequest("Not allowed to proceed to this step")
+            recs = self.relation_service.get_recommendations_by_document_edit(
+                document_edit_id
+            )
+            if len(recs) != 0:
+                raise BadRequest("Unreviewed recommendations left")
+        elif document_edit.state_name == "RELATIONS":
+            if state_name != "FINISHED":
+                raise BadRequest("Not allowed to proceed to this step")
+        elif document_edit.state_name == "FINISHED":
+            raise BadRequest("Annotation already finished")
+        else:
+            raise BadRequest("Invalid state")
+        document_edit = self.__document_edit_repository.update_state(
+            document_edit_id, state.id
+        )
+        return {
+            "id": document_edit.id,
+            "schema_id": document_edit.schema_id,
+            "document_id": document_edit.document_id,
+            "mention_model_id": document_edit.mention_model_id,
+            "entity_model_id": document_edit.entity_model_id,
+            "relation_model_id": document_edit.relation_model_id,
+            "state": {
+                "id": state.id,
+                "state": state.type,
+            },
+        }
+
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),
@@ -413,4 +493,5 @@ document_edit_service = DocumentEditService(
     mention_service,
     relation_service,
     schema_service,
+    entity_service,
 )

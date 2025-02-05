@@ -406,6 +406,11 @@ class MentionService:
         if mention_head_id == mention_tail_id:
             raise BadRequest("Mentions are equal")
 
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return self.__mention_repository.get_recommendations_by_document_edit(
+            document_edit_id
+        )
+
 
 mention_service = MentionService(
     MentionRepository(),
