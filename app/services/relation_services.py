@@ -106,10 +106,14 @@ class RelationService:
         mention_head_id,
         mention_tail_id,
     ):
-        self.verify_mention_in_document_edit(mention_head_id, document_edit_id)
-        self.verify_mention_in_document_edit(mention_tail_id, document_edit_id)
+        self.mention_service.verify_mention_in_document_edit_not_recommendation(
+            mention_head_id, document_edit_id
+        )
+        self.mention_service.verify_mention_in_document_edit_not_recommendation(
+            mention_tail_id, document_edit_id
+        )
 
-        self.check_mentions_not_equal(mention_head_id, mention_tail_id)
+        self.mention_service.check_mentions_not_equal(mention_head_id, mention_tail_id)
 
         self.check_duplicate_relations(mention_head_id, mention_tail_id)
 
@@ -149,8 +153,10 @@ class RelationService:
             raise BadRequest("You cannot update a recommendation")
 
         if mention_head_id:
-            mention_head = self.verify_mention_in_document_edit(
-                mention_head_id, relation.document_edit_id
+            mention_head = (
+                self.mention_service.verify_mention_in_document_edit_not_recommendation(
+                    mention_head_id, relation.document_edit_id
+                )
             )
         else:
             mention_head = self.mention_service.get_mention_by_id(
@@ -158,15 +164,17 @@ class RelationService:
             )
 
         if mention_tail_id:
-            mention_tail = self.verify_mention_in_document_edit(
-                mention_tail_id, relation.document_edit_id
+            mention_tail = (
+                self.mention_service.verify_mention_in_document_edit_not_recommendation(
+                    mention_tail_id, relation.document_edit_id
+                )
             )
         else:
             mention_tail = self.mention_service.get_mention_by_id(
                 relation.mention_tail_id
             )
 
-        self.check_mentions_not_equal(mention_head.id, mention_tail.id)
+        self.mention_service.check_mentions_not_equal(mention_head.id, mention_tail.id)
 
         # check duplicate relation if mentions changed
         if mention_tail_id or mention_head_id:
@@ -294,22 +302,6 @@ class RelationService:
         if duplicate_relations is not None:
             if len(duplicate_relations) > 0:
                 raise Conflict("Relation already exists.")
-
-    def verify_mention_in_document_edit(self, mention_id, document_edit_id):
-        # get mention head and tail
-        mention = self.mention_service.get_mention_by_id(mention_id)
-
-        # check for none and if mention belongs to same edit
-        if mention is None or mention.document_edit_id != document_edit_id:
-            raise BadRequest("Invalid mention ids.")
-
-        if mention.document_recommendation_id:
-            raise BadRequest("You cannot use a recommendation inside the relation")
-        return mention
-
-    def check_mentions_not_equal(self, mention_head_id, mention_tail_id):
-        if mention_head_id == mention_tail_id:
-            raise BadRequest("Mentions are equal")
 
 
 relation_service = RelationService(

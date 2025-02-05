@@ -1,5 +1,5 @@
 from flask import current_app
-from werkzeug.exceptions import BadRequest, Conflict
+from werkzeug.exceptions import BadRequest
 import requests
 import logging
 
@@ -63,7 +63,7 @@ class DocumentRecommendationService:
 
         # check for duplicate and overlapping tokens
         if not self.no_overlapping_or_duplicate_tokens(mention_recommendations):
-            raise Conflict("Overlapping or duplicate mentions found")
+            raise BadRequest("Overlapping or duplicate mentions found")
 
         # create id tag dictionary for schema_mention
         schema_mention_dict = dict()
@@ -200,7 +200,6 @@ class DocumentRecommendationService:
                 relation_recommendation_input, params
             )
         )
-        logging.debug(f"relations_recommendations: {relations_recommendations}")
         schema_relations_dict = dict()
         for schema_relation in schema["schema_relations"]:
             schema_relations_dict[schema_relation["tag"]] = schema_relation["id"]

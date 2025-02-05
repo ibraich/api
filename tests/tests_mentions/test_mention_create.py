@@ -3,39 +3,16 @@ from unittest.mock import patch, Mock, MagicMock
 from werkzeug.exceptions import NotFound, Conflict
 from app.models import Mention, Schema, SchemaMention
 
-from app.repositories.mention_repository import MentionRepository
-from app.services.document_edit_service import DocumentEditService
-from app.services.entity_mention_service import EntityMentionService
 from app.services.mention_services import MentionService, mention_service
-from app.services.relation_mention_service import RelationMentionService
-from app.services.schema_service import SchemaService
-from app.services.token_mention_service import TokenMentionService
 from app.services.token_service import TokenService
 from app.services.user_service import UserService
-from tests.test_routes import BaseTestCase
+from tests.test_routes import BaseTestCase, MentionBaseTestCase
 
 
-class TestMentionResource(BaseTestCase):
-    service: MentionService
+class TestMentionResource(MentionBaseTestCase):
 
     def setUp(self):
         super().setUp()
-        self.__mention_repository = MagicMock(spec=MentionRepository)
-        self.token_mention_service = MagicMock(spec=TokenMentionService)
-        self.user_service = MagicMock(spec=UserService)
-        self.relation_mention_service = MagicMock(spec=RelationMentionService)
-        self.entity_mention_service = MagicMock(spec=EntityMentionService)
-        self.token_service = MagicMock(spec=TokenService)
-        self.schema_service = MagicMock(spec=SchemaService)
-        self.service = MentionService(
-            self.__mention_repository,
-            self.token_mention_service,
-            self.user_service,
-            self.relation_mention_service,
-            self.entity_mention_service,
-            self.token_service,
-            self.schema_service,
-        )
 
     @patch.object(MentionService, "check_token_in_mention")
     @patch.object(MentionService, "get_mention_dto_by_id")
@@ -52,7 +29,7 @@ class TestMentionResource(BaseTestCase):
         self.schema_service.get_schema_mention_by_id.return_value = SchemaMention(
             id=6, schema_id=9
         )
-        self.__mention_repository.create_mention.return_value = Mention(id=4)
+        self.mention_repository.create_mention.return_value = Mention(id=4)
         get_dto_by_id_mock.return_value = {"id": 8}
 
         # Call the function

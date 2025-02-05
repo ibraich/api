@@ -28,6 +28,17 @@ class ProjectService:
         self.document_service = document_service
 
     def create_project(self, user_id, team_id, schema_id, projectname):
+        """
+        Creates a new project with the given parameters.
+        Sets schema as fixed and not modifiable.
+
+        :param user_id: Creator ID of the project
+        :param team_id: Team ID of the project
+        :param schema_id: Schema ID of the project
+        :param projectname: Name of the project
+        :return: project_output_dto
+        :raises BadRequest: If project name already exists
+        """
         duplicate_project = self.__project_repository.get_project_by_name(projectname)
         if duplicate_project:
             raise BadRequest("Project with name " + projectname + " already exists")
@@ -39,26 +50,45 @@ class ProjectService:
             team_id,
             schema_id,
         )
-        return self.get_project_by_id(project.id)
+        return self.__get_project_by_id(project.id)
 
     def team_is_in_project(self, team_id, document_edit_id):
         return team_id == self.__project_repository.get_team_id_by_document_edit_id(
             document_edit_id
         )
 
-    def get_project_by_id(self, project_id):
+    def __get_project_by_id(self, project_id):
+        """
+        Fetches project by project ID
+
+        :param project_id: Project ID to query.
+        :return: project_output_dto
+        :raises BadRequest: If project does not exist
+        """
         project = self.__project_repository.get_project_by_id(project_id)
         if project is None:
             raise BadRequest("Project not found")
-        return self.build_project(project)
+        return self.__build_project(project)
 
     def get_projects_by_user(self, user_id):
+        """
+        Fetches all projects the user has access to.
+
+        :param user_id: User ID to query projects.
+        :return: project_user_output_list_dto
+        """
         projects = self.__project_repository.get_projects_by_user(user_id)
         if projects is None:
             return {"projects": []}
-        return {"projects": [self.build_project(project) for project in projects]}
+        return {"projects": [self.__build_project(project) for project in projects]}
 
-    def build_project(self, project):
+    def __build_project(self, project):
+        """
+        Maps project to output dto.
+
+        :param project: Project to map.
+        :return: project_output_dto
+        """
         return {
             "id": project.id,
             "name": project.name,

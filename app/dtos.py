@@ -39,17 +39,6 @@ project_input_dto = api.model(
     },
 )
 
-project_output_dto = api.model(
-    "ProjectOutput",
-    {
-        "id": fields.Integer,
-        "name": fields.String,
-        "creator": fields.Nested(user_output_dto),
-        "team_id": fields.Integer,
-        "schema_id": fields.Integer,
-    },
-)
-
 team_dto = api.model(
     "Team",
     {
@@ -358,8 +347,8 @@ document_edit_output_dto = api.model(
     },
 )
 
-project_list_dto = api.model(
-    "project_list_dto",
+project_output_dto = api.model(
+    "ProjectOutput",
     {
         "id": fields.Integer,
         "name": fields.String,
@@ -372,7 +361,7 @@ project_list_dto = api.model(
 project_user_output_list_dto = api.model(
     "project_user_output_list_dto",
     {
-        "projects": fields.List(fields.Nested(project_list_dto)),
+        "projects": fields.List(fields.Nested(project_output_dto)),
     },
 )
 

@@ -1,6 +1,6 @@
 import json
 import requests
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, Forbidden
 from flask import current_app
 
 from app.models import Token
@@ -90,7 +90,7 @@ class TokenService:
         document_token_ids = [document_token.id for document_token in document_tokens]
         for token_id in token_ids:
             if token_id not in document_token_ids:
-                raise BadRequest("Tokens do not belong to this document.")
+                raise Forbidden("Tokens do not belong to this document.")
 
 
 token_service = TokenService(TokenRepository(), user_service)

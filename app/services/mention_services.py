@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict
+from werkzeug.exceptions import BadRequest, NotFound, Conflict, Forbidden
 
 from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
@@ -88,6 +88,12 @@ class MentionService:
         return {"mentions": list(mentions_dict.values())}
 
     def get_mention_dto_by_id(self, mention_id):
+        """
+        Fetches mention with associated tokens by mention ID and maps to output dto.
+
+        :param mention_id: Mention ID to query.
+        :return: mention_output_dto
+        """
         mention = self.__mention_repository.get_mention_with_schema_by_id(mention_id)
         tokens = self.token_service.get_tokens_by_mention(mention_id)
         return {
@@ -138,6 +144,13 @@ class MentionService:
         return self.get_mention_dto_by_id(mention.id)
 
     def add_to_entity(self, entity_id: int, mention_id: int):
+        """
+        Add a mention to an existing entity.
+
+        :param entity_id: Entity ID to add mention to.
+        :param mention_id: Mention ID to add to entity.
+        :return: Updated Mention
+        """
         self.__mention_repository.add_to_entity(entity_id, mention_id)
 
     def delete_mention(self, user_id, mention_id):
@@ -167,14 +180,19 @@ class MentionService:
 
         deleted = self.__mention_repository.delete_mention_by_id(mention_id)
 
-        self.delete_entity_if_empty(mention.entity_id)
+        self.__delete_entity_if_empty(mention.entity_id)
 
         if not deleted:
             raise NotFound("Mention not found during deletion.")
 
         return {"message": "OK"}
 
-    def delete_entity_if_empty(self, entity_id):
+    def __delete_entity_if_empty(self, entity_id):
+        """
+        Deletes an entity if it contains no mentions.
+
+        :param entity_id: Entity ID to delete.
+        """
         if entity_id is not None:
             mentions_with_entity = self.__mention_repository.get_mentions_by_entity_id(
                 entity_id
@@ -184,6 +202,21 @@ class MentionService:
                 self.entity_mention_service.delete_entity(entity_id)
 
     def update_mention(self, mention_id, schema_mention_id, token_ids, entity_id):
+        """
+        Updates a mention.
+        To remove entity ID from the mention, pass entity ID = 0.
+        If an entity is empty afterward, it will be deleted.
+
+        :param mention_id: Mention ID to update.
+        :param schema_mention_id: Updated schema mention ID.
+        :param token_ids: Updated token IDs.
+        :param entity_id: Updated entity ID.
+        :return: mention_output_dto
+        :raises NotFound: If mention does not exist.
+        :raises Conflict: If tokens already part of another mention.
+        :raises BadRequest: If schema mention not allowed, entity not allowed or mention is a recommendation.
+        :raises Forbidden: If entity or tokens do not belong to the document edit.
+        """
         # Check that mention exists
         mention = self.__mention_repository.get_mention_by_id(mention_id)
         if not mention:
@@ -192,11 +225,12 @@ class MentionService:
         if mention.document_recommendation_id:
             raise BadRequest("You cannot update a recommendation")
 
+        # Fetch schema
         schema = self.schema_service.get_schema_by_document_edit(
             mention.document_edit_id
         )
 
-        # Check for valid tag
+        # Fetch schema mention
         if schema_mention_id is not None:
             schema_mention = self.schema_service.get_schema_mention_by_id(
                 schema_mention_id
@@ -217,6 +251,7 @@ class MentionService:
             duplicate_tokens = self.check_token_in_mention(
                 mention.document_edit_id, token_ids
             )
+            # Do not raise exception if tokens are used by mention to update.
             for duplicate_token in duplicate_tokens:
                 if duplicate_token.mention_id != mention_id:
                     raise Conflict("Token already part of mention")
@@ -226,28 +261,38 @@ class MentionService:
             for token_id in token_ids:
                 self.token_mention_service.create_token_mention(token_id, mention_id)
 
+        # Raise exception if entity is specified but forbidden by schema
         if entity_id is not None or mention.entity_id is not None:
             if not schema_mention.entityPossible:
                 raise BadRequest("Entity not allowed for this mention")
 
-        # Delete entity if it is empty after update, id = 0: clear entity_id of mention
+        # Check if entity id belongs to document edit
         if entity_id is not None:
             if entity_id != 0:
                 self.entity_mention_service.check_entity_in_document_edit(
                     entity_id, mention.document_edit_id
                 )
 
+        # Update mention, entity id = 0:  clear entity_id of mention
         updated_mention = self.__mention_repository.update_mention(
             mention_id, schema_mention_id, entity_id
         )
 
+        # Delete entity if it is empty
         if mention.entity_id and entity_id != mention.entity_id:
-            self.delete_entity_if_empty(mention.entity_id)
+            self.__delete_entity_if_empty(mention.entity_id)
 
         return self.get_mention_dto_by_id(updated_mention.id)
 
     def check_token_in_mention(self, document_edit_id, token_ids):
-        # check duplicates
+        """
+        Check if tokens are already part of mentions of a document edit.
+
+        :param document_edit_id: DocumentEdit ID to check tokens.
+        :param token_ids: Token IDs to check.
+        :return: List of duplicate tokens, empty list if no duplicates found.
+        """
+        # Fetch mentions of document edit
         mentions = self.__mention_repository.get_mentions_with_tokens_by_document_edit(
             document_edit_id
         )
@@ -257,7 +302,8 @@ class MentionService:
             for mention in mentions:
                 mention_ids.append(mention.mention_id)
 
-            duplicate_token_mention = token_mention_service.get_token_mention(
+            # Find duplicate tokens
+            duplicate_token_mention = self.token_mention_service.get_token_mention(
                 token_ids, mention_ids
             )
             return duplicate_token_mention
@@ -310,7 +356,16 @@ class MentionService:
         return {"message": "Mention successfully rejected."}
 
     def get_mention_by_id(self, mention_id):
-        return self.__mention_repository.get_mention_by_id(mention_id)
+        """
+        Returns mention database entry for given mention ID.
+        :param mention_id: MentionID to fetch.
+        :return: Mention database entry.
+        :raises NotFound: If mention does not exist
+        """
+        mention = self.__mention_repository.get_mention_by_id(mention_id)
+        if not mention:
+            raise NotFound("Mention does not exist")
+        return mention
 
     def create_recommended_mention(
         self, document_edit_id, document_recommendation_id, mention_recommendations
@@ -324,6 +379,39 @@ class MentionService:
             )
             for token_id in mention_recommendation["token_ids"]:
                 self.token_mention_service.create_token_mention(token_id, mention.id)
+
+    def verify_mention_in_document_edit_not_recommendation(
+        self, mention_id, document_edit_id
+    ):
+        """
+        Check that mention is in document edit and is not a recommendation.
+
+        :param mention_id: MentionID to check.
+        :param document_edit_id: DocumentEdit ID to check.
+        :return: Mention database entry
+        :raises NotFound: If mention does not exist
+        :raises BadRequest: If mention does not belong to document edit or is a recommendation.
+        """
+        mention = self.get_mention_by_id(mention_id)
+
+        # check if mention belongs to same edit
+        if mention.document_edit_id != document_edit_id:
+            raise BadRequest("Mentions do not belong to this document.")
+
+        if mention.document_recommendation_id:
+            raise BadRequest("You cannot use a recommendation inside the relation")
+        return mention
+
+    def check_mentions_not_equal(self, mention_head_id, mention_tail_id):
+        """
+        Check if two mentions are equal.
+
+        :param mention_head_id: MentionID to compare.
+        :param mention_tail_id: MentionID to compare.
+        :raises BadRequest: If mentions are equal
+        """
+        if mention_head_id == mention_tail_id:
+            raise BadRequest("Mentions are equal")
 
 
 mention_service = MentionService(

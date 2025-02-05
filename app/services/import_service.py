@@ -143,7 +143,9 @@ class ImportService:
             token_ids_by_index[index] = created_token.id
 
         # Create document edit
-        document_edit = document_edit_service.create_document_edit(document.id)
+        document_edit = self._document_edit_service.create_document_edit(
+            user_id, document.id
+        )
         # Import Mentions to documentEdit
         schema = self._schema_service.get_schema_by_project_id(project_id)
 

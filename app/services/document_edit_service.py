@@ -6,7 +6,6 @@ from app.services.document_recommendation_service import (
     document_recommendation_service,
 )
 from app.services.schema_service import SchemaService, schema_service
-from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
 from app.services.mention_services import MentionService, mention_service
 from app.services.relation_services import RelationService, relation_service
@@ -14,7 +13,6 @@ from app.services.relation_services import RelationService, relation_service
 
 class DocumentEditService:
     __document_edit_repository: DocumentEditRepository
-    user_service: UserService
     document_recommendation_service: DocumentRecommendationService
     token_service: TokenService
     mention_service: MentionService
@@ -24,7 +22,6 @@ class DocumentEditService:
     def __init__(
         self,
         document_edit_repository,
-        user_service,
         document_recommendation_service,
         token_service,
         mention_service,
@@ -32,7 +29,6 @@ class DocumentEditService:
         schema_service,
     ):
         self.__document_edit_repository = document_edit_repository
-        self.user_service = user_service
         self.document_recommendation_service = document_recommendation_service
         self.token_service = token_service
         self.mention_service = mention_service
@@ -50,8 +46,26 @@ class DocumentEditService:
         model_settings_entities=None,
         model_settings_relation=None,
     ):
+        """
+        Create a new document annotation.
+        Generates recommendations for mentions and stores them for the newly created annotation.
+
+        [Optional] takes ids and settings of models available inside the schema for mention, entity and relation suggestion.
+        If not specified, default models (LLM) and default settings are used.
+
+        :param user_id: Owner ID of new annotation.
+        :param document_id: Document ID to which the annotation belongs.
+        :param model_mention: ID of model to use for mention recommendations.
+        :param model_entities: ID of model to use for entity recommendations.
+        :param model_relation: ID of model to use for relation recommendations.
+        :param model_settings_mention: Settings for mention recommendations as dict with fields "key" and "value".
+        :param model_settings_entities: Settings for entity recommendations as dict with fields "key" and "value".
+        :param model_settings_relation: Settings for relation recommendations as dict with fields "key" and "value".
+        :return: document_edit_output_dto
+        :raises BadRequest: If annotation already exists, invalid model IDs were given or recommendation generation fails.
+        """
         # Check if document edit already exists
-        existing_doc_edit = self.get_document_edit_by_document(document_id, user_id)
+        existing_doc_edit = self.__get_document_edit_by_document(document_id, user_id)
         if existing_doc_edit is not None:
             raise BadRequest("Document Edit already exists")
 
@@ -79,6 +93,7 @@ class DocumentEditService:
                     if model["step"]["id"] == 3:
                         model_relation = model["id"]
 
+        # Verify models are valid for given schema and steps
         self.schema_service.check_models_in_schema(
             model_mention, model_entities, model_relation, schema.id
         )
@@ -92,7 +107,7 @@ class DocumentEditService:
             model_entities,
             model_relation,
         )
-        doc_edit = self.get_document_edit_with_document_by_id(document_edit.id)
+        doc_edit = self.__get_document_edit_with_document_by_id(document_edit.id)
 
         # Create document recommendation for document edit
         document_recommendation = (
@@ -112,14 +127,15 @@ class DocumentEditService:
             document_edit.id, model_relation, model_settings_relation
         )
 
-        # Create mention recommendation
-        params = self.get_recommendation_params(document_edit.id, 1)  # MENTIONS
-
+        # Create mention recommendations
+        params = self.__get_recommendation_params(document_edit.id, 1)  # MENTIONS
         mention_recommendations = (
             self.document_recommendation_service.get_mention_recommendation(
                 document_id, doc_edit.schema_id, doc_edit.content, params
             )
         )
+
+        # Store mention recommendations
         self.mention_service.create_recommended_mention(
             document_edit.id, document_recommendation.id, mention_recommendations
         )
@@ -133,12 +149,25 @@ class DocumentEditService:
             "relation_model_id": document_edit.relation_model_id,
         }
 
-    def get_document_edit_by_document(self, document_id, user_id):
+    def __get_document_edit_by_document(self, document_id, user_id):
+        """
+        Fetch DocumentEdit database entry by document ID and user ID.
+
+        :param document_id: Document ID to which the annotation belongs.
+        :param user_id: User ID to which the annotation belongs.
+        :return: DocumentEdit database entry.
+        """
         return self.__document_edit_repository.get_document_edit_by_document(
             document_id, user_id
         )
 
-    def get_document_edit_with_document_by_id(self, document_edit_id):
+    def __get_document_edit_with_document_by_id(self, document_edit_id):
+        """
+        Fetch DocumentEdit database entry with document information by document edit ID.
+
+        :param document_edit_id: Document ID to which the annotation belongs.
+        :return: DocumentEdit database entry with document information.
+        """
         return self.__document_edit_repository.get_document_edit_with_document_by_id(
             document_edit_id
         )
@@ -148,7 +177,7 @@ class DocumentEditService:
             document_edit_id
         )
         if document_edit is None:
-            raise BadRequest("Document edit does not exist")
+            raise NotFound("Document edit does not exist")
 
         current_owner_id = document_edit.user_id
 
@@ -157,7 +186,7 @@ class DocumentEditService:
         # check for team
 
         # check if another document edit exist for current user
-        existing_document_edit = self.get_document_edit_by_document(
+        existing_document_edit = self.__get_document_edit_by_document(
             document_edit.document_id, logged_in_user_id
         )
         if existing_document_edit is not None:
@@ -199,11 +228,18 @@ class DocumentEditService:
         self.__document_edit_repository.bulk_soft_delete_edits(document_ids)
 
     def get_document_edit_by_id(self, document_edit_id):
+        """
+        Fetch DocumentEdit object with associated mentions and relations.
+
+        :param document_edit_id: DocumentEdit ID of the annotation.
+        :return: finished_document_edit_output_dto
+        :raises NotFound: If DocumentEdit does not exist.
+        """
         document_edit = self.__document_edit_repository.get_document_edit_by_id(
             document_edit_id
         )
         if document_edit is None:
-            raise BadRequest("Document Edit doesnt exist")
+            raise NotFound("Document Edit doesnt exist")
 
         tokens_data = self.token_service.get_tokens_by_document(
             document_edit.document_id
@@ -230,7 +266,7 @@ class DocumentEditService:
             document_edit_id
         )
         if document_edit is None:
-            raise BadRequest("Document Edit doesnt exist")
+            raise NotFound("Document Edit doesnt exist")
 
         tokens_data = self.token_service.get_tokens_by_document(
             document_edit.document_id
@@ -283,6 +319,12 @@ class DocumentEditService:
         }
 
     def get_document_edit_model(self, document_edit_id):
+        """
+        Fetch selected models with associated settings chosen for given DocumentEdit.
+
+        :param document_edit_id: DocumentEdit ID of the annotation.
+        :return: document_edit_model_output_list_dto
+        """
         settings = self.__document_edit_repository.get_document_edit_model(
             document_edit_id
         )
@@ -312,8 +354,14 @@ class DocumentEditService:
         return {"models": list(model_dict.values())}
 
     def save_relation_recommendation(self, document_edit_id):
-        doc_edit = self.get_document_edit_with_document_by_id(document_edit_id)
-        params = self.get_recommendation_params(document_edit_id, 2)  # RELATIONS
+        """
+        Generate and save relation recommendations for given DocumentEdit.
+
+        :param document_edit_id: DocumentEdit ID of the annotation.
+        :raises BadRequest: If recommendation generation fails.
+        """
+        doc_edit = self.__get_document_edit_with_document_by_id(document_edit_id)
+        params = self.__get_recommendation_params(document_edit_id, 3)  # RELATIONS
         self.document_recommendation_service.get_relation_recommendation(
             document_edit_id,
             doc_edit.schema_id,
@@ -323,8 +371,14 @@ class DocumentEditService:
         )
 
     def save_entity_recommendation(self, document_edit_id):
-        doc_edit = self.get_document_edit_with_document_by_id(document_edit_id)
-        params = self.get_recommendation_params(document_edit_id, 3)  # ENTITIES
+        """
+        Generate and save entity recommendations for given DocumentEdit.
+
+        :param document_edit_id: DocumentEdit ID of the annotation.
+        :raises BadRequest: If recommendation generation fails.
+        """
+        doc_edit = self.__get_document_edit_with_document_by_id(document_edit_id)
+        params = self.__get_recommendation_params(document_edit_id, 2)  # ENTITIES
         self.document_recommendation_service.get_entity_recommendation(
             document_edit_id,
             doc_edit.schema_id,
@@ -333,7 +387,14 @@ class DocumentEditService:
             params,
         )
 
-    def get_recommendation_params(self, document_edit_id, step_id):
+    def __get_recommendation_params(self, document_edit_id, step_id):
+        """
+        Fetch model data and settings to pass in query for recommendation generation.
+
+        :param document_edit_id: DocumentEdit ID of the annotation.
+        :param step_id: Step of the model. 1 = MENTIONS, 2 = ENTITIES, 3 = RELATIONS
+        :return: Query parameters to pass in recommendation system
+        """
         params = {}
         models = self.get_document_edit_model(document_edit_id)["models"]
         for model in models:
@@ -347,7 +408,6 @@ class DocumentEditService:
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),
-    user_service,
     document_recommendation_service,
     token_service,
     mention_service,
