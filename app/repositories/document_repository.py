@@ -11,8 +11,8 @@ from app.models import (
     Schema,
 )
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy import and_, literal
-
+from sqlalchemy import and_, literal, SQLAlchemyError
+from werkzeug.exceptions import NotFound, BadRequest, Forbidden
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
@@ -188,3 +188,34 @@ class DocumentRepository(BaseRepository):
             .filter(DocumentEdit.active == True)
             .all()
         )
+
+
+    def update_document_state(self, document_id, new_state_id, user_id):
+        """
+        Update the state of a document if the user has access.
+        """
+        session = self.get_session()
+        
+        # Check if the document exists
+        document = session.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            raise NotFound("Document not found")
+        
+        # Validate user access
+        if not self.user_has_access(user_id, document.project_id):
+            raise Forbidden("User does not have access to this document")
+        
+        # Check if the new state exists
+        state = session.query(DocumentState).filter(DocumentState.id == new_state_id).first()
+        if not state:
+            raise BadRequest("Invalid document state")
+        
+        # Update document state
+        try:
+            document.state_id = new_state_id
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise BadRequest("Failed to update document state")
+        
+        return document

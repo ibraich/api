@@ -1,8 +1,8 @@
 import requests
-from flask_restx import Namespace
-from werkzeug.exceptions import NotFound, InternalServerError
+from flask_restx import Namespace, Resource
+from werkzeug.exceptions import NotFound, InternalServerError, BadRequest, Forbidden
 from app.routes.base_routes import AuthorizedBaseRoute
-from flask import request, current_app
+from flask import request, current_app, jsonify
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
     document_output_dto,
@@ -199,3 +199,33 @@ class JaccardIndexResource(DocumentBaseRoute):
             "document_edits": document_edits,
             "result": response.json(),
         }
+
+
+@ns.route("/<int:document_id>/state")
+@ns.doc(params={"document_id": "A Document ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Document not found")
+class DocumentStateResource(Resource):
+    @ns.doc(description="Update the state of a document")
+    def put(self, document_id):
+        """
+        Update the state of a document.
+        """
+        user_id = request.headers.get("User-ID")
+        if not user_id:
+            return jsonify({"error": "User-ID header missing"}), 400
+        
+        data = request.get_json()
+        new_state_id = data.get("state_id")
+        if not new_state_id:
+            return jsonify({"error": "Missing state_id in request body"}), 400
+        
+        try:
+            updated_document = document_service.change_document_state(document_id, new_state_id, int(user_id))
+            return jsonify({"message": "Document state updated successfully", "document_id": updated_document.id, "new_state_id": updated_document.state_id})
+        except NotFound:
+            return jsonify({"error": "Document not found"}), 404
+        except Forbidden:
+            return jsonify({"error": "User does not have permission to update the document state"}), 403
+        except BadRequest as e:
+            return jsonify({"error": str(e)}), 400

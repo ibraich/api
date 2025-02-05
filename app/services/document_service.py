@@ -1,4 +1,4 @@
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, Forbidden
 
 from app.repositories.document_repository import DocumentRepository
 from app.services.document_edit_service import (
@@ -22,6 +22,7 @@ class DocumentService:
         self.__document_repository = document_repository
         self.token_service = token_service
         self.document_edit_service = document_edit_service
+        self.document_repository = document_repository
 
     def get_documents_by_project(self, user_id, project_id):
         """
@@ -204,7 +205,16 @@ class DocumentService:
             },
         }
 
+    def change_document_state(self, document_id, new_state_id, user_id):
 
+        try:
+            return self.document_repository.update_document_state(document_id, new_state_id, user_id)
+        except NotFound:
+            raise NotFound("Document not found")
+        except Forbidden:
+            raise Forbidden("User does not have permission to change the document state")
+        except BadRequest as e:
+            raise BadRequest(str(e))
 document_service = DocumentService(
     DocumentRepository(),
     token_service,
