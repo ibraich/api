@@ -1,5 +1,4 @@
-from werkzeug.exceptions import BadRequest
-from app.models import DocumentState
+from werkzeug.exceptions import BadRequest, NotFound
 from app.repositories.document_repository import DocumentRepository
 from app.services.document_edit_service import (
     document_edit_service,
@@ -22,7 +21,6 @@ class DocumentService:
         self.__document_repository = document_repository
         self.token_service = token_service
         self.document_edit_service = document_edit_service
-        self.document_repository = document_repository
 
     def get_documents_by_project(self, user_id, project_id):
         """
@@ -209,21 +207,22 @@ class DocumentService:
         """
         Change the state of a document after validating the input and user access.
         """
-        session = self.document_repository.get_session()
-
         # Validate the new state
-        state = session.query(DocumentState).filter(DocumentState.id == new_state_id).first()
+        state = self.__document_repository.get_document_state_by_id(new_state_id)
         if not state:
             raise BadRequest("Invalid document state")
 
         # Update the document state
-        document = self.document_repository.update_document_state(document_id, new_state_id)
+        document = self.__document_repository.update_document_state(
+            document_id, new_state_id
+        )
         if not document:
             raise BadRequest("Document not found")
 
         # Return the updated document in correct response format
-        return self.document_repository.get_document_by_id(document.id, user_id)
-    
+        return self.get_document_by_id(document.id, user_id)
+
+
 document_service = DocumentService(
     DocumentRepository(),
     token_service,

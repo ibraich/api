@@ -11,8 +11,8 @@ from app.models import (
     Schema,
 )
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy import and_, literal, SQLAlchemyError
-from werkzeug.exceptions import NotFound, BadRequest, Forbidden
+from sqlalchemy import and_
+
 
 class DocumentRepository(BaseRepository):
     DOCUMENT_STATE_ID_FINISHED = 3
@@ -189,7 +189,6 @@ class DocumentRepository(BaseRepository):
             .all()
         )
 
-
     def update_document_state(self, document_id, new_state_id):
         """
         Update the state of a document in the database.
@@ -198,11 +197,13 @@ class DocumentRepository(BaseRepository):
         document = session.query(Document).filter(Document.id == document_id).first()
         if document:
             document.state_id = new_state_id
+        self.store_object(document)
         return document
 
-    def get_document_by_id(self, document_id):
-        """
-        Fetch a document by its ID.
-        """
-        session = self.get_session()
-        return session.query(Document).filter(Document.id == document_id).first()
+    def get_document_state_by_id(self, state_id):
+        return (
+            self.get_session()
+            .query(DocumentState)
+            .filter(DocumentState.id == state_id)
+            .first()
+        )

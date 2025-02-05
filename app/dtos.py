@@ -820,22 +820,11 @@ document_edit_state_input_dto = api.model(
 )
 
 
-
 document_state_update_dto = api.model(
     "DocumentStateUpdate",
     {
-        "state_id": fields.Integer(required=True, description="ID of the new document state"),
-    }
-)
-
-
-document_response_dto = api.model(
-    "DocumentResponse",
-    {
-        "id": fields.Integer(description="ID of the document"),
-        "name": fields.String(description="Name of the document"),
-        "state_id": fields.Integer(description="Current state ID of the document"),
-        "state_name": fields.String(description="Current state name of the document"),
-        "project_id": fields.Integer(description="Project ID associated with the document"),
-    }
+        "state_id": fields.Integer(
+            required=True, description="ID of the new document state"
+        ),
+    },
 )

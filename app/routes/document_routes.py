@@ -1,8 +1,7 @@
 import requests
-from flask_restx import Namespace, Resource
-from werkzeug.exceptions import NotFound, InternalServerError, BadRequest, Forbidden
-from app.routes.base_routes import AuthorizedBaseRoute
-from flask import request, current_app, jsonify
+from flask_restx import Namespace
+from werkzeug.exceptions import NotFound, InternalServerError
+from flask import request, current_app
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
     document_output_dto,
@@ -11,9 +10,9 @@ from app.dtos import (
     document_delete_output_dto,
     heatmap_output_list_dto,
     jaccard_output_dto,
+    document_state_update_dto,
 )
 from app.routes.base_routes import AuthorizedBaseRoute
-from app.dtos import document_state_update_dto, document_response_dto
 
 ns = Namespace("documents", description="Document related operations")
 
@@ -202,23 +201,26 @@ class JaccardIndexResource(DocumentBaseRoute):
             "result": response.json(),
         }
 
-@ns.route("")
+
 @ns.response(403, "Authorization required")
 @ns.route("/<int:document_id>/state")
 @ns.doc(params={"document_id": "A Document ID"})
-class DocumentStateResource(Resource):
+class DocumentStateResource(DocumentBaseRoute):
+
     @ns.expect(document_state_update_dto)
-    @ns.marshal_with(document_response_dto)
+    @ns.marshal_with(document_output_dto)
     def put(self, document_id):
         """
         Update the state of a document.
         """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_accessible(user_id, document_id)
-        
+
         data = request.get_json()
         new_state_id = data.get("state_id")
-        
-        updated_document = document_service.change_document_state(document_id, new_state_id, user_id)
-        
+
+        updated_document = self.service.change_document_state(
+            document_id, new_state_id, user_id
+        )
+
         return updated_document
