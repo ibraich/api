@@ -317,7 +317,7 @@ class SchemaService:
         if modelling_language is None:
             raise BadRequest("Modelling Language not allowed")
 
-        created_schema = self.create_schema(
+        created_schema = self.__create_schema(
             modelling_language.id, team_id, schema["name"]
         )
         self.create_schema_components(schema, created_schema.id)
@@ -340,7 +340,7 @@ class SchemaService:
 
         schema_mentions_by_tag = {}
         for schema_mention in schema["schema_mentions"]:
-            created_mention = self.create_schema_mention(
+            created_mention = self.__create_schema_mention(
                 schema_id,
                 schema_mention.get("tag"),
                 schema_mention.get("description"),
@@ -352,7 +352,7 @@ class SchemaService:
         schema_relations_by_tag = {}
         for schema_relation in schema["schema_relations"]:
             created_relation = self.__create_schema_relation(
-                created_schema.id,
+                schema_id,
                 schema_relation.get("tag"),
                 schema_relation.get("description"),
             )
@@ -360,7 +360,7 @@ class SchemaService:
 
         try:
             for constraint in schema["schema_constraints"]:
-                self.create_schema_constraint(
+                self.__create_schema_constraint(
                     schema_relations_by_tag[constraint.get("relation_tag")].id,
                     schema_mentions_by_tag[constraint.get("mention_head_tag")].id,
                     schema_mentions_by_tag[constraint.get("mention_tail_tag")].id,
