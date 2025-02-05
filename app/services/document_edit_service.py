@@ -5,6 +5,7 @@ from app.services.document_recommendation_service import (
     DocumentRecommendationService,
     document_recommendation_service,
 )
+from app.services.f1_score_service import f1_score_service, F1ScoreService
 from app.services.schema_service import SchemaService, schema_service
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
@@ -20,6 +21,7 @@ class DocumentEditService:
     mention_service: MentionService
     relation_service: RelationService
     schema_service: SchemaService
+    f1_score_service: F1ScoreService
 
     def __init__(
         self,
@@ -30,6 +32,7 @@ class DocumentEditService:
         mention_service,
         relation_service,
         schema_service,
+        f1_score_service,
     ):
         self.__document_edit_repository = document_edit_repository
         self.user_service = user_service
@@ -38,6 +41,7 @@ class DocumentEditService:
         self.mention_service = mention_service
         self.relation_service = relation_service
         self.schema_service = schema_service
+        self.f1_score_service = f1_score_service
 
     def create_document_edit(
         self,
@@ -318,6 +322,70 @@ class DocumentEditService:
                 )
         return {"models": list(model_dict.values())}
 
+    def get_f1_score(self, document_edit_id):
+        f1_score_request = self.get_document_edit_for_f1_score(document_edit_id)
+        return self.f1_score_service.get_f1_score(f1_score_request)
+
+    def get_document_edit_for_f1_score(self, document_edit_id):
+        document_edit = self.__document_edit_repository.get_document_edit_by_id(
+            document_edit_id
+        )
+        if document_edit is None:
+            raise BadRequest("Document Edit doesnt exist")
+
+        tokens_data = self.token_service.get_tokens_by_document(
+            document_edit.document_id
+        )
+        tokens = tokens_data.get("tokens", [])
+
+        actual_mentions = self.mention_service.get_actual_mentions_by_document_edit(
+            document_edit_id
+        )
+        predicted_mentions = (
+            self.mention_service.get_predicted_mentions_by_document_edit(
+                document_edit_id
+            )
+        )
+
+        mentions_data = self.mention_service.get_mentions_by_document_edit(
+            document_edit_id
+        )
+        mentions_dict = {
+            mention["id"]: mention for mention in mentions_data["mentions"]
+        }
+
+        actual_relations = (
+            self.relation_service.get_actual_relations_by_document_edit_id(
+                document_edit_id, mentions_dict
+            )
+        )
+
+        predicted_relations = (
+            self.relation_service.get_predicted_relations_by_document_edit_id(
+                document_edit_id, mentions_dict
+            )
+        )
+
+        actual_document_edit = {
+            "document": {
+                "id": document_edit.document_id,
+                "tokens": tokens,
+            },
+            "mentions": actual_mentions,
+            "relations": actual_relations,
+        }
+
+        predicted_document_edit = {
+            "document": {
+                "id": document_edit.document_id,
+                "tokens": tokens,
+            },
+            "mentions": predicted_mentions,
+            "relations": predicted_relations,
+        }
+
+        return {"actual": actual_document_edit, "predicted": predicted_document_edit}
+
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),
@@ -327,4 +395,5 @@ document_edit_service = DocumentEditService(
     mention_service,
     relation_service,
     schema_service,
+    f1_score_service,
 )
