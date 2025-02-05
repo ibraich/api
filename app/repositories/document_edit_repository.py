@@ -5,6 +5,7 @@ from app.models import (
     ModelStep,
     Document,
     DocumentEditState,
+    User,
 )
 from app.repositories.base_repository import BaseRepository
 
@@ -181,3 +182,23 @@ class DocumentEditRepository(BaseRepository):
         document_edit.state_id = state_id
         self.store_object(document_edit)
         return document_edit
+
+    def get_document_edits_by_schema(self, schema_id):
+        return (
+            self.get_session()
+            .query(
+                DocumentEdit.id,
+                DocumentEdit.document_id,
+                DocumentEdit.state_id,
+                DocumentEditState.type.label("state_name"),
+                Document.name.label("document_name"),
+                User.username,
+                User.id.label("user_id"),
+                User.email,
+            )
+            .select_from(DocumentEdit)
+            .join(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
+            .join(Document, Document.id == DocumentEdit.document_id)
+            .join(User, DocumentEdit.user_id == User.id)
+            .filter(DocumentEdit.schema_id == schema_id)
+        ).all()

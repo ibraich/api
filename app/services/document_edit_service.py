@@ -498,6 +498,36 @@ class DocumentEditService:
             },
         }
 
+    def get_document_edits_by_schema(self, schema_id):
+        """
+        Fetch a list of all document edits by schema id.
+
+        :param schema_id: Schema ID to query
+        :return: document_edit_schema_output_dto
+        """
+        document_edits = self.__document_edit_repository.get_document_edits_by_schema(
+            schema_id
+        )
+        return [
+            {
+                "document": {
+                    "id": document_edit.document_id,
+                    "name": document_edit.document_name,
+                },
+                "id": document_edit.id,
+                "state": {
+                    "id": document_edit.state_id,
+                    "type": document_edit.state_name,
+                },
+                "user": {
+                    "id": document_edit.user_id,
+                    "email": document_edit.email,
+                    "username": document_edit.username,
+                },
+            }
+            for document_edit in document_edits
+        ]
+
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),

@@ -828,3 +828,23 @@ document_state_update_dto = api.model(
         ),
     },
 )
+
+document_edit_schema_output_dto = api.model(
+    "DocumentEditSchemaOutput",
+    {
+        "document": fields.Nested(
+            heat_document_dto, description="Details of the document"
+        ),
+        "id": fields.Integer(description="Document Edit ID"),
+        "state": fields.Nested(
+            api.model(
+                "DocumentEditState",
+                {
+                    "id": fields.Integer,
+                    "type": fields.String,
+                },
+            )
+        ),
+        "user": fields.Nested(user_output_dto),
+    },
+)
