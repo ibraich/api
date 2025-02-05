@@ -454,7 +454,6 @@ relation_update_input_dto = api.model(
     "UpdateRelationInput",
     {
         "schema_relation_id": fields.Integer,
-        "isDirected": fields.Boolean,
         "mention_head_id": fields.Integer,
         "mention_tail_id": fields.Integer,
     },

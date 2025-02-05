@@ -12,7 +12,6 @@ from app.services.mention_services import MentionService, mention_service
 from app.services.relation_services import RelationService, relation_service
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
-from app.services.user_service import UserService, user_service
 
 
 def _verify_constraint(
@@ -88,7 +87,6 @@ class ImportService:
     _entity_service: EntityService
     _relation_service: RelationService
     _schema_service: SchemaService
-    _user_service: UserService
 
     def __init__(
         self,
@@ -99,7 +97,6 @@ class ImportService:
         entity_service: EntityService,
         relation_service: RelationService,
         schema_service: SchemaService,
-        user_service: UserService,
     ):
         self._document_service = document_service
         self._document_edit_service = document_edit_service
@@ -108,7 +105,6 @@ class ImportService:
         self._entity_service = entity_service
         self._relation_service = relation_service
         self._schema_service = schema_service
-        self._user_service = user_service
 
     def import_pet_documents(
         self,
@@ -219,5 +215,4 @@ import_service = ImportService(
     entity_service=entity_service,
     relation_service=relation_service,
     schema_service=schema_service,
-    user_service=user_service,
 )

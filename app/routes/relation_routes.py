@@ -56,7 +56,6 @@ class RelationDeleteResource(RelationBaseRoute):
         schema_relation_id = data.get("schema_relation_id")
         mention_head_id = data.get("mention_head_id")
         mention_tail_id = data.get("mention_tail_id")
-        is_directed = data.get("isDirected")
 
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_relation_accessible(user_id, relation_id)
@@ -66,7 +65,6 @@ class RelationDeleteResource(RelationBaseRoute):
             schema_relation_id,
             mention_head_id,
             mention_tail_id,
-            is_directed,
         )
         return response
 

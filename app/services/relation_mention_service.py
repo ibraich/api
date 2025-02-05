@@ -1,21 +1,17 @@
 from werkzeug.exceptions import BadRequest, NotFound
 
 from app.repositories.relation_repository import RelationRepository
-from app.services.user_service import user_service, UserService
 
 
 class RelationMentionService:
 
     __relation_repository: RelationRepository
-    user_service: UserService
 
     def __init__(
         self,
         relation_repository,
-        user_service,
     ):
         self.__relation_repository = relation_repository
-        self.user_service = user_service
 
     def delete_relation_by_id(self, relation_id):
         if not isinstance(relation_id, int) or relation_id <= 0:
@@ -40,10 +36,14 @@ class RelationMentionService:
         return {"message": "OK"}
 
     def get_relations_by_mention(self, mention_id):
+        """
+        Fetches relations where mention is part of.
+        :param mention_id: Mention ID to query
+        :return: List of relations
+        """
         return self.__relation_repository.get_relations_by_mention(mention_id)
 
 
 relation_mention_service = RelationMentionService(
     RelationRepository(),
-    user_service,
 )

@@ -3,7 +3,6 @@ from werkzeug.exceptions import BadRequest, NotFound, Conflict, Forbidden
 from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
-from app.services.user_service import UserService, user_service
 
 from app.services.relation_mention_service import (
     RelationMentionService,
@@ -23,7 +22,6 @@ from app.services.token_mention_service import (
 class MentionService:
     __mention_repository: MentionRepository
     token_mention_service: TokenMentionService
-    user_service: UserService
     relation_mention_service: RelationMentionService
     entity_mention_service: EntityMentionService
     token_service: TokenService
@@ -33,7 +31,6 @@ class MentionService:
         self,
         mention_repository,
         token_mention_service,
-        user_service,
         relation_mention_service,
         entity_mention_service,
         token_service,
@@ -41,7 +38,6 @@ class MentionService:
     ):
         self.__mention_repository = mention_repository
         self.token_mention_service = token_mention_service
-        self.user_service = user_service
         self.relation_mention_service = relation_mention_service
         self.entity_mention_service = entity_mention_service
         self.token_service = token_service
@@ -146,6 +142,7 @@ class MentionService:
     def add_to_entity(self, entity_id: int, mention_id: int):
         """
         Add a mention to an existing entity.
+        Does not check for valid inputs.
 
         :param entity_id: Entity ID to add mention to.
         :param mention_id: Mention ID to add to entity.
@@ -165,10 +162,6 @@ class MentionService:
             raise BadRequest(
                 "Cannot delete a mention without a valid document_edit_id."
             )
-
-        self.user_service.check_user_document_edit_accessible(
-            user_id, mention.document_edit_id
-        )
 
         related_relations = self.relation_mention_service.get_relations_by_mention(
             mention_id
@@ -417,7 +410,6 @@ class MentionService:
 mention_service = MentionService(
     MentionRepository(),
     token_mention_service,
-    user_service,
     relation_mention_service,
     entity_mention_service,
     token_service,

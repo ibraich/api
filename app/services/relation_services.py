@@ -86,6 +86,19 @@ class RelationService:
         document_recommendation_id=None,
         is_shown_recommendation=False,
     ) -> Relation:
+        """
+        Saves relation in the database.
+        Does not check for valid inputs.
+
+        :param schema_relation_id: SchemaRelation ID of relation
+        :param is_directed: Is Relation directed
+        :param mention_head_id: MentionHead ID of relation
+        :param mention_tail_id: MentionTail ID of relation
+        :param document_edit_id: Document edit ID of relation
+        :param document_recommendation_id: Document recommendation ID of relation
+        :param is_shown_recommendation: is relation a shown recommendation
+        :return: Newly created Relation
+        """
         return self.__relation_repository.save_relation_in_edit(
             schema_relation_id,
             is_directed,
@@ -115,7 +128,7 @@ class RelationService:
 
         self.mention_service.check_mentions_not_equal(mention_head_id, mention_tail_id)
 
-        self.check_duplicate_relations(mention_head_id, mention_tail_id)
+        self.__check_duplicate_relations(mention_head_id, mention_tail_id)
 
         # Check constraints for relation creation
         schema = self.schema_service.get_schema_by_document_edit(document_edit_id)
@@ -140,11 +153,22 @@ class RelationService:
     def update_relation(
         self,
         relation_id,
-        schema_relation_id,
-        mention_head_id,
-        mention_tail_id,
-        is_directed,
+        schema_relation_id=None,
+        mention_head_id=None,
+        mention_tail_id=None,
     ):
+        """
+        Updates a relation with specified parameters.
+
+        :param relation_id: Mention ID to update.
+        :param schema_relation_id: Updated schema mention ID.
+        :param mention_head_id: Updated MentionHead ID.
+        :param mention_tail_id: Updated MentionTail ID.
+        :return: relation_output_model
+        :raises NotFound: If relation or mentions do not exist.
+        :raises Conflict: If mentions already part of another relation.
+        :raises BadRequest: If schema constraint is violated or relation is a recommendation.
+        """
         relation = self.__relation_repository.get_relation_by_id(relation_id)
         if not relation:
             raise NotFound("Relation not found.")
@@ -153,6 +177,7 @@ class RelationService:
             raise BadRequest("You cannot update a recommendation")
 
         if mention_head_id:
+            # Verify mention
             mention_head = (
                 self.mention_service.verify_mention_in_document_edit_not_recommendation(
                     mention_head_id, relation.document_edit_id
@@ -184,8 +209,7 @@ class RelationService:
                 )
             )
             if duplicate_relations is not None and len(duplicate_relations) > 0:
-                # when only one mention of relation changed, current relation will be returned as duplicate
-                # when both mentions changed, no duplicate shall be returned
+                # when no mention of relation changed, no conflict shall be returned
                 if (
                     len(duplicate_relations) > 1
                     or duplicate_relations[0].id != relation.id
@@ -206,7 +230,7 @@ class RelationService:
             relation.document_edit_id
         )
         schema_extended = self.schema_service.get_schema_by_id(schema.id)
-        self.schema_service.verify_constraint(
+        constraint = self.schema_service.verify_constraint(
             schema_extended,
             schema_relation.id,
             mention_head.schema_mention_id,
@@ -219,11 +243,18 @@ class RelationService:
             schema_relation_id,
             mention_head_id,
             mention_tail_id,
-            is_directed,
+            constraint["is_directed"],
         )
         return self.get_relation_dto_by_id(relation.id)
 
     def get_relation_dto_by_id(self, relation_id):
+        """
+        Fetches relation and maps it to output dto.
+        Also fetches associated mentions.
+
+        :param relation_id: Relation ID to fetch
+        :return: relation_output_model
+        """
         relation = self.__relation_repository.get_relation_with_schema_by_id(
             relation_id
         )
@@ -290,7 +321,13 @@ class RelationService:
         self.__relation_repository.update_is_shown_recommendation(relation_id, False)
         return {"message": "Relation successfully rejected."}
 
-    def check_duplicate_relations(self, mention_head_id, mention_tail_id):
+    def __check_duplicate_relations(self, mention_head_id, mention_tail_id):
+        """
+        Checks if relation containing with the same mentions already exists.
+        :param mention_head_id: MentionHead ID to check
+        :param mention_tail_id: MentionTail ID to check
+        :raises Conflict: If relation already exists
+        """
         # get duplicate relation if any
         duplicate_relations = (
             self.__relation_repository.get_relations_by_mention_head_and_tail(
