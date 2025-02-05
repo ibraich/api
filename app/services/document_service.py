@@ -5,7 +5,6 @@ from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from app.services.f1_score_service import f1_score_service
 from app.services.user_service import UserService, user_service
 from app.services.token_service import TokenService, token_service
 from app.services.team_service import TeamService, team_service
@@ -25,14 +24,12 @@ class DocumentService:
         team_service,
         token_service,
         document_edit_service,
-        f1_score_service,
     ):
         self.__document_repository = document_repository
         self.user_service = user_service
         self.team_service = team_service
         self.token_service = token_service
         self.document_edit_service = document_edit_service
-        self.f1_score_service = f1_score_service
 
     def get_documents_by_project(self, user_id, project_id):
         response = self.get_documents_by_user(user_id)
@@ -174,11 +171,6 @@ class DocumentService:
             },
         }
 
-    def get_f1_score(self, actual_document_edit_id, predicted_document_edit_id):
-        return f1_score_service.get_f1_score(
-            actual_document_edit_id, predicted_document_edit_id
-        )
-
 
 document_service = DocumentService(
     DocumentRepository(),
@@ -186,5 +178,4 @@ document_service = DocumentService(
     team_service,
     token_service,
     document_edit_service,
-    f1_score_service,
 )

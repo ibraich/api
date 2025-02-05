@@ -10,7 +10,6 @@ from app.dtos import (
     document_list_dto,
     document_delete_output_dto,
     heatmap_output_list_dto,
-    f1_score_dto,
 )
 
 ns = Namespace("documents", description="Document related operations")
@@ -144,28 +143,3 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             },
             "document_edits": document_edits,
         }
-
-
-@ns.route("/f1_score/<int:document_actual_id>/<int:document_predicted_id>")
-@ns.doc(
-    params={
-        "document_actual_id": "A Document edit ID",
-        "document_predicted_id": "A Document edit ID",
-    }
-)
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class DocumentEditsF1Score(DocumentBaseRoute):
-
-    @ns.marshal_with(f1_score_dto)
-    @ns.doc(description="Get F1 score for two document edits")
-    def get(self, document_actual_id, document_predicted_id):
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_document_edit_accessible(
-            user_id, document_actual_id
-        )
-        self.user_service.check_user_document_edit_accessible(
-            user_id, document_predicted_id
-        )
-
-        return self.service.get_f1_score(document_actual_id, document_predicted_id)
