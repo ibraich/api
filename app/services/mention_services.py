@@ -372,7 +372,7 @@ class MentionService:
         # Convert the dictionary to a list of mentions
         mentions_list = list(mentions_map.values())
 
-        return {"mentions": mentions_list}
+        return mentions_list
 
 
 mention_service = MentionService(

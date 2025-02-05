@@ -348,7 +348,7 @@ class RelationService:
 
             transformed_relations.append(transformed_relation)
 
-        return {"relations": transformed_relations}
+        return transformed_relations
 
 
 relation_service = RelationService(
