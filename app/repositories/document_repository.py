@@ -11,7 +11,7 @@ from app.models import (
     Schema,
 )
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy import and_, literal
+from sqlalchemy import and_
 
 
 class DocumentRepository(BaseRepository):
@@ -187,4 +187,23 @@ class DocumentRepository(BaseRepository):
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.active == True)
             .all()
+        )
+
+    def update_document_state(self, document_id, new_state_id):
+        """
+        Update the state of a document in the database.
+        """
+        session = self.get_session()
+        document = session.query(Document).filter(Document.id == document_id).first()
+        if document:
+            document.state_id = new_state_id
+        self.store_object(document)
+        return document
+
+    def get_document_state_by_id(self, state_id):
+        return (
+            self.get_session()
+            .query(DocumentState)
+            .filter(DocumentState.id == state_id)
+            .first()
         )

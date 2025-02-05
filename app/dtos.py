@@ -818,3 +818,13 @@ document_edit_state_input_dto = api.model(
         "state": fields.String(required=True, description="State of the document edit"),
     },
 )
+
+
+document_state_update_dto = api.model(
+    "DocumentStateUpdate",
+    {
+        "state_id": fields.Integer(
+            required=True, description="ID of the new document state"
+        ),
+    },
+)
