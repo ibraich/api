@@ -794,18 +794,18 @@ _Values_ are of type object containing the following keys:
 get_recommendation_models_output_dto = api.model(
     "GetRecommendationModelsOutput",
     {
-        "mention": fields.Nested(model_type_with_settings),
-        "entity": fields.Nested(model_type_with_settings),
-        "relation": fields.Nested(model_type_with_settings),
+        "mention": fields.List(fields.Nested(model_type_with_settings)),
+        "entity": fields.List(fields.Nested(model_type_with_settings)),
+        "relation": fields.List(fields.Nested(model_type_with_settings)),
     },
 )
 
 get_train_models_output_dto = api.model(
     "GetTrainModelsOutput",
     {
-        "mention": fields.Nested(train_models_with_settings),
-        "entity": fields.Nested(train_models_with_settings),
-        "relation": fields.Nested(train_models_with_settings),
+        "mention": fields.List(fields.Nested(train_models_with_settings)),
+        "entity": fields.List(fields.Nested(train_models_with_settings)),
+        "relation": fields.List(fields.Nested(train_models_with_settings)),
     },
 )
 
