@@ -1,5 +1,5 @@
-from werkzeug.exceptions import NotFound, BadRequest, Forbidden
-
+from werkzeug.exceptions import BadRequest
+from app.models import DocumentState
 from app.repositories.document_repository import DocumentRepository
 from app.services.document_edit_service import (
     document_edit_service,
@@ -206,15 +206,24 @@ class DocumentService:
         }
 
     def change_document_state(self, document_id, new_state_id, user_id):
+        """
+        Change the state of a document after validating the input and user access.
+        """
+        session = self.document_repository.get_session()
 
-        try:
-            return self.document_repository.update_document_state(document_id, new_state_id, user_id)
-        except NotFound:
-            raise NotFound("Document not found")
-        except Forbidden:
-            raise Forbidden("User does not have permission to change the document state")
-        except BadRequest as e:
-            raise BadRequest(str(e))
+        # Validate the new state
+        state = session.query(DocumentState).filter(DocumentState.id == new_state_id).first()
+        if not state:
+            raise BadRequest("Invalid document state")
+
+        # Update the document state
+        document = self.document_repository.update_document_state(document_id, new_state_id)
+        if not document:
+            raise BadRequest("Document not found")
+
+        # Return the updated document in correct response format
+        return self.document_repository.get_document_by_id(document.id, user_id)
+    
 document_service = DocumentService(
     DocumentRepository(),
     token_service,
