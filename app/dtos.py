@@ -39,17 +39,6 @@ project_input_dto = api.model(
     },
 )
 
-project_output_dto = api.model(
-    "ProjectOutput",
-    {
-        "id": fields.Integer,
-        "name": fields.String,
-        "creator": fields.Nested(user_output_dto),
-        "team_id": fields.Integer,
-        "schema_id": fields.Integer,
-    },
-)
-
 team_dto = api.model(
     "Team",
     {
@@ -74,8 +63,8 @@ project_dto = api.model(
     },
 )
 
-document_edit_dto = api.model(
-    "DocumentEdit",
+document_edit_state_dto = api.model(
+    "DocumentEditState",
     {
         "id": fields.Integer,
         "state": fields.String,
@@ -100,7 +89,7 @@ document_output_dto = api.model(
         "project": fields.Nested(project_dto),
         "schema": fields.Nested(schema_dto),
         "team": fields.Nested(team_dto),
-        "document_edit": fields.Nested(document_edit_dto),
+        "document_edit": fields.Nested(document_edit_state_dto),
         "creator": fields.Nested(user_output_dto),
         "document_edits": fields.List(
             fields.Nested(
@@ -355,11 +344,12 @@ document_edit_output_dto = api.model(
         "mention_model_id": fields.Integer,
         "entity_model_id": fields.Integer,
         "relation_model_id": fields.Integer,
+        "state": fields.Nested(document_edit_state_dto),
     },
 )
 
-project_list_dto = api.model(
-    "project_list_dto",
+project_output_dto = api.model(
+    "ProjectOutput",
     {
         "id": fields.Integer,
         "name": fields.String,
@@ -372,7 +362,7 @@ project_list_dto = api.model(
 project_user_output_list_dto = api.model(
     "project_user_output_list_dto",
     {
-        "projects": fields.List(fields.Nested(project_list_dto)),
+        "projects": fields.List(fields.Nested(project_output_dto)),
     },
 )
 
@@ -454,11 +444,17 @@ project_delete_output_model = api.model(
     },
 )
 
+team_delete_output_model = api.model(
+    "DeleteTeamOutput",
+    {
+        "message": fields.String,
+    },
+)
+
 relation_update_input_dto = api.model(
     "UpdateRelationInput",
     {
         "schema_relation_id": fields.Integer,
-        "isDirected": fields.Boolean,
         "mention_head_id": fields.Integer,
         "mention_tail_id": fields.Integer,
     },
@@ -764,6 +760,69 @@ get_recommendation_models_output_dto = api.model(
         "mention": fields.Nested(model_type_with_settings),
         "entity": fields.Nested(model_type_with_settings),
         "relation": fields.Nested(model_type_with_settings),
+    },
+)
+
+jaccard_index_response = api.model(
+    "jaccard index response",
+    {
+        "combined_index": fields.Float(
+            required=True,
+            description="An approximation of the overall Jaccard index, where relations and entities are weighted less than mentions.",
+        ),
+        "mention_index": fields.Float(required=True),
+        "relation_index": fields.Float(required=True),
+        "considered_relation_index": fields.Float(required=True),
+        "entity_index": fields.Float(required=True),
+        "considered_entities_index": fields.Float(required=True),
+    },
+)
+
+jaccard_response = api.model(
+    "jaccard index response",
+    {
+        "average": fields.Nested(
+            jaccard_index_response,
+            description="The average jaccard index where the index for all pairs of documents is calculated and the average is returned, e.g. ((A∩B/A∪B)+(A∩C/A∪C)+(B∩C/B∪C))/3",
+        ),
+        "combined": fields.Nested(
+            jaccard_index_response,
+            description="The combined jaccard index where one index for all documents in calculated at once, e.g. (A∩B∩C/A∪B∪C)",
+        ),
+    },
+)
+
+jaccard_output_dto = api.model(
+    "JaccardOutput",
+    {
+        "result": fields.List(
+            fields.Nested(jaccard_response),
+            description="Result of Jaccard calculation",
+        ),
+        "document": fields.Nested(
+            heat_document_dto, description="Details of the document"
+        ),
+        "document_edits": fields.List(
+            fields.Nested(heat_document_edit_dto),
+            description="List of document edits with user details",
+        ),
+    },
+)
+
+document_edit_state_input_dto = api.model(
+    "DocumentEditStateOutput",
+    {
+        "state": fields.String(required=True, description="State of the document edit"),
+    },
+)
+
+
+document_state_update_dto = api.model(
+    "DocumentStateUpdate",
+    {
+        "state_id": fields.Integer(
+            required=True, description="ID of the new document state"
+        ),
     },
 )
 

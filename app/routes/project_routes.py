@@ -7,7 +7,7 @@ from app.dtos import (
     project_input_dto,
     project_user_output_list_dto,
     project_delete_output_model,
-    project_list_dto,
+    project_output_dto,
 )
 
 ns = Namespace("projects", description="Project related operations")
@@ -22,10 +22,13 @@ class ProjectBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class ProjectRoutes(ProjectBaseRoute):
 
-    @ns.doc(description="Create a new project")
     @ns.expect(project_input_dto)
-    @ns.marshal_with(project_list_dto)
+    @ns.marshal_with(project_output_dto)
     def post(self):
+        """
+        Create a new project.
+        Sets schema as fixed and not modifiable.
+        """
         request_data = request.get_json()
 
         user_id = self.user_service.get_logged_in_user_id()
@@ -41,9 +44,11 @@ class ProjectRoutes(ProjectBaseRoute):
             request_data["name"],
         )
 
-    @ns.doc(description="Fetch all projects of current logged-in user")
     @ns.marshal_with(project_user_output_list_dto)
     def get(self):
+        """
+        Fetch all projects the user has access to.
+        """
         user_id = self.user_service.get_logged_in_user_id()
 
         response = self.service.get_projects_by_user(user_id)

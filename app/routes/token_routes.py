@@ -19,9 +19,11 @@ class TokenBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class TokenQueryResource(TokenBaseRoute):
 
-    @ns.doc(description="Get Tokens of document")
     @ns.marshal_with(token_output_list_dto)
     def get(self, document_id):
+        """
+        Fetch tokens of document
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_accessible(user_id, document_id)
 

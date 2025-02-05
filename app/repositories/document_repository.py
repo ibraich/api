@@ -11,7 +11,7 @@ from app.models import (
     Schema,
 )
 from app.repositories.base_repository import BaseRepository
-from sqlalchemy import and_, literal
+from sqlalchemy import and_
 
 
 class DocumentRepository(BaseRepository):
@@ -55,7 +55,7 @@ class DocumentRepository(BaseRepository):
                 ),
             )
             .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
-        )
+        ).all()
 
     def create_document(self, name, content, project_id, user_id):
         """
@@ -80,7 +80,7 @@ class DocumentRepository(BaseRepository):
         self.store_object(document)
         return document
 
-    def get_document_by_id_without_edit(self, document_id):
+    def get_document_by_id(self, document_id, user_id):
         return (
             self.get_session()
             .query(
@@ -98,8 +98,8 @@ class DocumentRepository(BaseRepository):
                 User.id.label("creator_id"),
                 User.email.label("email"),
                 User.username.label("username"),
-                literal(None).label("document_edit_id"),
-                literal(None).label("document_edit_state"),
+                DocumentEditState.type.label("document_edit_state"),
+                DocumentEdit.id.label("document_edit_id"),
             )
             .filter(Document.id == document_id)
             .filter(Document.active == True)
@@ -108,6 +108,14 @@ class DocumentRepository(BaseRepository):
             .join(DocumentState, DocumentState.id == Document.state_id)
             .join(Schema, Schema.id == Project.schema_id)
             .join(User, User.id == Document.creator_id)
+            .outerjoin(
+                DocumentEdit,
+                and_(
+                    DocumentEdit.document_id == document_id,
+                    DocumentEdit.user_id == user_id,
+                ),
+            )
+            .outerjoin(DocumentEditState, DocumentEditState.id == DocumentEdit.state_id)
         ).first()
 
     def save(self, name, content, project_id, creator_id, state_id):
@@ -179,4 +187,23 @@ class DocumentRepository(BaseRepository):
             .filter(DocumentEdit.document_id == document_id)
             .filter(DocumentEdit.active == True)
             .all()
+        )
+
+    def update_document_state(self, document_id, new_state_id):
+        """
+        Update the state of a document in the database.
+        """
+        session = self.get_session()
+        document = session.query(Document).filter(Document.id == document_id).first()
+        if document:
+            document.state_id = new_state_id
+        self.store_object(document)
+        return document
+
+    def get_document_state_by_id(self, state_id):
+        return (
+            self.get_session()
+            .query(DocumentState)
+            .filter(DocumentState.id == state_id)
+            .first()
         )

@@ -1,22 +1,27 @@
 import json
 import requests
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, Forbidden
 from flask import current_app
 
 from app.models import Token
 from app.repositories.token_repository import TokenRepository
-from app.services.user_service import UserService, user_service
 
 
 class TokenService:
     __token_repository: TokenRepository
-    user_service: UserService
 
-    def __init__(self, token_repository, user_service):
+    def __init__(self, token_repository):
         self.__token_repository = token_repository
-        self.user_service = user_service
 
     def tokenize_document(self, doc_id, content):
+        """
+        Calls tokenization process and stores tokens for document
+
+        :param doc_id: Document ID to tokenize
+        :param content: Content of the document
+        :return: Token dict
+        :raises BadRequest: If tokenization failed
+        """
         url = current_app.config.get("PIPELINE_URL") + "/steps/tokenize"
         request_data = json.dumps({"content": content, "document_id": str(doc_id)})
         response = requests.post(
@@ -41,6 +46,16 @@ class TokenService:
     def save_token(
         self, text, document_index, pos_tag, sentence_index, doc_id
     ) -> Token:
+        """
+        Saves token for document, without validation
+
+        :param text: Text of token
+        :param document_index: Document index of token
+        :param pos_tag: POS tag of token
+        :param sentence_index: Sentence index of token
+        :param doc_id: document ID
+        :return: token database object
+        """
         return self.__token_repository.create_token(
             text,
             document_index,
@@ -50,6 +65,12 @@ class TokenService:
         )
 
     def get_tokens_by_document(self, document_id):
+        """
+        Fetches all tokens for a document
+
+        :param document_id: Document ID to query tokens
+        :return: token_output_list_dto
+        """
         tokens = self.__token_repository.get_tokens_by_document(document_id)
         if tokens is None:
             return {"tokens": []}
@@ -67,6 +88,12 @@ class TokenService:
         }
 
     def get_tokens_by_mention(self, mention_id):
+        """
+        Fetches all tokens for a mention
+
+        :param mention_id: Mention ID to query tokens
+        :return: token_output_list_dto
+        """
         tokens = self.__token_repository.get_tokens_by_mention(mention_id)
         if tokens is None:
             return {"tokens": []}
@@ -84,13 +111,20 @@ class TokenService:
         }
 
     def check_tokens_in_document_edit(self, token_ids, document_edit_id):
+        """
+        Checks that tokens are part of document edit
+
+        :param token_ids: Token IDs to check
+        :param document_edit_id: Document edit ID to check
+        :raises Forbidden: If at least one token is not part of the document
+        """
         document_tokens = self.__token_repository.get_tokens_by_document_edit(
             document_edit_id
         )
         document_token_ids = [document_token.id for document_token in document_tokens]
         for token_id in token_ids:
             if token_id not in document_token_ids:
-                raise BadRequest("Tokens do not belong to this document.")
+                raise Forbidden("Tokens do not belong to this document.")
 
 
-token_service = TokenService(TokenRepository(), user_service)
+token_service = TokenService(TokenRepository())

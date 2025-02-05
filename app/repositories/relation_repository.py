@@ -103,6 +103,8 @@ class RelationRepository(BaseRepository):
         mention_head_id,
         mention_tail_id,
         document_edit_id,
+        document_recommendation_id,
+        is_shown_recommendation,
     ) -> Relation:
         return super().store_object(
             Relation(
@@ -111,6 +113,8 @@ class RelationRepository(BaseRepository):
                 mention_head_id=mention_head_id,
                 mention_tail_id=mention_tail_id,
                 document_edit_id=document_edit_id,
+                document_recommendation_id=document_recommendation_id,
+                isShownRecommendation=is_shown_recommendation,
             )
         )
 
@@ -201,3 +205,12 @@ class RelationRepository(BaseRepository):
         if relation:
             relation.isShownRecommendation = value
         return relation
+
+    def get_recommendations_by_document_edit(self, document_edit_id):
+        return (
+            self.get_session()
+            .query(Relation)
+            .filter(Relation.document_edit_id == document_edit_id)
+            .filter(Relation.isShownRecommendation == True)
+            .all()
+        )

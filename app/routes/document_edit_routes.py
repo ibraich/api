@@ -4,7 +4,8 @@ from app.services.document_edit_service import (
     document_edit_service,
     DocumentEditService,
 )
-from flask import request
+import json
+from flask import request, Response
 from app.dtos import (
     document_edit_output_dto,
     document_edit_input_dto,
@@ -12,6 +13,7 @@ from app.dtos import (
     document_edit_output_soft_delete_dto,
     finished_document_edit_output_dto,
     document_edit_model_output_list_dto,
+    document_edit_state_input_dto,
     f1_score_dto,
 )
 
@@ -25,12 +27,18 @@ class DocumentEditBaseRoute(AuthorizedBaseRoute):
 @ns.route("")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class DocumentRoutes(DocumentEditBaseRoute):
+class DocumentEditCreateResource(DocumentEditBaseRoute):
 
-    @ns.doc(description="Create a new document annotation")
     @ns.marshal_with(document_edit_output_dto)
     @ns.expect(document_edit_input_dto)
     def post(self):
+        """
+        Create a new document annotation.
+        Generates recommendations for mentions and stores them for the newly created annotation.
+
+        [Optional] takes ids and settings of models available inside the schema for mention, entity and relation suggestion.
+        If not specified, default models (LLM) and default settings are used.
+        """
         data = request.get_json()
 
         document_id = (data.get("document_id"),)
@@ -54,7 +62,7 @@ class DocumentRoutes(DocumentEditBaseRoute):
 @ns.route("/overtake")
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class DocumentRoutes(DocumentEditBaseRoute):
+class DocumentEditOvertakeResource(DocumentEditBaseRoute):
 
     @ns.doc(description="overtake another user annotation")
     @ns.marshal_with(document_edit_output_dto)
@@ -73,7 +81,7 @@ class DocumentRoutes(DocumentEditBaseRoute):
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class DocumentEditDeletionResource(DocumentEditBaseRoute):
+class DocumentEditDeleteFetchResource(DocumentEditBaseRoute):
 
     @ns.marshal_with(document_edit_output_soft_delete_dto)
     @ns.doc(description="Soft-delete a DocumentEdit by setting 'active' to False")
@@ -83,13 +91,6 @@ class DocumentEditDeletionResource(DocumentEditBaseRoute):
 
         response = self.service.soft_delete_document_edit(document_edit_id)
         return response
-
-
-@ns.route("/<int:document_edit_id>")
-@ns.doc(params={"document_edit_id": "A Document Edit ID"})
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class DocumentEditResource(DocumentEditBaseRoute):
 
     @ns.marshal_with(finished_document_edit_output_dto)
     @ns.doc(description="Fetch details of a DocumentEdit by its ID")
@@ -105,18 +106,66 @@ class DocumentEditResource(DocumentEditBaseRoute):
 @ns.doc(params={"document_edit_id": "A Document Edit ID"})
 @ns.response(403, "Authorization required")
 @ns.response(404, "Data not found")
-class DocumentEditResource(DocumentEditBaseRoute):
+class DocumentEditModelResource(DocumentEditBaseRoute):
 
     @ns.marshal_with(document_edit_model_output_list_dto)
-    @ns.doc(
-        description="Fetch details of the models used in Recommendations for DocumentEdit"
-    )
     def get(self, document_edit_id):
+        """
+        Fetch selected models with associated settings chosen for this annotation.
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
 
         response = self.service.get_document_edit_model(document_edit_id)
         return response
+
+
+@ns.route("/<int:document_edit_id>/step")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditStateResource(DocumentEditBaseRoute):
+
+    @ns.marshal_with(document_edit_output_dto)
+    @ns.expect(document_edit_state_input_dto, validate=True)
+    def post(self, document_edit_id):
+        """
+        Set Edit State of a document edit to another step.
+        Possible is only the directly following step.
+
+        When proceeding to a suggestion step, new recommendations will be generated.
+        If unreviewed recommendations exist, it is forbidden to leave the suggestion step.
+        """
+        request_data = request.get_json()
+
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
+        response = self.service.set_edit_state(document_edit_id, request_data["state"])
+        return response
+
+
+@ns.route("/<int:document_edit_id>/download")
+@ns.doc(params={"document_edit_id": "A Document Edit ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditResource(DocumentEditBaseRoute):
+
+    @ns.doc(description="Download a DocumentEdit by its ID")
+    def get(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+
+        response_data = self.service.get_document_edit_by_id_for_difference_calc(
+            document_edit_id
+        )
+        json_data = json.dumps(response_data, indent=4)
+
+        return Response(
+            json_data,
+            mimetype="application/json",
+            headers={"Content-Disposition": "attachment; filename=document_edit.json"},
+        )
 
 
 @ns.route("/<int:document_edit_id>/f1score")

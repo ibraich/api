@@ -1,7 +1,6 @@
 import requests
 from flask_restx import Namespace
 from werkzeug.exceptions import NotFound, InternalServerError
-from app.routes.base_routes import AuthorizedBaseRoute
 from flask import request, current_app
 from app.services.document_service import document_service, DocumentService
 from app.dtos import (
@@ -10,7 +9,10 @@ from app.dtos import (
     document_list_dto,
     document_delete_output_dto,
     heatmap_output_list_dto,
+    jaccard_output_dto,
+    document_state_update_dto,
 )
+from app.routes.base_routes import AuthorizedBaseRoute
 
 ns = Namespace("documents", description="Document related operations")
 
@@ -24,9 +26,12 @@ class DocumentBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class DocumentRoutes(DocumentBaseRoute):
 
-    @ns.doc(description="Get all documents current user has access to")
     @ns.marshal_with(document_list_dto)
     def get(self):
+        """
+        Fetch all documents the user has access to.
+        Documents also contain list of users which have annotated this document.
+        """
         user_id = self.user_service.get_logged_in_user_id()
 
         response = self.service.get_documents_by_user(user_id)
@@ -68,9 +73,12 @@ class DocumentRoutes(DocumentBaseRoute):
 @ns.response(404, "Data not found")
 class DocumentProjectRoutes(DocumentBaseRoute):
 
-    @ns.doc(description="Get all documents of project")
     @ns.marshal_with(document_list_dto)
     def get(self, project_id):
+        """
+        Fetch all documents of a project the user has access to.
+        Documents also contain list of users which have annotated this document.
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_project_accessible(user_id, project_id)
 
@@ -114,9 +122,7 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
         if not document_edits:
             raise NotFound(f"No DocumentEdits found for Document ID {document_id}")
 
-        document = self.service.get_document_by_id(document_id)
-        if not document:
-            raise NotFound(f"Document with ID {document_id} not found")
+        document = self.service.get_document_by_id(document_id, user_id)
 
         transformed_edits = self.service.get_all_structured_document_edits_by_document(
             document_id
@@ -139,7 +145,82 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             "items": response.json(),
             "document": {
                 "id": document_id,
-                "name": document.name,
+                "name": document["name"],
             },
             "document_edits": document_edits,
         }
+
+
+@ns.route("/<int:document_id>/jaccard-index")
+@ns.doc(params={"document_id": "A Document ID"})
+@ns.response(400, "Invalid input")
+@ns.response(404, "Document not found")
+class JaccardIndexResource(DocumentBaseRoute):
+
+    @ns.marshal_with(jaccard_output_dto)
+    @ns.doc(
+        description="Send all DocumentEdit data for a specific Document ID to an external service"
+    )
+    def get(self, document_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
+
+        document = self.service.get_document_by_id(document_id, user_id)
+        if not document:
+            raise NotFound(f"Document with ID {document_id} not found")
+
+        document_edits = self.service.get_all_document_edits_with_user_by_document(
+            document_id
+        )
+        if not document_edits:
+            raise NotFound(f"No DocumentEdits found for Document ID {document_id}")
+
+        transformed_edits = self.service.get_all_structured_document_edits_by_document(
+            document_id
+        )
+
+        external_endpoint = (
+            current_app.config.get("DIFFERENCE_CALC_URL") + "/jaccard-index"
+        )
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+
+        response = requests.post(
+            external_endpoint, json=transformed_edits, headers=headers
+        )
+        if response.status_code != 200:
+            raise InternalServerError(
+                "Jaccard Index calculation failed: " + response.text
+            )
+
+        return {
+            "document": {
+                "id": document_id,
+                "name": document["name"],
+            },
+            "document_edits": document_edits,
+            "result": response.json(),
+        }
+
+
+@ns.response(403, "Authorization required")
+@ns.route("/<int:document_id>/state")
+@ns.doc(params={"document_id": "A Document ID"})
+class DocumentStateResource(DocumentBaseRoute):
+
+    @ns.expect(document_state_update_dto)
+    @ns.marshal_with(document_output_dto)
+    def put(self, document_id):
+        """
+        Update the state of a document.
+        """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_accessible(user_id, document_id)
+
+        data = request.get_json()
+        new_state_id = data.get("state_id")
+
+        updated_document = self.service.change_document_state(
+            document_id, new_state_id, user_id
+        )
+
+        return updated_document

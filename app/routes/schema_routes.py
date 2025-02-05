@@ -26,14 +26,15 @@ class SchemaBaseRoute(AuthorizedBaseRoute):
 @ns.response(404, "Data not found")
 class SchemaResource(SchemaBaseRoute):
 
-    @ns.doc(description="Fetch all schemas of current logged-in user")
     @ns.marshal_with(schema_output_list_dto)
     def get(self):
+        """
+        Fetch all schemas the user has access to
+        """
         user_id = self.user_service.get_logged_in_user_id()
 
         return self.service.get_schemas_by_user(user_id)
 
-    @ns.doc(description="Create schema.")
     @ns.doc(
         params={
             "team_id": {
@@ -46,6 +47,9 @@ class SchemaResource(SchemaBaseRoute):
     @ns.marshal_with(schema_output_dto)
     @ns.expect(schema_input_dto)
     def post(self):
+        """
+        Creates a schema for given team ID
+        """
         import_schema = request.get_json()
 
         team_id = request.args.get("team_id")
@@ -63,9 +67,11 @@ class SchemaResource(SchemaBaseRoute):
 @ns.response(404, "Data not found")
 class SchemaQueryResource(SchemaBaseRoute):
 
-    @ns.doc(description="Get schema by schema ID")
     @ns.marshal_with(schema_output_dto)
     def get(self, schema_id):
+        """
+        Fetch schema by schema ID
+        """
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_schema_accessible(user_id, schema_id)
 
@@ -76,11 +82,11 @@ class SchemaQueryResource(SchemaBaseRoute):
 @ns.route("/<int:schema_id>/recommendation")
 class ModelRoutes(SchemaBaseRoute):
 
-    @ns.doc(
-        description="Fetch possible model types of schema for recommendation generation from pipeline microservice"
-    )
     @ns.marshal_with(get_recommendation_models_output_dto)
     def get(self, schema_id):
+        """
+        Fetch recommendation models  of schema with possible settings-
+        """
 
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_schema_accessible(user_id, schema_id)
@@ -130,10 +136,12 @@ class ModelRoutes(SchemaBaseRoute):
 @ns.response(404, "Data not found")
 class SchemaTrainResource(SchemaBaseRoute):
 
-    @ns.doc(description="Train model for given schema ID")
     @ns.expect(model_train_input)
     @ns.marshal_with(model_train_output_list_dto)
     def post(self, schema_id):
+        """
+        Train a recommendation model for a given schema ID
+        """
         data = request.json
 
         user_id = self.user_service.get_logged_in_user_id()
@@ -142,4 +150,34 @@ class SchemaTrainResource(SchemaBaseRoute):
         response = self.service.train_model_for_schema(
             schema_id, data["model_name"], data["model_type"], data["model_steps"]
         )
+        return response
+
+
+@ns.route("/<int:schema_id>")
+@ns.doc(params={"schema_id": "A Schema ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class SchemaUpdateResource(SchemaBaseRoute):
+
+    @ns.doc(description="Update schema by schema ID")
+    @ns.doc(
+        params={
+            "schema_id": {
+                "type": "integer",
+                "required": True,
+                "description": "ID of the schema to be updated.",
+            },
+        }
+    )
+    @ns.expect(schema_input_dto)
+    @ns.marshal_with(schema_output_dto)
+    def put(self, schema_id):
+        """
+        Update the schema by adding or removing mentions, relations, and constraints.
+        """
+        if not schema_id:
+            raise BadRequest("Schema ID is required.")
+
+        data = request.get_json()
+        response = self.service.update_schema(data, schema_id)
         return response
