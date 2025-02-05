@@ -65,7 +65,9 @@ class RelationRepository(BaseRepository):
                 Relation.mention_tail_id,
                 Relation.document_recommendation_id,
                 Relation.document_edit_id,
+                SchemaRelation.tag,
             )
+            .join(SchemaRelation, SchemaRelation.id == Relation.schema_relation_id)
             .filter(
                 (Relation.document_edit_id == document_edit_id)
                 & (Relation.document_recommendation_id.is_(None))
@@ -84,7 +86,9 @@ class RelationRepository(BaseRepository):
                 Relation.mention_tail_id,
                 Relation.document_recommendation_id,
                 Relation.document_edit_id,
+                SchemaRelation.tag,
             )
+            .join(SchemaRelation, SchemaRelation.id == Relation.schema_relation_id)
             .filter(
                 (Relation.document_edit_id == document_edit_id)
                 & (Relation.document_recommendation_id.is_not(None))

@@ -307,6 +307,49 @@ class RelationService:
         if mention_head_id == mention_tail_id:
             raise BadRequest("Mentions are equal")
 
+    def get_actual_relations_by_document_edit_id(self, document_edit_id, mentions_dict):
+        actual_relations = (
+            self.__relation_repository.get_actual_relations_by_document_edit(
+                document_edit_id
+            )
+        )
+        return self.__map_relation_to_f1_score_dto(actual_relations, mentions_dict)
+
+    def get_predicted_relations_by_document_edit_id(
+        self, document_edit_id, mentions_dict
+    ):
+        predicted_relation = self.__relation_repository.get_predicted_recommended_relations_by_document_edit(
+            document_edit_id
+        )
+        return self.__map_relation_to_f1_score_dto(predicted_relation, mentions_dict)
+
+    def __map_relation_to_f1_score_dto(self, relations, mentions_dict):
+        transformed_relations = []
+        for relation in relations:
+            head_mention = mentions_dict.get(relation.mention_head_id)
+            tail_mention = mentions_dict.get(relation.mention_tail_id)
+
+            if not head_mention or not tail_mention:
+                continue
+
+            transformed_relation = {
+                "tag": relation.tag,
+                "mention_head": {
+                    "tag": head_mention["tag"],
+                    "tokens": head_mention["tokens"],
+                    "entity": {"id": head_mention["entity_id"]},
+                },
+                "mention_tail": {
+                    "tag": tail_mention["tag"],
+                    "tokens": tail_mention["tokens"],
+                    "entity": {"id": tail_mention["entity_id"]},
+                },
+            }
+
+            transformed_relations.append(transformed_relation)
+
+        return {"relations": transformed_relations}
+
 
 relation_service = RelationService(
     RelationRepository(),
