@@ -249,6 +249,12 @@ class DocumentEditService:
             document_edit_id
         )
 
+        non_recommended_mentions_dict = {
+            mention["id"]: mention
+            for mention in mentions_data.get("mentions", [])
+            if mention["document_recommendation_id"] is None
+        }
+
         transformed_mentions = [
             {
                 "tag": mention["tag"],
@@ -259,11 +265,17 @@ class DocumentEditService:
                     else {}
                 ),  # Only add entity object if entity_id exists
             }
-            for mention in mentions_data.get("mentions", [])
+            for mention in non_recommended_mentions_dict.get("mentions", [])
         ]
         relations_data = self.relation_service.get_relations_by_document_edit(
             document_edit_id
         )
+
+        non_recommended_relations_dict = {
+            relation["id"]: relation
+            for relation in relations_data.get("relations", [])
+            if relation["document_recommendation_id"] is None
+        }
 
         transformed_relations = [
             {
@@ -288,7 +300,7 @@ class DocumentEditService:
                     ),  # Only add entity object if entity_id exists
                 },
             }
-            for relation in relations_data.get("relations", [])
+            for relation in non_recommended_relations_dict.get("relations", [])
         ]
         return {
             "document": {
