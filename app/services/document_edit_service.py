@@ -316,7 +316,6 @@ class DocumentEditService:
                         if relation["head_mention"].get("entity_id")
                         else {}
                     ),  # Only add entity object if entity_id exists
-                    "entity": {"id": relation["head_mention"]["entity_id"]},
                 },
                 "mention_tail": {
                     "tag": relation["tail_mention"]["tag"],

@@ -443,7 +443,11 @@ class MentionService:
                 mentions_map[mention_id] = {
                     "tag": mention.tag,
                     "tokens": [],
-                    "entity": {"id": mention.entity_id},
+                    **(
+                        {"entity": {"id": mention.entity_id}}
+                        if mention.entity_id
+                        else {"entity": {"id": 0}}
+                    ),
                 }
 
             # Add token data to the mention's tokens list

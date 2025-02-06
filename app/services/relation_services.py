@@ -381,12 +381,20 @@ class RelationService:
                 "mention_head": {
                     "tag": head_mention["tag"],
                     "tokens": head_mention["tokens"],
-                    "entity": {"id": head_mention["entity_id"]},
+                    **(
+                        {"entity": {"id": head_mention["entity_id"]}}
+                        if head_mention.get("entity_id")
+                        else {"entity": {"id": 0}}
+                    ),
                 },
                 "mention_tail": {
                     "tag": tail_mention["tag"],
                     "tokens": tail_mention["tokens"],
-                    "entity": {"id": tail_mention["entity_id"]},
+                    **(
+                        {"entity": {"id": tail_mention["entity_id"]}}
+                        if tail_mention.get("entity_id")
+                        else {"entity": {"id": 0}}
+                    ),
                 },
             }
 

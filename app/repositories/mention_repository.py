@@ -45,7 +45,7 @@ class MentionRepository(BaseRepository):
                 Mention.id.label("mention_id"),
                 Mention.document_edit_id,
                 Mention.document_recommendation_id,
-                Mention.tag,
+                SchemaMention.tag,
                 Mention.entity_id,
                 Token.id.label("token_id"),
                 Token.text,
@@ -53,6 +53,7 @@ class MentionRepository(BaseRepository):
                 Token.sentence_index,
                 Token.pos_tag,
             )
+            .join(SchemaMention, SchemaMention.id == Mention.schema_mention_id)
             .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
             .outerjoin(Token, TokenMention.token_id == Token.id)  # Join tokens
             .filter(
@@ -70,7 +71,7 @@ class MentionRepository(BaseRepository):
                 Mention.id.label("mention_id"),
                 Mention.document_edit_id,
                 Mention.document_recommendation_id,
-                Mention.tag,
+                SchemaMention.tag,
                 Mention.entity_id,
                 Token.id.label("token_id"),
                 Token.text,
@@ -78,6 +79,7 @@ class MentionRepository(BaseRepository):
                 Token.sentence_index,
                 Token.pos_tag,
             )
+            .join(SchemaMention, SchemaMention.id == Mention.schema_mention_id)
             .outerjoin(TokenMention, Mention.id == TokenMention.mention_id)
             .outerjoin(Token, TokenMention.token_id == Token.id)  # Join tokens
             .filter(
