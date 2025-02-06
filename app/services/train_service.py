@@ -34,7 +34,7 @@ class TrainService:
         if duplicate is not None:
             raise BadRequest("Model Name already exists")
 
-        if step not in ["mention", "entity", "relation"]:
+        if step not in ["MENTIONS", "ENTITIES", "RELATIONS"]:
             raise BadRequest("Step must be mention, entity or relation")
 
         params = {}
@@ -55,7 +55,16 @@ class TrainService:
             "schema": schema,
             "documents": document_edits,
         }
-        url = current_app.config.get("PIPELINE_URL") + "/train/" + step
+        pipeline_step_mapping = {
+            "MENTIONS": "mention",
+            "ENTITIES": "entity",
+            "RELATIONS": "relation",
+        }
+        url = (
+            current_app.config.get("PIPELINE_URL")
+            + "/train/"
+            + pipeline_step_mapping[step]
+        )
         headers = {"Content-Type": "application/json"}
 
         train_response = requests.post(
