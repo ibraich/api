@@ -417,6 +417,56 @@ class MentionService:
             document_edit_id
         )
 
+    def get_actual_mentions_by_document_edit(self, document_edit_id):
+        actual_mentions = (
+            self.__mention_repository.get_actual_mentions_with_tokens_by_document_edit(
+                document_edit_id
+            )
+        )
+        return self.__map_mentions_to_f1_score_dto(actual_mentions)
+
+    def get_predicted_mentions_by_document_edit(self, document_edit_id):
+        predicted_mentions = self.__mention_repository.get_predicted_mentions_with_tokens_by_document_edit(
+            document_edit_id
+        )
+        return self.__map_mentions_to_f1_score_dto(predicted_mentions)
+
+    def __map_mentions_to_f1_score_dto(self, mentions):
+        # Create a dictionary to group tokens by mention_id
+        mentions_map = {}
+
+        for mention in mentions:
+            mention_id = mention.mention_id
+
+            # If the mention is not already in the map, add it
+            if mention_id not in mentions_map:
+                mentions_map[mention_id] = {
+                    "tag": mention.tag,
+                    "tokens": [],
+                    **(
+                        {"entity": {"id": mention.entity_id}}
+                        if mention.entity_id
+                        else {"entity": {"id": 0}}
+                    ),
+                }
+
+            # Add token data to the mention's tokens list
+            if mention.token_id is not None:  # Ensure token data exists
+                mentions_map[mention_id]["tokens"].append(
+                    {
+                        "id": mention.token_id,
+                        "text": mention.text,
+                        "document_index": mention.document_index,
+                        "sentence_index": mention.sentence_index,
+                        "pos_tag": mention.pos_tag,
+                    }
+                )
+
+        # Convert the dictionary to a list of mentions
+        mentions_list = list(mentions_map.values())
+
+        return mentions_list
+
 
 mention_service = MentionService(
     MentionRepository(),
