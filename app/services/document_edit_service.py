@@ -268,6 +268,10 @@ class DocumentEditService:
             "schema_id": document_edit.schema_id,
             "mentions": mentions_data["mentions"],
             "relations": relations_data["relations"],
+            "state": {
+                "id": document_edit.state_id,
+                "state": document_edit.state_name,
+            },
         }
 
     def get_document_edit_by_id_for_difference_calc(self, document_edit_id):
