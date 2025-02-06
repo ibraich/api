@@ -6,11 +6,8 @@ from werkzeug.exceptions import BadRequest
 from app.dtos import (
     schema_output_dto,
     schema_output_list_dto,
-    model_train_input,
-    model_train_output_list_dto,
     schema_input_dto,
     get_recommendation_models_output_dto,
-    get_train_models_output_dto,
 )
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.schema_service import schema_service, SchemaService
@@ -126,51 +123,6 @@ class ModelRoutes(SchemaBaseRoute):
                     model_response["id"] = model["id"]
                     response[step].append(model_response)
 
-        return response
-
-
-@ns.route("/<int:schema_id>/train")
-@ns.doc(params={"schema_id": "A Schema ID"})
-@ns.response(403, "Authorization required")
-@ns.response(404, "Data not found")
-class SchemaTrainResource(SchemaBaseRoute):
-
-    @ns.expect(model_train_input)
-    @ns.marshal_with(model_train_output_list_dto)
-    def post(self, schema_id):
-        """
-        Train a recommendation model for a given schema ID
-        """
-        data = request.json
-
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_schema_accessible(user_id, schema_id)
-
-        response = self.service.train_model_for_schema(
-            schema_id, data["model_name"], data["model_type"], data["model_steps"]
-        )
-        return response
-
-    @ns.marshal_with(get_train_models_output_dto)
-    def get(self, schema_id):
-        """
-        Fetch possible models for training models from pipeline microservice
-        """
-        user_id = self.user_service.get_logged_in_user_id()
-        self.user_service.check_user_schema_accessible(user_id, schema_id)
-
-        steps = ["mention", "entity", "relation"]
-        response = {}
-
-        for index, step in enumerate(steps):
-            url = current_app.config.get("PIPELINE_URL") + "/train/" + step
-            headers = {"Content-Type": "application/json"}
-
-            train_response = requests.get(url=url, headers=headers)
-            if train_response.status_code != 200:
-                raise BadRequest("Failed to fetch models: " + train_response.text)
-
-            response[step] = train_response.json()
         return response
 
 

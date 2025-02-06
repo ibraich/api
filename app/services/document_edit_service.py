@@ -532,6 +532,87 @@ class DocumentEditService:
             for document_edit in document_edits
         ]
 
+    def get_document_edits_for_schema_training(self, document_edit_ids, schema_id):
+
+        schema_document_edits = self.__document_edit_repository.get_document_edit_ids_with_document_by_schema(
+            schema_id
+        )
+        document_edit_ids = set(document_edit_ids)
+
+        schema_doc_edit_to_doc_map = {}
+        schema_doc_edit_to_content_map = {}
+        for id, document_id, content in schema_document_edits:
+            schema_doc_edit_to_doc_map[id] = document_id
+            schema_doc_edit_to_content_map[id] = content
+
+        if not document_edit_ids.issubset(schema_doc_edit_to_doc_map.keys()):
+            raise BadRequest("At least one Document Edit does not belong to schema")
+
+        doc_edit_to_doc_map = {}
+        doc_edit_to_content_map = {}
+        for document_edit_id in document_edit_ids:
+            doc_edit_to_doc_map[document_edit_id] = schema_doc_edit_to_doc_map[
+                document_edit_id
+            ]
+            doc_edit_to_content_map[document_edit_id] = schema_doc_edit_to_content_map[
+                document_edit_id
+            ]
+
+        document_tokens_dict = self.token_service.get_tokens_by_document_ids(
+            doc_edit_to_doc_map.values()
+        )
+
+        document_edit_tokens_dict = {
+            document_edit_id: document_tokens_dict[
+                doc_edit_to_doc_map[document_edit_id]
+            ]
+            for document_edit_id in document_edit_ids
+        }
+
+        mention_dict = self.mention_service.get_mentions_by_edit_ids(document_edit_ids)
+
+        document_edit_mention_dict = {
+            document_edit_id: [] for document_edit_id in document_edit_ids
+        }
+        document_edit_entity_dict = {
+            document_edit_id: [] for document_edit_id in document_edit_ids
+        }
+        entity_mention_dict = {
+            mention["entity_id"]: [] for mention in mention_dict.values()
+        }
+        for mention in mention_dict.values():
+            document_edit_mention_dict[mention["document_edit_id"]].append(mention)
+            if mention["entity_id"] is not None:
+                entity_mention_dict[mention["entity_id"]].append(mention)
+
+        # raise BadRequest(entity_mention_dict)
+        for mention_list in entity_mention_dict.values():
+            if len(mention_list) > 0:
+                document_edit_entity_dict[mention_list[0]["document_edit_id"]].append(
+                    {
+                        "id": mention_list[0]["entity_id"],
+                        "tag": "",
+                        "mentions": mention_list,
+                    }
+                )
+
+        document_edit_relations_dict = (
+            self.relation_service.get_document_edit_to_relation_dict(
+                document_edit_ids, mention_dict
+            )
+        )
+        return [
+            {
+                "id": edit_id,
+                "content": doc_edit_to_content_map[edit_id],
+                "tokens": document_edit_tokens_dict[edit_id],
+                "mentions": document_edit_mention_dict[edit_id],
+                "entitys": document_edit_entity_dict[edit_id],
+                "relations": document_edit_relations_dict[edit_id],
+            }
+            for edit_id in document_edit_ids
+        ]
+
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),

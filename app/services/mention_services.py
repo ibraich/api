@@ -1,4 +1,4 @@
-from werkzeug.exceptions import BadRequest, NotFound, Conflict, Forbidden
+from werkzeug.exceptions import BadRequest, NotFound, Conflict
 
 from app.repositories.mention_repository import MentionRepository
 from app.services.schema_service import SchemaService, schema_service
@@ -416,6 +416,30 @@ class MentionService:
         return self.__mention_repository.get_recommendations_by_document_edit(
             document_edit_id
         )
+
+    def get_mentions_by_edit_ids(self, document_edit_ids):
+        mentions = self.__mention_repository.get_mentions_by_edit_ids(document_edit_ids)
+        mention_dict = {}
+        for mention in mentions:
+            if mention.id not in mention_dict:
+                mention_dict[mention.id] = {
+                    "tag": mention.tag,
+                    "id": mention.id,
+                    "document_edit_id": mention.document_edit_id,
+                    "entity_id": mention.entity_id,
+                    "tokens": [],
+                }
+            mention_dict[mention.id]["tokens"].append(
+                {
+                    "id": mention.token_id,
+                    "text": mention.text,
+                    "document_index": mention.document_index,
+                    "sentence_index": mention.sentence_index,
+                    "pos_tag": mention.pos_tag,
+                }
+            )
+
+        return mention_dict
 
 
 mention_service = MentionService(

@@ -676,13 +676,16 @@ model_train_input = api.model(
     {
         "model_name": fields.String(description="Name of trained model", required=True),
         "model_type": fields.String(description="Type of trained model", required=True),
-        "model_steps": fields.List(
-            fields.String(
-                description="Steps this model can be used for, valid steps: MENTIONS, ENTITIES, RELATIONS",
-                required=True,
-            ),
+        "model_step": fields.String(
+            description="Steps this model can be used for, valid steps: mention, entity, relation",
             required=True,
         ),
+        "document_edits": fields.List(
+            fields.Integer(required=True),
+            required=True,
+            description="IDs of document edits to consider for training",
+        ),
+        "settings": fields.List(fields.Nested(recommendation_model_settings_dto)),
     },
 )
 

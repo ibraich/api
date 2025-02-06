@@ -202,3 +202,11 @@ class DocumentEditRepository(BaseRepository):
             .join(User, DocumentEdit.user_id == User.id)
             .filter(DocumentEdit.schema_id == schema_id)
         ).all()
+
+    def get_document_edit_ids_with_document_by_schema(self, schema_id):
+        return (
+            self.get_session()
+            .query(DocumentEdit.id, DocumentEdit.document_id, Document.content)
+            .join(Document, Document.id == DocumentEdit.document_id)
+            .filter(DocumentEdit.schema_id == schema_id)
+        ).all()

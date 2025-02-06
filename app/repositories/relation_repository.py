@@ -172,3 +172,19 @@ class RelationRepository(BaseRepository):
             .filter(Relation.isShownRecommendation == True)
             .all()
         )
+
+    def get_relations_by_edit_ids(self, document_edit_ids):
+        return (
+            self.get_session()
+            .query(
+                Relation.id,
+                Relation.mention_head_id,
+                Relation.mention_tail_id,
+                Relation.document_edit_id,
+                SchemaRelation.tag,
+            )
+            .join(SchemaRelation, Relation.schema_relation_id == SchemaRelation.id)
+            .filter(Relation.document_edit_id.in_(document_edit_ids))
+            .filter(Relation.document_recommendation_id.is_(None))
+            .all()
+        )

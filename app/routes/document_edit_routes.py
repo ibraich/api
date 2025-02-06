@@ -174,7 +174,7 @@ class DocumentEditResource(DocumentEditBaseRoute):
 @ns.response(404, "Data not found")
 class DocumentEditSchemaResource(DocumentEditBaseRoute):
 
-    @ns.marshal_with(document_edit_schema_output_dto)
+    @ns.marshal_with(document_edit_schema_output_dto, as_list=True)
     def get(self, schema_id):
         """
         Fetch a list of all document edits by schema id.
