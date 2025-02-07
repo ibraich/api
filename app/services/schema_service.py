@@ -509,6 +509,16 @@ class SchemaService:
         return self.__schema_repository.get_model_by_name(model_name)
 
     def add_model_to_schema(self, schema_id, model_name, model_type, steps):
+        """
+        Add a recommendation model to a schema.
+
+        :param schema_id: Schema ID
+        :param model_name: Model name
+        :param model_type: Model type
+        :param steps: Step name, allowed: MENTIONS, ENTITIES, RELATIONS
+        :return: Newly created recommendation model database object
+        :raises BadRequest: If step name is not allowed
+        """
         db_steps = self.__schema_repository.get_model_steps()
         step_dict = {}
         for db_step in db_steps:
