@@ -2,6 +2,7 @@ from flask import request
 from flask_restx import Namespace
 from werkzeug.exceptions import BadRequest
 
+from app.dtos import document_import_dto
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.import_service import import_service, ImportService
 
@@ -30,6 +31,7 @@ class Imports(ImportBaseRoute):
             },
         }
     )
+    @ns.expect(document_import_dto, as_list=True)
     def post(self):
         """
         Import documents from different data sources.
