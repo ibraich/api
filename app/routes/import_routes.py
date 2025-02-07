@@ -31,7 +31,7 @@ class Imports(ImportBaseRoute):
             },
         }
     )
-    @ns.expect(document_import_dto, as_list=True)
+    @ns.expect(document_import_dto)
     def post(self):
         """
         Import documents from different data sources.
@@ -48,6 +48,8 @@ class Imports(ImportBaseRoute):
         source = request.args.get("source")
 
         if source == "pet":
-            return self.service.import_pet_documents(import_list, project_id, user_id)
+            return self.service.import_pet_documents(
+                import_list["documents"], project_id, user_id
+            )
         else:
             raise BadRequest(f"Invalid source {source}")
