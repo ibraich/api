@@ -22,7 +22,7 @@ class TestMentionCreateResource(MentionBaseTestCase):
         moc_schema_mention_id = 456
         mock_token_ids = [1, 5, 9]
 
-        check_token_in_mention_mock.return_value = None
+        check_token_in_mention_mock.return_value = []
 
         self.schema_service.get_schema_by_document_edit.return_value = Schema(id=9)
         self.schema_service.get_schema_mention_by_id.return_value = SchemaMention(
