@@ -34,15 +34,11 @@ class TokenFetchByDocumentTestCase(BaseTestCase):
             ]
         }
 
-        response = self.client.get(
-            "/api/tokens/1",
-            headers={"Content-Type": "application/json"},
-        )
+        response = self.service.get_tokens_by_document(1)
 
         # Assert the response is 200 for valid call
-        self.assertEqual(200, response.status_code)
         self.assertEqual(
-            response.json,
+            response,
             {
                 "tokens": [
                     {

@@ -37,29 +37,7 @@ class TokenizationTestCases(BaseTestCase):
             res = self.service.tokenize_document(1, "Content of Document")
         self.assertEqual(
             res["tokens"],
-            [
-                {
-                    "document_index": 0,
-                    "id": None,
-                    "pos_tag": "DT",
-                    "sentence_index": 0,
-                    "text": "The",
-                },
-                {
-                    "document_index": 1,
-                    "id": None,
-                    "pos_tag": "NNP",
-                    "sentence_index": 0,
-                    "text": "MSPN",
-                },
-                {
-                    "document_index": 2,
-                    "id": None,
-                    "pos_tag": "VBZ",
-                    "sentence_index": 0,
-                    "text": "registers",
-                },
-            ],
+            valid_response,
         )
 
 
