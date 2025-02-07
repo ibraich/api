@@ -22,13 +22,16 @@ class TrainService:
     ):
         """
         Trains a recommendation model for given schema id.
+        Stores model information in the database.
 
         :param schema_id: Schema ID to train model for
         :param model_name: Name of the model
         :param model_type: Type of the model
         :param step: Step for which model can be used
+        :param document_edits: Document edit IDs to use as training input
+        :param settings: Settings for model training
         :return: model_train_output_list_dto
-        :raises BadRequest: If schema name already exists or training failed
+        :raises BadRequest: If model name already exists or training failed
         """
         duplicate = self.schema_service.get_model_by_name(model_name)
         if duplicate is not None:
@@ -37,6 +40,7 @@ class TrainService:
         if step not in ["MENTIONS", "ENTITIES", "RELATIONS"]:
             raise BadRequest("Step must be mention, entity or relation")
 
+        # Query parameter for training endpoint
         params = {}
         for setting in settings:
             params[setting["key"]] = setting["value"]
@@ -73,6 +77,7 @@ class TrainService:
         if train_response.status_code != 200:
             raise BadRequest("Failed to train model: " + train_response.text)
 
+        # Store model in database
         models = self.schema_service.add_model_to_schema(
             schema_id, model_name, model_type, [step]
         )

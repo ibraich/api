@@ -352,6 +352,13 @@ class RelationService:
         )
 
     def get_document_edit_to_relation_dict(self, document_edit_ids, mention_dict):
+        """
+        Fetch relations by list of document edit IDs
+
+        :param document_edit_ids: List of document edit IDs
+        :param mention_dict: Dict of mention id -> mention
+        :return: Dict containing relation list by document edit ID
+        """
         relations = self.__relation_repository.get_relations_by_edit_ids(
             document_edit_ids
         )

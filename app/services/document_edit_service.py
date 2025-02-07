@@ -536,42 +536,45 @@ class DocumentEditService:
         ]
 
     def get_document_edits_for_schema_training(self, document_edit_ids, schema_id):
+        """
+        Fetch list of document edits with all required information for model training.
+        Returned DocumentEdit dict contains tokens, mentions, relations and entities.
 
-        schema_document_edits = self.__document_edit_repository.get_document_edit_ids_with_document_by_schema(
-            schema_id
+        :param document_edit_ids: DocumentEdit IDs to query.
+        :param schema_id: Schema of the documents.
+        :return: Dict containing required data for training.
+        :raises BadRequest: If document edit does not exist or does not belong to schema.
+        """
+        # Fetch all document edits of schema
+        document_edits = self.__document_edit_repository.get_document_edit_ids_with_document_by_schema(
+            schema_id, document_edit_ids
         )
+
         document_edit_ids = set(document_edit_ids)
-
-        schema_doc_edit_to_doc_map = {}
-        schema_doc_edit_to_content_map = {}
-        for id, document_id, content in schema_document_edits:
-            schema_doc_edit_to_doc_map[id] = document_id
-            schema_doc_edit_to_content_map[id] = content
-
-        if not document_edit_ids.issubset(schema_doc_edit_to_doc_map.keys()):
+        if not len(document_edit_ids) == len(document_edits):
             raise BadRequest("At least one Document Edit does not belong to schema")
 
-        doc_edit_to_doc_map = {}
+        # Create dict mapping document edit ID -> document id, document content
+        doc_edit_to_doc_id_map = {}
         doc_edit_to_content_map = {}
-        for document_edit_id in document_edit_ids:
-            doc_edit_to_doc_map[document_edit_id] = schema_doc_edit_to_doc_map[
-                document_edit_id
-            ]
-            doc_edit_to_content_map[document_edit_id] = schema_doc_edit_to_content_map[
-                document_edit_id
-            ]
+        for id, document_id, content in document_edits:
+            doc_edit_to_doc_id_map[id] = document_id
+            doc_edit_to_content_map[id] = content
 
+        # Create dict mapping document id -> token list
         document_tokens_dict = self.token_service.get_tokens_by_document_ids(
-            doc_edit_to_doc_map.values()
+            doc_edit_to_doc_id_map.values()
         )
 
+        # Create dict mapping document edit id -> token list
         document_edit_tokens_dict = {
             document_edit_id: document_tokens_dict[
-                doc_edit_to_doc_map[document_edit_id]
+                doc_edit_to_doc_id_map[document_edit_id]
             ]
             for document_edit_id in document_edit_ids
         }
 
+        # Create dict mapping mention id -> mention
         mention_dict = self.mention_service.get_mentions_by_edit_ids(document_edit_ids)
 
         document_edit_mention_dict = {
@@ -583,12 +586,15 @@ class DocumentEditService:
         entity_mention_dict = {
             mention["entity_id"]: [] for mention in mention_dict.values()
         }
+
+        # Create dict mapping document edit id ->  list
+        # Create dict mapping entity id -> mention list
         for mention in mention_dict.values():
             document_edit_mention_dict[mention["document_edit_id"]].append(mention)
             if mention["entity_id"] is not None:
                 entity_mention_dict[mention["entity_id"]].append(mention)
 
-        # raise BadRequest(entity_mention_dict)
+        # Create dict mapping document edit id -> entity list
         for mention_list in entity_mention_dict.values():
             if len(mention_list) > 0:
                 document_edit_entity_dict[mention_list[0]["document_edit_id"]].append(
@@ -599,11 +605,14 @@ class DocumentEditService:
                     }
                 )
 
+        # Create dict mapping document edit id -> relation list
         document_edit_relations_dict = (
             self.relation_service.get_document_edit_to_relation_dict(
                 document_edit_ids, mention_dict
             )
         )
+
+        # Build response from dict mappings
         return [
             {
                 "id": edit_id,

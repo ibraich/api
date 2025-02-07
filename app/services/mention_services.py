@@ -418,6 +418,12 @@ class MentionService:
         )
 
     def get_mentions_by_edit_ids(self, document_edit_ids):
+        """
+        Fetch mentions by list of document edit IDs
+
+        :param document_edit_ids: List of document edit IDs
+        :return: Mention dict containing mentions by mention ID
+        """
         mentions = self.__mention_repository.get_mentions_by_edit_ids(document_edit_ids)
         mention_dict = {}
         for mention in mentions:
