@@ -150,7 +150,7 @@ class MentionService:
         """
         self.__mention_repository.add_to_entity(entity_id, mention_id)
 
-    def delete_mention(self, user_id, mention_id):
+    def delete_mention(self, mention_id):
         if not isinstance(mention_id, int) or mention_id <= 0:
             raise BadRequest("Invalid mention ID. It must be a positive integer.")
 

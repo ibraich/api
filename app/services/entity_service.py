@@ -66,6 +66,9 @@ class EntityService:
         return self.__entity_repository.create_in_edit(document_edit_id)
 
     def delete_entity(self, entity_id):
+        entity = self.__entity_repository.get_entity_by_id(entity_id)
+        if entity is None:
+            raise NotFound("No entity found for the given ID.")
         return self.entity_mention_service.delete_entity(entity_id)
 
     def create_entity(self, document_edit_id, mention_ids):
