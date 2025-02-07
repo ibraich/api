@@ -1,121 +1,47 @@
-from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound
-
-from tests.test_routes import BaseTestCase
-from unittest.mock import patch
-import json
-from app.services.project_service import ProjectService, project_service
-from app.services.user_service import UserService
-from app.services.schema_service import SchemaService
-from app.db import db
+import unittest
+from collections import namedtuple
+from werkzeug.exceptions import BadRequest
+from app.models import Project
+from tests.test_routes import ProjectBaseTestCase
 
 
-class ProjectCreateTestCases(BaseTestCase):
-    service: ProjectService
+class TestProjectCreateResource(ProjectBaseTestCase):
 
     def setUp(self):
         super().setUp()
-        self.service = project_service
 
-    @patch.object(ProjectService, "create_project")
-    def test_create_project_endpoint(self, create_project_mock):
-        payload = json.dumps({"name": "Project-Name", "team_id": 2, "schema_id": 7})
+    def test_create_project_success(self):
+        self.project_repository.get_project_by_name.return_value = None
 
-        create_project_mock.return_value = "", 200
-        response = self.client.post(
-            "/api/projects/",
-            headers={"Content-Type": "application/json"},
-            data=payload,
+        self.schema_service.fix_schema.return_value = None
+        self.project_repository.create_project.return_value = Project(
+            id=7, name="Project7"
         )
-        self.assertEqual(200, response.status_code)
-
-    @patch.object(ProjectService, "create_project")
-    def test_create_project_service_wrong_param(self, create_project_mock):
-        payload = json.dumps({"name": "Project-Name", "schema_id": 7})
-
-        create_project_mock.return_value = "", 200
-        response = self.client.post(
-            "/api/projects/",
-            headers={"Content-Type": "application/json"},
-            data=payload,
+        self.project_repository.get_project_by_id.return_value = project_response(
+            7, "Project7", 1, 2, 3, "Schema", "Team2"
         )
-        self.assertEqual(400, response.status_code)
+        response = self.service.create_project(1, 2, 3, "Project7")
 
-    @patch.object(UserService, "get_logged_in_user_id")
-    def test_create_project_service_invalid_user_auth(self, check_auth_mock):
-        payload = json.dumps({"name": "Project-Name", "team_id": 2, "schema_id": 7})
+        # Assertions
+        self.assertEqual(response["id"], 7)
+        self.assertEqual(response["team"]["name"], "Team2")
 
-        check_auth_mock.side_effect = Forbidden("You need to be logged in")
+        self.project_repository.get_project_by_name.assert_called_with("Project7")
 
-        response = self.client.post(
-            "/api/projects/",
-            headers={"Content-Type": "application/json"},
-            data=payload,
-        )
-        self.assertEqual(403, response.status_code)
-        self.assertEqual(response.json.get("message"), "You need to be logged in")
+        self.schema_service.fix_schema.assert_called()
+        self.project_repository.create_project.assert_called()
 
-    @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "check_user_in_team")
-    def test_create_project_service_no_team(self, check_team_mock, check_auth_mock):
-        payload = json.dumps({"name": "Project-Name", "team_id": 2, "schema_id": 7})
+    def test_create_project_name_exists(self):
+        self.project_repository.get_project_by_name.side_effect = BadRequest()
 
-        check_auth_mock.return_value = 1
-        check_team_mock.side_effect = BadRequest("You have to be in a team")
+        with self.assertRaises(BadRequest):
+            self.service.create_project(1, 2, 3, "Project7")
 
-        response = self.client.post(
-            "/api/projects/",
-            headers={"Content-Type": "application/json"},
-            data=payload,
-        )
-        self.assertEqual(400, response.status_code)
-        self.assertEqual(response.json.get("message"), "You have to be in a team")
 
-    @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "check_user_in_team")
-    @patch.object(UserService, "check_user_schema_accessible")
-    @patch.object(db.session, "add")
-    def test_create_project_service_no_schema(
-        self, db_mock, check_schema_mock, check_team_mock, check_auth_mock
-    ):
-        payload = json.dumps({"name": "Project-Name", "team_id": 2, "schema_id": 7})
+project_response = namedtuple(
+    "ProjectResponse",
+    ["id", "name", "creator_id", "team_id", "schema_id", "schema_name", "team_name"],
+)
 
-        check_auth_mock.return_value = 1
-        check_team_mock.return_value = "", 200
-        check_schema_mock.side_effect = Forbidden("You cannot access this schema")
-        response = self.client.post(
-            "/api/projects/",
-            headers={"Content-Type": "application/json"},
-            data=payload,
-        )
-        self.assertEqual(403, response.status_code)
-        db_mock.assert_not_called()
-
-    @patch.object(UserService, "get_logged_in_user_id")
-    @patch.object(UserService, "check_user_in_team")
-    @patch.object(UserService, "check_user_schema_accessible")
-    @patch.object(db.session, "add")
-    @patch.object(db.session, "commit")
-    def test_create_project_service_valid(
-        self,
-        db_mock_commit,
-        db_mock_add,
-        check_schema_mock,
-        check_team_mock,
-        check_auth_mock,
-    ):
-        payload = json.dumps({"name": "Project-Name", "team_id": 2, "schema_id": 7})
-
-        check_auth_mock.return_value = 1
-        check_team_mock.return_value = "", 200
-        check_schema_mock.return_value = "", 200
-
-        response = self.client.post(
-            "/api/projects/",
-            headers={"Content-Type": "application/json"},
-            data=payload,
-        )
-
-        db_mock_add.assert_called_once()
-        db_mock_commit.assert_called_once()
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(response.json.get("name"), "Project-Name")
+if __name__ == "__main__":
+    unittest.main()

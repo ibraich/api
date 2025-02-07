@@ -66,7 +66,7 @@ class MentionDeletionResource(MentionBaseRoute):
         user_id = self.user_service.get_logged_in_user_id()
         self.user_service.check_user_mention_accessible(user_id, mention_id)
 
-        response = self.service.delete_mention(user_id, mention_id)
+        response = self.service.delete_mention(mention_id)
         return response
 
     @ns.expect(mention_update_input_dto)
