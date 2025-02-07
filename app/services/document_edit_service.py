@@ -49,6 +49,7 @@ class DocumentEditService:
         model_settings_mention=None,
         model_settings_entities=None,
         model_settings_relation=None,
+        with_recommendations=True,
     ):
         """
         Create a new document annotation.
@@ -65,6 +66,7 @@ class DocumentEditService:
         :param model_settings_mention: Settings for mention recommendations as dict with fields "key" and "value".
         :param model_settings_entities: Settings for entity recommendations as dict with fields "key" and "value".
         :param model_settings_relation: Settings for relation recommendations as dict with fields "key" and "value".
+        :param with_recommendations: If true, create recommendations for mentions.
         :return: document_edit_output_dto
         :raises BadRequest: If annotation already exists, invalid model IDs were given or recommendation generation fails.
         """
@@ -132,17 +134,18 @@ class DocumentEditService:
         )
 
         # Create mention recommendations
-        params = self.__get_recommendation_params(document_edit.id, 1)  # MENTIONS
-        mention_recommendations = (
-            self.document_recommendation_service.get_mention_recommendation(
-                document_id, doc_edit.schema_id, doc_edit.content, params
+        if with_recommendations:
+            params = self.__get_recommendation_params(document_edit.id, 1)  # MENTIONS
+            mention_recommendations = (
+                self.document_recommendation_service.get_mention_recommendation(
+                    document_id, doc_edit.schema_id, doc_edit.content, params
+                )
             )
-        )
 
-        # Store mention recommendations
-        self.mention_service.create_recommended_mention(
-            document_edit.id, document_recommendation.id, mention_recommendations
-        )
+            # Store mention recommendations
+            self.mention_service.create_recommended_mention(
+                document_edit.id, document_recommendation.id, mention_recommendations
+            )
 
         return {
             "id": document_edit.id,

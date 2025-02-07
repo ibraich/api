@@ -1,8 +1,9 @@
+from http.client import HTTPException
 from flask import Flask, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from werkzeug.exceptions import HTTPException, InternalServerError
+from werkzeug.exceptions import InternalServerError
 
 from app.config import Config
 

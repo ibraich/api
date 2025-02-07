@@ -46,6 +46,6 @@ class Imports(ImportBaseRoute):
         source = request.args.get("source")
 
         if source == "pet":
-            return self.service.import_pet_documents(import_list, project_id)
+            return self.service.import_pet_documents(import_list, project_id, user_id)
         else:
             raise BadRequest(f"Invalid source {source}")
