@@ -894,3 +894,6 @@ f1_score_dto = api.model(
         "relation_score": fields.Integer(description="Relation Score"),
     },
 )
+
+
+document_import_dto = api.model("DocumentImportList", {})
