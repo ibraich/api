@@ -43,6 +43,7 @@ def create_app(config_class):
     from app.routes.auth_routes import ns as auth
     from app.routes.token_routes import ns as tokens
     from app.routes.import_routes import ns as imports
+    from app.routes.train_routes import ns as training
 
     api.add_namespace(projects, path="/projects")
     api.add_namespace(mentions, path="/mentions")
@@ -55,6 +56,7 @@ def create_app(config_class):
     api.add_namespace(auth, path="/auth")
     api.add_namespace(tokens, path="/tokens")
     api.add_namespace(imports, path="/imports")
+    api.add_namespace(training, path="/training")
 
     if not config_class.TESTING:
         from app.db import db

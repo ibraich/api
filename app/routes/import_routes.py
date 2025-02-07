@@ -2,6 +2,7 @@ from flask import request
 from flask_restx import Namespace
 from werkzeug.exceptions import BadRequest
 
+from app.dtos import document_import_dto
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.import_service import import_service, ImportService
 
@@ -30,6 +31,7 @@ class Imports(ImportBaseRoute):
             },
         }
     )
+    @ns.expect(document_import_dto)
     def post(self):
         """
         Import documents from different data sources.
@@ -46,6 +48,8 @@ class Imports(ImportBaseRoute):
         source = request.args.get("source")
 
         if source == "pet":
-            return self.service.import_pet_documents(import_list, project_id)
+            return self.service.import_pet_documents(
+                import_list["documents"], project_id, user_id
+            )
         else:
             raise BadRequest(f"Invalid source {source}")

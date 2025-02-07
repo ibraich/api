@@ -14,14 +14,12 @@ from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 
 
-def _verify_constraint(
-    schema, tag: str, head_mention: Mention, tail_mention: Mention
-) -> any:
+def _verify_constraint(schema, tag: str, head_mention, tail_mention) -> any:
     schema_head_mention = next(
         (
             mention
             for mention in schema["schema_mentions"]
-            if mention["tag"] == head_mention.tag
+            if mention["tag"] == head_mention["tag"]
         ),
         None,
     )
@@ -29,14 +27,14 @@ def _verify_constraint(
     if schema_head_mention is None:
         # This is a LogicError as the mentions has been saved before
         raise ImportError(
-            f'Given Mention type "{head_mention.tag}" does not exist in the schema of the project'
+            f'Given Mention type "{head_mention["tag"]}" does not exist in the schema of the project'
         )
 
     schema_tail_mention = next(
         (
             mention
             for mention in schema["schema_mentions"]
-            if mention["tag"] == tail_mention.tag
+            if mention["tag"] == tail_mention["tag"]
         ),
         None,
     )
@@ -44,10 +42,9 @@ def _verify_constraint(
     if schema_tail_mention is None:
         # This is a LogicError as the mentions has been saved before
         raise ImportError(
-            f'Given Mention type "{tail_mention.tag}" does not exist in the schema of the project'
+            f'Given Mention type "{tail_mention["tag"]}" does not exist in the schema of the project'
         )
 
-    print(schema["schema_constraints"], flush=True)
     constraint = next(
         (
             constraint
@@ -140,7 +137,7 @@ class ImportService:
 
         # Create document edit
         document_edit = self._document_edit_service.create_document_edit(
-            user_id, document.id
+            user_id, document.id, with_recommendations=False
         )
         # Import Mentions to documentEdit
         schema = self._schema_service.get_schema_by_project_id(project_id)
@@ -174,7 +171,7 @@ class ImportService:
 
             for mention_index in entity["mentionIndices"]:
                 self._mention_service.add_to_entity(
-                    created_entity.id, mentions_by_index.get(mention_index).id
+                    created_entity.id, mentions_by_index.get(mention_index)["id"]
                 )
 
         # Import Relations of documentEdit
@@ -201,8 +198,8 @@ class ImportService:
             self._relation_service.save_relation_in_edit(
                 schema_relation_id,
                 schema_constraint["is_directed"],
-                mentions_by_index.get(relation["headMentionIndex"]).id,
-                mentions_by_index.get(relation["tailMentionIndex"]).id,
+                mentions_by_index.get(relation["headMentionIndex"])["id"],
+                mentions_by_index.get(relation["tailMentionIndex"])["id"],
                 document_edit["id"],
             )
 

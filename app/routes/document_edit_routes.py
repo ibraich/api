@@ -14,6 +14,7 @@ from app.dtos import (
     finished_document_edit_output_dto,
     document_edit_model_output_list_dto,
     document_edit_state_input_dto,
+    document_edit_schema_output_dto,
     f1_score_dto,
 )
 
@@ -167,6 +168,23 @@ class DocumentEditResource(DocumentEditBaseRoute):
             headers={"Content-Disposition": "attachment; filename=document_edit.json"},
         )
 
+
+@ns.route("/schema/<int:schema_id>")
+@ns.doc(params={"schema_id": "A schema ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditSchemaResource(DocumentEditBaseRoute):
+
+    @ns.marshal_with(document_edit_schema_output_dto, as_list=True)
+    def get(self, schema_id):
+        """
+        Fetch a list of all document edits by schema id.
+        """
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_schema_accessible(user_id, schema_id)
+
+        response = self.service.get_document_edits_by_schema(schema_id)
+        return response
 
 @ns.route("/<int:document_edit_id>/f1score")
 @ns.doc(params={"document_edit_id": "A Document ID"})

@@ -673,13 +673,16 @@ model_train_input = api.model(
     {
         "model_name": fields.String(description="Name of trained model", required=True),
         "model_type": fields.String(description="Type of trained model", required=True),
-        "model_steps": fields.List(
-            fields.String(
-                description="Steps this model can be used for, valid steps: MENTIONS, ENTITIES, RELATIONS",
-                required=True,
-            ),
+        "model_step": fields.String(
+            description="Steps this model can be used for, valid steps: mention, entity, relation",
             required=True,
         ),
+        "document_edits": fields.List(
+            fields.Integer(required=True),
+            required=True,
+            description="IDs of document edits to consider for training",
+        ),
+        "settings": fields.List(fields.Nested(recommendation_model_settings_dto)),
     },
 )
 
@@ -857,6 +860,26 @@ document_state_update_dto = api.model(
     },
 )
 
+document_edit_schema_output_dto = api.model(
+    "DocumentEditSchemaOutput",
+    {
+        "document": fields.Nested(
+            heat_document_dto, description="Details of the document"
+        ),
+        "id": fields.Integer(description="Document Edit ID"),
+        "state": fields.Nested(
+            api.model(
+                "DocumentEditState",
+                {
+                    "id": fields.Integer,
+                    "type": fields.String,
+                },
+            )
+        ),
+        "user": fields.Nested(user_output_dto),
+    },
+)
+
 f1_score_dto = api.model(
     "F1Score",
     {
@@ -870,4 +893,9 @@ f1_score_dto = api.model(
         ),
         "relation_score": fields.Integer(description="Relation Score"),
     },
+)
+
+
+document_import_dto = api.model(
+    "DocumentImportList", {"documents": fields.List(fields.Raw())}
 )
