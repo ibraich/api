@@ -6,6 +6,7 @@ from app.services.document_recommendation_service import (
     document_recommendation_service,
 )
 from app.services.entity_service import EntityService, entity_service
+from app.services.f1_score_service import f1_score_service, F1ScoreService
 from app.services.schema_service import SchemaService, schema_service
 from app.services.token_service import TokenService, token_service
 from app.services.mention_services import MentionService, mention_service
@@ -20,6 +21,7 @@ class DocumentEditService:
     relation_service: RelationService
     schema_service: SchemaService
     entity_service: EntityService
+    f1_score_service: F1ScoreService
 
     def __init__(
         self,
@@ -30,6 +32,7 @@ class DocumentEditService:
         relation_service,
         schema_service,
         entity_service,
+        f1_score_service,
     ):
         self.__document_edit_repository = document_edit_repository
         self.document_recommendation_service = document_recommendation_service
@@ -38,6 +41,7 @@ class DocumentEditService:
         self.relation_service = relation_service
         self.schema_service = schema_service
         self.entity_service = entity_service
+        self.f1_score_service = f1_score_service
 
     def create_document_edit(
         self,
@@ -292,6 +296,12 @@ class DocumentEditService:
             document_edit_id
         )
 
+        non_recommended_mentions_dict = {
+            mention["id"]: mention
+            for mention in mentions_data.get("mentions", [])
+            if mention["document_recommendation_id"] is None
+        }
+
         transformed_mentions = [
             {
                 "tag": mention["tag"],
@@ -302,11 +312,17 @@ class DocumentEditService:
                     else {}
                 ),  # Only add entity object if entity_id exists
             }
-            for mention in mentions_data.get("mentions", [])
+            for mention in non_recommended_mentions_dict.get("mentions", [])
         ]
         relations_data = self.relation_service.get_relations_by_document_edit(
             document_edit_id
         )
+
+        non_recommended_relations_dict = {
+            relation["id"]: relation
+            for relation in relations_data.get("relations", [])
+            if relation["document_recommendation_id"] is None
+        }
 
         transformed_relations = [
             {
@@ -319,7 +335,6 @@ class DocumentEditService:
                         if relation["head_mention"].get("entity_id")
                         else {}
                     ),  # Only add entity object if entity_id exists
-                    "entity": {"id": relation["head_mention"]["entity_id"]},
                 },
                 "mention_tail": {
                     "tag": relation["tail_mention"]["tag"],
@@ -331,7 +346,7 @@ class DocumentEditService:
                     ),  # Only add entity object if entity_id exists
                 },
             }
-            for relation in relations_data.get("relations", [])
+            for relation in non_recommended_relations_dict.get("relations", [])
         ]
         return {
             "document": {
@@ -625,6 +640,70 @@ class DocumentEditService:
             for edit_id in document_edit_ids
         ]
 
+    def get_f1_score(self, document_edit_id):
+        f1_score_request = self.get_document_edit_for_f1_score(document_edit_id)
+        return self.f1_score_service.get_f1_score(f1_score_request)
+
+    def get_document_edit_for_f1_score(self, document_edit_id):
+        document_edit = self.__document_edit_repository.get_document_edit_by_id(
+            document_edit_id
+        )
+        if document_edit is None:
+            raise BadRequest("Document Edit doesnt exist")
+
+        tokens_data = self.token_service.get_tokens_by_document(
+            document_edit.document_id
+        )
+        tokens = tokens_data.get("tokens", [])
+
+        actual_mentions = self.mention_service.get_actual_mentions_by_document_edit(
+            document_edit_id
+        )
+        predicted_mentions = (
+            self.mention_service.get_predicted_mentions_by_document_edit(
+                document_edit_id
+            )
+        )
+
+        mentions_data = self.mention_service.get_mentions_by_document_edit(
+            document_edit_id
+        )
+        mentions_dict = {
+            mention["id"]: mention for mention in mentions_data["mentions"]
+        }
+
+        actual_relations = (
+            self.relation_service.get_actual_relations_by_document_edit_id(
+                document_edit_id, mentions_dict
+            )
+        )
+
+        predicted_relations = (
+            self.relation_service.get_predicted_relations_by_document_edit_id(
+                document_edit_id, mentions_dict
+            )
+        )
+
+        actual_document_edit = {
+            "document": {
+                "id": document_edit.document_id,
+                "tokens": tokens,
+            },
+            "mentions": actual_mentions,
+            "relations": actual_relations,
+        }
+
+        predicted_document_edit = {
+            "document": {
+                "id": document_edit.document_id,
+                "tokens": tokens,
+            },
+            "mentions": predicted_mentions,
+            "relations": predicted_relations,
+        }
+
+        return {"actual": actual_document_edit, "predicted": predicted_document_edit}
+
 
 document_edit_service = DocumentEditService(
     DocumentEditRepository(),
@@ -634,4 +713,5 @@ document_edit_service = DocumentEditService(
     relation_service,
     schema_service,
     entity_service,
+    f1_score_service,
 )

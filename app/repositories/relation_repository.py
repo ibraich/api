@@ -54,6 +54,48 @@ class RelationRepository(BaseRepository):
             .all()
         )
 
+    def get_actual_relations_by_document_edit(self, document_edit_id):
+        return (
+            self.get_session()
+            .query(
+                Relation.id,
+                Relation.isDirected,
+                Relation.isShownRecommendation,
+                Relation.mention_head_id,
+                Relation.mention_tail_id,
+                Relation.document_recommendation_id,
+                Relation.document_edit_id,
+                SchemaRelation.tag,
+            )
+            .join(SchemaRelation, SchemaRelation.id == Relation.schema_relation_id)
+            .filter(
+                (Relation.document_edit_id == document_edit_id)
+                & (Relation.document_recommendation_id.is_(None))
+            )
+            .all()
+        )
+
+    def get_predicted_recommended_relations_by_document_edit(self, document_edit_id):
+        return (
+            self.get_session()
+            .query(
+                Relation.id,
+                Relation.isDirected,
+                Relation.isShownRecommendation,
+                Relation.mention_head_id,
+                Relation.mention_tail_id,
+                Relation.document_recommendation_id,
+                Relation.document_edit_id,
+                SchemaRelation.tag,
+            )
+            .join(SchemaRelation, SchemaRelation.id == Relation.schema_relation_id)
+            .filter(
+                (Relation.document_edit_id == document_edit_id)
+                & (Relation.document_recommendation_id.is_not(None))
+            )
+            .all()
+        )
+
     def save_relation_in_edit(
         self,
         schema_relation_id,

@@ -15,6 +15,7 @@ from app.dtos import (
     document_edit_model_output_list_dto,
     document_edit_state_input_dto,
     document_edit_schema_output_dto,
+    f1_score_dto,
 )
 
 ns = Namespace("annotations", description="Document-Annotation related operations")
@@ -184,3 +185,16 @@ class DocumentEditSchemaResource(DocumentEditBaseRoute):
 
         response = self.service.get_document_edits_by_schema(schema_id)
         return response
+
+@ns.route("/<int:document_edit_id>/f1score")
+@ns.doc(params={"document_edit_id": "A Document ID"})
+@ns.response(403, "Authorization required")
+@ns.response(404, "Data not found")
+class DocumentEditF1Score(DocumentEditBaseRoute):
+
+    @ns.marshal_with(f1_score_dto)
+    @ns.doc(description="Get F1 score for document edit")
+    def get(self, document_edit_id):
+        user_id = self.user_service.get_logged_in_user_id()
+        self.user_service.check_user_document_edit_accessible(user_id, document_edit_id)
+        return self.service.get_f1_score(document_edit_id)
