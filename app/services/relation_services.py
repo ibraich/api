@@ -351,6 +351,34 @@ class RelationService:
             document_edit_id
         )
 
+    def get_document_edit_to_relation_dict(self, document_edit_ids, mention_dict):
+        """
+        Fetch relations by list of document edit IDs
+
+        :param document_edit_ids: List of document edit IDs
+        :param mention_dict: Dict of mention id -> mention
+        :return: Dict containing relation list by document edit ID
+        """
+        relations = self.__relation_repository.get_relations_by_edit_ids(
+            document_edit_ids
+        )
+        document_edit_relation_dict = {
+            document_edit_id: [] for document_edit_id in document_edit_ids
+        }
+
+        for relation in relations:
+            mapped_relation = {
+                "tag": relation.tag,
+                "id": relation.id,
+                "head_mention": mention_dict[relation.mention_head_id],
+                "tail_mention": mention_dict[relation.mention_tail_id],
+            }
+            document_edit_relation_dict[relation.document_edit_id].append(
+                mapped_relation
+            )
+
+        return document_edit_relation_dict
+
     def get_actual_relations_by_document_edit_id(self, document_edit_id, mentions_dict):
         actual_relations = (
             self.__relation_repository.get_actual_relations_by_document_edit(

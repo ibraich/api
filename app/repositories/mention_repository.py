@@ -199,3 +199,27 @@ class MentionRepository(BaseRepository):
             .filter(Mention.isShownRecommendation == True)
             .all()
         )
+
+    def get_mentions_by_edit_ids(self, document_edit_ids):
+        return (
+            self.get_session()
+            .query(
+                Mention.id,
+                Mention.document_edit_id,
+                SchemaMention.tag,
+                Mention.document_edit_id,
+                Mention.entity_id,
+                TokenMention.token_id,
+                Token.id.label("token_id"),
+                Token.text,
+                Token.pos_tag,
+                Token.sentence_index,
+                Token.document_index,
+            )
+            .join(SchemaMention, SchemaMention.id == Mention.schema_mention_id)
+            .join(TokenMention, TokenMention.mention_id == Mention.id)
+            .join(Token, Token.id == TokenMention.token_id)
+            .filter(Mention.document_edit_id.in_(document_edit_ids))
+            .filter(Mention.document_recommendation_id.is_(None))
+            .all()
+        )

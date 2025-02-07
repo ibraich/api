@@ -39,3 +39,11 @@ class TokenRepository(BaseRepository):
             .filter(DocumentEdit.id == document_edit_id)
             .all()
         )
+
+    def get_tokens_by_document_ids(self, document_ids):
+        return (
+            self.get_session()
+            .query(Token)
+            .filter(Token.document_id.in_(document_ids))
+            .all()
+        )

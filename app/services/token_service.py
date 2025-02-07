@@ -126,5 +126,28 @@ class TokenService:
             if token_id not in document_token_ids:
                 raise Forbidden("Tokens do not belong to this document.")
 
+    def get_tokens_by_document_ids(self, document_ids):
+        """
+        Fetch tokens by list of document IDs
+
+        :param document_ids: List of document IDs
+        :return: Token dict containing tokens by document ID
+        """
+        tokens = self.__token_repository.get_tokens_by_document_ids(document_ids)
+        document_tokens_dict = {document_id: [] for document_id in document_ids}
+
+        for token in tokens:
+            document_tokens_dict[token.document_id].append(
+                {
+                    "text": token.text,
+                    "document_index": token.document_index,
+                    "pos_tag": token.pos_tag,
+                    "sentence_index": token.sentence_index,
+                    "id": token.id,
+                }
+            )
+
+        return document_tokens_dict
+
 
 token_service = TokenService(TokenRepository())

@@ -131,7 +131,7 @@ class SchemaService:
         )
         steps = self.__schema_repository.get_model_steps()
         steps = [step.type for step in steps]
-        schema.models = self.__schema_repository.add_model_to_schema(
+        schema.models = self.add_model_to_schema(
             schema.id, "OpenAI Large Language Model", "llm", steps
         )
         return schema
@@ -387,42 +387,6 @@ class SchemaService:
         hexa_code = re.compile(r"^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$")
         return bool(re.match(hexa_code, string))
 
-    def train_model_for_schema(self, schema_id, model_name, model_type, steps):
-        """
-        Trains a recommendation model for given schema id.
-
-        :param schema_id: Schema ID to train model for
-        :param model_name: Name of the model
-        :param model_type: Type of the model
-        :param steps: Steps for which model can be used
-        :return: model_train_output_list_dto
-        :raises BadRequest: If schema name already exists or training failed
-        """
-        duplicate = self.__schema_repository.get_model_by_name(model_name)
-        if duplicate is not None:
-            raise BadRequest("Model Name already exists")
-
-        # TODO call training endpoint
-
-        models = self.__schema_repository.add_model_to_schema(
-            schema_id, model_name, model_type, steps
-        )
-        return {
-            "models": [
-                {
-                    "id": model.id,
-                    "name": model.model_name,
-                    "type": model.model_type,
-                    "step": {
-                        "id": model.model_step_id,
-                        "type": model.model_step_name,
-                    },
-                    "schema_id": model.schema_id,
-                }
-                for model in models
-            ]
-        }
-
     def check_models_in_schema(
         self, mention_model_id, entity_model_id, relation_model_id, schema_id
     ):
@@ -535,6 +499,45 @@ class SchemaService:
         if schema_constraints is None:
             raise BadRequest("No Schema Mentions Found")
         return schema_constraints
+
+    def get_model_by_name(self, model_name):
+        """
+        Fetches a recommendation model by name.
+        :param model_name: Model name
+        :return: Recommendation model database object
+        """
+        return self.__schema_repository.get_model_by_name(model_name)
+
+    def add_model_to_schema(self, schema_id, model_name, model_type, steps):
+        """
+        Add a recommendation model to a schema.
+
+        :param schema_id: Schema ID
+        :param model_name: Model name
+        :param model_type: Model type
+        :param steps: Step name, allowed: MENTIONS, ENTITIES, RELATIONS
+        :return: Newly created recommendation model database object
+        :raises BadRequest: If step name is not allowed
+        """
+        db_steps = self.__schema_repository.get_model_steps()
+        step_dict = {}
+        for db_step in db_steps:
+            step_dict[db_step.type] = db_step.id
+
+        models = []
+        for step in steps:
+            if step not in step_dict.keys():
+                raise BadRequest("Step " + step + " not allowed.")
+            model = self.__schema_repository.add_model_to_schema(
+                model_name=model_name,
+                model_type=model_type,
+                schema_id=schema_id,
+                step_id=step_dict[step],
+            )
+
+            model.model_step_name = step
+            models.append(model)
+        return models
 
 
 schema_service = SchemaService(SchemaRepository())

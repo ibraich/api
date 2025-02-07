@@ -235,26 +235,15 @@ class SchemaRepository(BaseRepository):
             .first()
         )
 
-    def add_model_to_schema(self, schema_id, model_name, model_type, steps):
-        models = []
-        db_steps = self.get_model_steps()
-        step_dict = {}
-        for db_step in db_steps:
-            step_dict[db_step.type] = db_step.id
-
-        for step in steps:
-            if step not in step_dict.keys():
-                raise BadRequest("Step " + step + " not allowed.")
-            model = RecommendationModel(
-                model_name=model_name,
-                model_type=model_type,
-                schema_id=schema_id,
-                model_step_id=step_dict[step],
-            )
-            model.model_step_name = step
-            self.store_object(model)
-            models.append(model)
-        return models
+    def add_model_to_schema(self, schema_id, model_name, model_type, step_id):
+        model = RecommendationModel(
+            model_name=model_name,
+            model_type=model_type,
+            schema_id=schema_id,
+            model_step_id=step_id,
+        )
+        self.store_object(model)
+        return model
 
     def get_models_by_schema(self, schema_id):
         return (

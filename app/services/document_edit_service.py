@@ -53,6 +53,7 @@ class DocumentEditService:
         model_settings_mention=None,
         model_settings_entities=None,
         model_settings_relation=None,
+        with_recommendations=True,
     ):
         """
         Create a new document annotation.
@@ -69,6 +70,7 @@ class DocumentEditService:
         :param model_settings_mention: Settings for mention recommendations as dict with fields "key" and "value".
         :param model_settings_entities: Settings for entity recommendations as dict with fields "key" and "value".
         :param model_settings_relation: Settings for relation recommendations as dict with fields "key" and "value".
+        :param with_recommendations: If true, create recommendations for mentions.
         :return: document_edit_output_dto
         :raises BadRequest: If annotation already exists, invalid model IDs were given or recommendation generation fails.
         """
@@ -136,17 +138,18 @@ class DocumentEditService:
         )
 
         # Create mention recommendations
-        params = self.__get_recommendation_params(document_edit.id, 1)  # MENTIONS
-        mention_recommendations = (
-            self.document_recommendation_service.get_mention_recommendation(
-                document_id, doc_edit.schema_id, doc_edit.content, params
+        if with_recommendations:
+            params = self.__get_recommendation_params(document_edit.id, 1)  # MENTIONS
+            mention_recommendations = (
+                self.document_recommendation_service.get_mention_recommendation(
+                    document_id, doc_edit.schema_id, doc_edit.content, params
+                )
             )
-        )
 
-        # Store mention recommendations
-        self.mention_service.create_recommended_mention(
-            document_edit.id, document_recommendation.id, mention_recommendations
-        )
+            # Store mention recommendations
+            self.mention_service.create_recommended_mention(
+                document_edit.id, document_recommendation.id, mention_recommendations
+            )
 
         return {
             "id": document_edit.id,
@@ -516,6 +519,126 @@ class DocumentEditService:
                 "state": state.type,
             },
         }
+
+    def get_document_edits_by_schema(self, schema_id):
+        """
+        Fetch a list of all document edits by schema id.
+
+        :param schema_id: Schema ID to query
+        :return: document_edit_schema_output_dto
+        """
+        document_edits = self.__document_edit_repository.get_document_edits_by_schema(
+            schema_id
+        )
+        return [
+            {
+                "document": {
+                    "id": document_edit.document_id,
+                    "name": document_edit.document_name,
+                },
+                "id": document_edit.id,
+                "state": {
+                    "id": document_edit.state_id,
+                    "type": document_edit.state_name,
+                },
+                "user": {
+                    "id": document_edit.user_id,
+                    "email": document_edit.email,
+                    "username": document_edit.username,
+                },
+            }
+            for document_edit in document_edits
+        ]
+
+    def get_document_edits_for_schema_training(self, document_edit_ids, schema_id):
+        """
+        Fetch list of document edits with all required information for model training.
+        Returned DocumentEdit dict contains tokens, mentions, relations and entities.
+
+        :param document_edit_ids: DocumentEdit IDs to query.
+        :param schema_id: Schema of the documents.
+        :return: Dict containing required data for training.
+        :raises BadRequest: If document edit does not exist or does not belong to schema.
+        """
+        # Fetch all document edits of schema
+        document_edits = self.__document_edit_repository.get_document_edit_ids_with_document_by_schema(
+            schema_id, document_edit_ids
+        )
+
+        document_edit_ids = set(document_edit_ids)
+        if not len(document_edit_ids) == len(document_edits):
+            raise BadRequest("At least one Document Edit does not belong to schema")
+
+        # Create dict mapping document edit ID -> document id, document content
+        doc_edit_to_doc_id_map = {}
+        doc_edit_to_content_map = {}
+        for id, document_id, content in document_edits:
+            doc_edit_to_doc_id_map[id] = document_id
+            doc_edit_to_content_map[id] = content
+
+        # Create dict mapping document id -> token list
+        document_tokens_dict = self.token_service.get_tokens_by_document_ids(
+            doc_edit_to_doc_id_map.values()
+        )
+
+        # Create dict mapping document edit id -> token list
+        document_edit_tokens_dict = {
+            document_edit_id: document_tokens_dict[
+                doc_edit_to_doc_id_map[document_edit_id]
+            ]
+            for document_edit_id in document_edit_ids
+        }
+
+        # Create dict mapping mention id -> mention
+        mention_dict = self.mention_service.get_mentions_by_edit_ids(document_edit_ids)
+
+        document_edit_mention_dict = {
+            document_edit_id: [] for document_edit_id in document_edit_ids
+        }
+        document_edit_entity_dict = {
+            document_edit_id: [] for document_edit_id in document_edit_ids
+        }
+        entity_mention_dict = {
+            mention["entity_id"]: [] for mention in mention_dict.values()
+        }
+
+        # Create dict mapping document edit id ->  list
+        # Create dict mapping entity id -> mention list
+        for mention in mention_dict.values():
+            document_edit_mention_dict[mention["document_edit_id"]].append(mention)
+            if mention["entity_id"] is not None:
+                entity_mention_dict[mention["entity_id"]].append(mention)
+
+        # Create dict mapping document edit id -> entity list
+        for mention_list in entity_mention_dict.values():
+            if len(mention_list) > 0:
+                document_edit_entity_dict[mention_list[0]["document_edit_id"]].append(
+                    {
+                        "id": mention_list[0]["entity_id"],
+                        "tag": "",
+                        "mentions": mention_list,
+                    }
+                )
+
+        # Create dict mapping document edit id -> relation list
+        document_edit_relations_dict = (
+            self.relation_service.get_document_edit_to_relation_dict(
+                document_edit_ids, mention_dict
+            )
+        )
+
+        # Build response from dict mappings
+        return [
+            {
+                "id": edit_id,
+                "content": doc_edit_to_content_map[edit_id],
+                "tokens": document_edit_tokens_dict[edit_id],
+                "mentions": document_edit_mention_dict[edit_id],
+                "entitys": document_edit_entity_dict[edit_id],
+                "relations": document_edit_relations_dict[edit_id],
+            }
+            for edit_id in document_edit_ids
+        ]
 
     def get_f1_score(self, document_edit_id):
         f1_score_request = self.get_document_edit_for_f1_score(document_edit_id)
