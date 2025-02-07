@@ -1,6 +1,3 @@
-import unittest
-from collections import namedtuple
-from unittest.mock import MagicMock
 from app.services.document_service import DocumentService
 from tests.test_routes import BaseTestCase
 

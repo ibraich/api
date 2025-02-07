@@ -1,7 +1,6 @@
-from collections import namedtuple
 from unittest.mock import patch
 
-from werkzeug.exceptions import NotFound, BadRequestKeyError, BadRequest
+from werkzeug.exceptions import BadRequest
 
 from app.repositories.schema_repository import SchemaRepository
 from app.services.schema_service import SchemaService, schema_service

@@ -72,11 +72,7 @@ class TestDocumentEditCreateResource(DocumentEditBaseTestCase):
     @patch.object(
         DocumentEditService, "_DocumentEditService__get_document_edit_by_document"
     )
-    @patch.object(
-        DocumentEditService,
-        "_DocumentEditService__get_document_edit_with_document_by_id",
-    )
-    def test_create_document_edit_invalid_model(self, get_edit_doc_mock, get_edit_mock):
+    def test_create_document_edit_invalid_model(self, get_edit_mock):
         get_edit_mock.return_value = None
 
         # Get schema of document

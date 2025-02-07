@@ -1,7 +1,4 @@
-from werkzeug.exceptions import BadRequest
 from flask_restx import Namespace
-
-
 from app.dtos import token_output_list_dto
 from app.routes.base_routes import AuthorizedBaseRoute
 from app.services.token_service import token_service, TokenService

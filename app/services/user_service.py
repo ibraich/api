@@ -173,7 +173,7 @@ class UserService:
         """
         Update user information by calling the repository.
 
-        :param user_id_ ID of the user
+        :param user_id: ID of the user
         :param username: New username (optional).
         :param email: New email (optional).
         :param password: New password (optional).

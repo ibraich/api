@@ -7,7 +7,6 @@ from app.models import (
     Team,
     User,
     UserTeam,
-    DocumentRecommendation,
     Schema,
 )
 from app.repositories.base_repository import BaseRepository

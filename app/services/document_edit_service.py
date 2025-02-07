@@ -572,9 +572,9 @@ class DocumentEditService:
         # Create dict mapping document edit ID -> document id, document content
         doc_edit_to_doc_id_map = {}
         doc_edit_to_content_map = {}
-        for id, document_id, content in document_edits:
-            doc_edit_to_doc_id_map[id] = document_id
-            doc_edit_to_content_map[id] = content
+        for edit_id, document_id, content in document_edits:
+            doc_edit_to_doc_id_map[edit_id] = document_id
+            doc_edit_to_content_map[edit_id] = content
 
         # Create dict mapping document id -> token list
         document_tokens_dict = self.token_service.get_tokens_by_document_ids(
@@ -615,7 +615,7 @@ class DocumentEditService:
                 document_edit_entity_dict[mention_list[0]["document_edit_id"]].append(
                     {
                         "id": mention_list[0]["entity_id"],
-                        "tag": "",
+                        "tag": mention_list[0]["tag"],
                         "mentions": mention_list,
                     }
                 )

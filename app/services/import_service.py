@@ -1,6 +1,5 @@
 import typing
 
-from app.models import Mention
 from app.repositories.document_repository import DocumentRepository
 from app.services.document_edit_service import (
     document_edit_service,

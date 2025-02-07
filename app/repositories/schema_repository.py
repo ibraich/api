@@ -1,5 +1,4 @@
 from sqlalchemy.orm import aliased
-from werkzeug.exceptions import BadRequest
 import logging
 
 from app.models import (
@@ -17,7 +16,6 @@ from app.models import (
     Document,
 )
 from app.repositories.base_repository import BaseRepository
-from flask import request, jsonify
 
 
 class SchemaRepository(BaseRepository):

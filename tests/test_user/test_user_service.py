@@ -1,6 +1,6 @@
 import unittest
-from unittest.mock import MagicMock, patch
-from werkzeug.exceptions import BadRequest, NotFound
+from unittest.mock import MagicMock
+from werkzeug.exceptions import BadRequest
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
 

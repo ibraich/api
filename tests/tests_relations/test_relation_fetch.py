@@ -1,10 +1,5 @@
-import json
 from unittest.mock import patch
-
-from werkzeug.exceptions import NotFound
-
 from app.services.relation_services import RelationService, relation_service
-from app.db import db
 from tests.test_routes import BaseTestCase
 
 
