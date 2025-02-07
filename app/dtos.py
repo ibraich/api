@@ -896,4 +896,6 @@ f1_score_dto = api.model(
 )
 
 
-document_import_dto = api.model("DocumentImportList", {})
+document_import_dto = api.model(
+    "DocumentImportList", {"documents": fields.List(fields.Raw())}
+)
