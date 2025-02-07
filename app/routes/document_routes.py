@@ -128,8 +128,6 @@ class DocumentEditsSenderResource(DocumentBaseRoute):
             document_id
         )
 
-        print(transformed_edits, flush=True)
-
         external_endpoint = current_app.config.get("DIFFERENCE_CALC_URL") + "/heatmap"
 
         headers = {
