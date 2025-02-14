@@ -17,7 +17,7 @@
     {
       "tag": "Activity",
       "description": "A specific, actionable step in a process (e.g., Verify Documents or Generate Invoice). Usually contains a verb",
-      "entity_possible": true,
+      "entity_possible": false,
       "color": "#12344567d"
     },
     {
@@ -34,7 +34,7 @@
     {
       "tag": "Condition Specification",
       "description": "Rules for decisions at gateways, defining which path to take (e.g., If Credit Score > 700, Approve Loan; Else, Manual Review).",
-      "entity_possible": true
+      "entity_possible": false
     },
     {
       "tag": "Further Specification",
@@ -45,27 +45,27 @@
   "schema_relations": [
   {
       "tag": "actor performer",
-      "description": "TODO"
+      "description": "Links an activity to the actor responsible for its execution"
     },
     {
       "tag": "uses",
-      "description": "TODO"
+      "description": "Links an activity with the activity data object used, required pr produced by it"
     },
     {
       "tag": "actor recipient",
-      "description": "TODO"
+      "description": "Links an activity to the actor that receives the data or is the trigger of an activity"
     },
     {
       "tag": "flow",
-      "description": "TODO"
+      "description": "The connector between activities in a process model that determines the execution sequence of the activities. Also possible across sentences. Also serves as a connector between Condition Specification/XOR Gateway and the next activity to be executed"
     },
     {
       "tag": "same gateway",
-      "description": "TODO"
+      "description": "Links two XOR gateways that share the same decision point. Also possible across sentences."
     },
     {
       "tag": "further specification",
-      "description": "TODO"
+      "description": "Links an activity to the further specification, which provides additional information about the activity."
     }
   ],
   "schema_constraints": [
