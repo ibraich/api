@@ -142,6 +142,12 @@ class MentionRepository(BaseRepository):
         mention = self.get_session().query(Mention).get(mention_id)
         if not mention:
             return False
+        tokensMentions = (
+            self.get_session().query(TokenMention).filter_by(mention_id=mention_id)
+        )
+        for tokenMention in tokensMentions:
+            self.get_session().delete(tokenMention)
+
         self.get_session().delete(mention)
         return True
 
