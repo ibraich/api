@@ -157,6 +157,10 @@ class RelationRepository(BaseRepository):
                 (Relation.mention_head_id == mention_id)
                 | (Relation.mention_tail_id == mention_id)
             )
+            .filter(
+                Relation.document_recommendation_id.is_(None)
+                | Relation.isShownRecommendation.is_(True)
+            )
             .all()
         )
 
@@ -167,6 +171,10 @@ class RelationRepository(BaseRepository):
             .filter(
                 (Relation.mention_head_id == mention_head_id)
                 & (Relation.mention_tail_id == mention_tail_id)
+            )
+            .filter(
+                Relation.document_recommendation_id.is_(None)
+                | Relation.isShownRecommendation.is_(True)
             )
             .all()
         )
